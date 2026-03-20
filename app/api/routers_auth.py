@@ -1,25 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-import os
 
 from app.core.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.user import User
 from app.models.token import RefreshToken
-from app.core.rbac import require_admin, require_normal_user
 from app.schemas.auth import (
     UserRegister,
     UserResponse,
     UserLogin,
     TokenResponse,
-    AccessTokenResponse
+    AccessTokenResponse,
+    ChangePassword
 )
 from app.core.security import (
     hash_password,
     verify_password,
     create_access_token,
-    verify_access_token,
     create_refresh_token,
     verify_refresh_token
 )
@@ -39,22 +37,13 @@ async def register(
 
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
-    # Detect role (disabled by default for safer public deployments)
-    allow_admin_domains = os.getenv("ALLOW_ADMIN_EMAIL_DOMAINS", "false").lower() == "true"
-    if allow_admin_domains and (
-        user.email.endswith("@admin.com") or user.email.endswith("@kumbhvolunteer.com")
-    ):
-        role = "admin"
-    else:
-        role = "user"
+
 
     # Create new user
     new_user = User(
-        name=user.name,
+        full_name=user.full_name,
         email=user.email,
-        password_hash=hash_password(user.password),
-        role=role
+        password_hash=hash_password(user.password)
     )
     db.add(new_user)
     await db.commit()
@@ -62,9 +51,12 @@ async def register(
     
     return UserResponse(
         id=new_user.id,
-        name=new_user.name,
+        full_name=new_user.full_name,
         email=new_user.email,
-        role=new_user.role
+        role=new_user.role,
+        employee_id=new_user.employee_id,
+        phone=new_user.phone,
+        is_active=new_user.is_active
     )
 
 # Login
@@ -83,12 +75,17 @@ async def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials"
         )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account is deactivated"
+        )
     
     # Create Access Token
-    access_token = create_access_token(data={"sub": user.email, "role": user.role})
+    access_token = create_access_token(data={"sub": user.email, "role": user.role.value})
 
     # Create Refresh Token
-    refresh_token, expires_at = create_refresh_token(data={"sub": user.email, "role": user.role})
+    refresh_token, expires_at = create_refresh_token(data={"sub": user.email, "role": user.role.value})
 
     # Store refresh token in DB
     db_token = RefreshToken(
@@ -170,3 +167,24 @@ async def logout(
     response.delete_cookie(key="refresh_token")
 
     return {"detail": "Logged out successfully"}
+
+# Change Password Endpoint
+@router.post("/change-password")
+async def change_password(
+    data: ChangePassword,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+     # Verify current password
+    if not verify_password(data.current_password, current_user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Current password is incorrect"
+        )
+
+    # Update password
+    current_user.password_hash = hash_password(data.new_password)
+    db.add(current_user)
+    await db.commit()
+
+    return {"detail": "Password changed successfully"}

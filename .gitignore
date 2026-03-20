@@ -40,4 +40,6 @@ secrets/
 # Alembic
 alembic/versions/*.pyc
 
-uv.lock
+# OS
+.DS_Store
+Thumbs.db

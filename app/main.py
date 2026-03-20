@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers_auth import router as auth_router
+from app.core.exceptions import register_exception_handlers
 
 app = FastAPI(
     title="Asset-Tracking-System",
@@ -10,11 +11,14 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten this in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Exception Handlers
+register_exception_handlers(app)
 
 # Routers
 app.include_router(auth_router)

@@ -1,15 +1,21 @@
 from pydantic import BaseModel, EmailStr
 
+from app.models.user import UserRole
+
+
 class UserRegister(BaseModel):
-    name: str
+    full_name: str
     email: EmailStr
     password: str
 
 class UserResponse(BaseModel):
     id: int
-    name: str
+    full_name: str
     email: EmailStr
-    role: str
+    role: UserRole
+    employee_id: str | None = None
+    phone: str | None = None
+    is_active: bool
 
     class Config:
         from_attributes = True
@@ -18,6 +24,10 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+class ChangePassword(BaseModel):
+    current_password: str
+    new_password: str
+    
 class AccessTokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
