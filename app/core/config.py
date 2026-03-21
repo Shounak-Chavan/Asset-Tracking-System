@@ -22,6 +22,11 @@ class Settings:
     # Database
     DATABASE_URL = os.getenv("DATABASE_URL")
 
+    # Admin Credentials
+    ADMIN_EMAIL = os.getenv("ADMIN_EMAIL")
+    ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
+    ADMIN_FULL_NAME = os.getenv("ADMIN_FULL_NAME")
+
 settings = Settings()
 
 if not settings.ACCESS_TOKEN_SECRET_KEY:
@@ -33,3 +38,5 @@ if not settings.REFRESH_TOKEN_SECRET_KEY:
 if not settings.DATABASE_URL:
     raise ValueError("DATABASE_URL environment variable is not set.")
 
+if not settings.ADMIN_EMAIL or not settings.ADMIN_PASSWORD or not settings.ADMIN_FULL_NAME:
+    raise ValueError("Admin credentials are not set.")

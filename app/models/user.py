@@ -1,4 +1,4 @@
-from sqlalchemy import  Column, Enum, String, Integer
+from sqlalchemy import  Column, Enum, ForeignKey, String, Integer
 from sqlalchemy.orm import relationship
 from app.db.base import Base
 import enum
@@ -25,6 +25,8 @@ class User(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    department_id = Column(Integer, ForeignKey("departments.id", ondelete="SET NULL"), nullable=True)
 
     # Relationships
+    department = relationship("Department", back_populates="users")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")

@@ -3,10 +3,10 @@ from pydantic import BaseModel, EmailStr
 from app.models.user import UserRole
 
 
-class UserRegister(BaseModel):
-    full_name: str
-    email: EmailStr
-    password: str
+# class UserRegister(BaseModel):
+#     full_name: str
+#     email: EmailStr
+#     password: str
 
 class UserResponse(BaseModel):
     id: int
@@ -16,6 +16,7 @@ class UserResponse(BaseModel):
     employee_id: str | None = None
     phone: str | None = None
     is_active: bool
+    department_id: int | None = None
 
     class Config:
         from_attributes = True
