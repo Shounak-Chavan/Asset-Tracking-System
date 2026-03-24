@@ -3,3 +3,5 @@ from app.models.token import RefreshToken
 from app.models.rental_plan import RentalPlan
 from app.models.category import Category
 from app.models.asset import Asset
+from app.models.bookings import Booking
+from app.models.payment import Payment

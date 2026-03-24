@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Authentication - Asset Tracking Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body data-page="auth">
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+
+  <main class="shell">
+    <header class="card topbar">
+      <div>
+        <p class="kicker">Step 1</p>
+        <h1>Authentication Flow</h1>
+      </div>
+      <nav class="nav-links">
+        <a class="nav-link" href="index.html">Home</a>
+        <a class="nav-link active" href="auth.html">Authentication</a>
+        <a class="nav-link" href="explore.html">Explore Data</a>
+        <a class="nav-link" href="admin.html">Admin Actions</a>
+        <a class="nav-link" href="session.html">Session</a>
+      </nav>
+    </header>
+
+    <section class="card hero-panel">
+      <div class="base-row">
+        <label>
+          Backend Base URL
+          <input id="baseUrl" type="text" value="http://127.0.0.1:8000" />
+        </label>
+        <button id="healthBtn" class="btn alt">Verify Backend Live</button>
+      </div>
+      <div class="token-box">
+        <span>Access Token</span>
+        <code id="tokenPreview">Not set</code>
+      </div>
+      <div class="callout">Presentation line: We start by creating user identity and issuing a JWT token through login.</div>
+    </section>
+
+    <section class="page-grid">
+      <article class="card">
+        <h2>Register New User</h2>
+        <form id="registerForm" class="stack">
+          <input name="full_name" placeholder="Full Name" required />
+          <input name="email" type="email" placeholder="Email" required />
+          <input name="password" type="password" placeholder="Password" required />
+          <button type="submit" class="btn">POST /auth/register</button>
+        </form>
+      </article>
+
+      <article class="card">
+        <h2>Login User</h2>
+        <form id="loginForm" class="stack">
+          <input name="email" type="email" placeholder="Email" required />
+          <input name="password" type="password" placeholder="Password" required />
+          <button type="submit" class="btn">POST /auth/login</button>
+        </form>
+      </article>
+    </section>
+
+    <section class="card">
+      <h2>Optional: Change Password</h2>
+      <form id="changePasswordForm" class="stack">
+        <input name="current_password" type="password" placeholder="Current Password" required />
+        <input name="new_password" type="password" placeholder="New Password" required />
+        <button type="submit" class="btn ghost">POST /auth/change-password</button>
+      </form>
+    </section>
+
+    <section class="card output-card">
+      <h2>Response Console</h2>
+      <pre id="output">Use register and login to generate a token.</pre>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
