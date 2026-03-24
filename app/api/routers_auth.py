@@ -4,11 +4,12 @@ from sqlalchemy.future import select
 
 from app.core.dependencies import get_current_user
 from app.db.session import get_db
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.models.token import RefreshToken
 from app.schemas.auth import (
     UserResponse,
     UserLogin,
+    UserRegister,
     TokenResponse,
     AccessTokenResponse,
     ChangePassword
@@ -23,40 +24,40 @@ from app.core.security import (
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
-# # Register endpoint
-# @router.post("/register", response_model=UserResponse)
-# async def register(
-#     user: UserRegister,
-#     db: AsyncSession = Depends(get_db)
-# ):
+# Register endpoint
+@router.post("/register", response_model=UserResponse)
+async def register(
+    user: UserRegister,
+    db: AsyncSession = Depends(get_db)
+):
 
-#     # Check if user already exists
-#     result = await db.execute(select(User).where(User.email == user.email))
-#     existing_user = result.scalars().first()
+    # Check if user already exists
+    result = await db.execute(select(User).where(User.email == user.email))
+    existing_user = result.scalars().first()
 
-#     if existing_user:
-#         raise HTTPException(status_code=400, detail="Email already registered")
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Email already registered")
 
 
-#     # Create new user
-#     new_user = User(
-#         full_name=user.full_name,
-#         email=user.email,
-#         password_hash=hash_password(user.password)
-#     )
-#     db.add(new_user)
-#     await db.commit()
-#     await db.refresh(new_user)
+    # Create new user
+    new_user = User(
+        full_name=user.full_name,
+        email=user.email,
+        password_hash=hash_password(user.password),
+        role=UserRole.user  # default role for self-registration
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
     
-#     return UserResponse(
-#         id=new_user.id,
-#         full_name=new_user.full_name,
-#         email=new_user.email,
-#         role=new_user.role,
-#         employee_id=new_user.employee_id,
-#         phone=new_user.phone,
-#         is_active=new_user.is_active
-#     )
+    return UserResponse(
+        id=new_user.id,
+        full_name=new_user.full_name,
+        email=new_user.email,
+        role=new_user.role,
+        phone=new_user.phone,
+        is_active=new_user.is_active
+    )
 
 # Login
 

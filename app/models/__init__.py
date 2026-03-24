@@ -1,3 +1,5 @@
 from app.models.user import User
 from app.models.token import RefreshToken
-from app.models.department import Department
+from app.models.rental_plan import RentalPlan
+from app.models.category import Category
+from app.models.asset import Asset

@@ -24,7 +24,7 @@ async def seed():
             full_name=ADMIN_FULL_NAME,
             email=ADMIN_EMAIL,
             password_hash=hash_password(ADMIN_PASSWORD),
-            role=UserRole.system_admin,
+            role=UserRole.admin,
             is_active=True
         )
 

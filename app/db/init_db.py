@@ -5,7 +5,6 @@ from app.db.base import Base
 
 from app.models.user import User
 from app.models.token import RefreshToken
-from app.models.department import Department
 
 async def init_db():
     # Create all tables in the database
