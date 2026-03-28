@@ -5,3 +5,5 @@ from app.models.category import Category
 from app.models.asset import Asset
 from app.models.bookings import Booking
 from app.models.payment import Payment
+from app.models.allocations import Allocation
+from app.models.returns import Return

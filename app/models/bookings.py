@@ -2,6 +2,8 @@ from sqlalchemy import Column, Integer, ForeignKey, Date, DateTime, Enum, Numeri
 from datetime import datetime, timezone
 import enum
 
+from sqlalchemy.orm import relationship
+
 from app.db.base import Base
 
 
@@ -37,3 +39,4 @@ class Booking(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
+    rental_plan = relationship("RentalPlan", back_populates="bookings")

@@ -1,9 +1,74 @@
 const tokenKey = "asset_tracking_access_token";
 const baseUrlKey = "asset_tracking_base_url";
+const timelineKey = "asset_tracking_recent_actions";
 
 const outputEl = document.getElementById("output");
 const tokenPreviewEl = document.getElementById("tokenPreview");
 const baseUrlEl = document.getElementById("baseUrl");
+const statusBackendEl = document.getElementById("statusBackend");
+const statusAuthEl = document.getElementById("statusAuth");
+const statusLastEl = document.getElementById("statusLast");
+const activityListEl = document.getElementById("activityList");
+
+function setPill(el, text, cls) {
+  if (!el) return;
+  el.textContent = text;
+  el.className = `pill ${cls}`;
+}
+
+function setBackendStatus(type, text) {
+  setPill(statusBackendEl, text, type);
+}
+
+function setAuthStatusFromToken() {
+  const token = getToken();
+  if (token) {
+    setPill(statusAuthEl, "Token Active", "success");
+  } else {
+    setPill(statusAuthEl, "No Token", "pending");
+  }
+}
+
+function setLastAction(type, text) {
+  setPill(statusLastEl, text, type);
+}
+
+function getTimeline() {
+  try {
+    return JSON.parse(localStorage.getItem(timelineKey) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function pushTimeline(status, label) {
+  const current = getTimeline();
+  const time = new Date().toLocaleTimeString();
+  current.unshift({ status, label, time });
+  const limited = current.slice(0, 8);
+  localStorage.setItem(timelineKey, JSON.stringify(limited));
+  renderTimeline();
+}
+
+function renderTimeline() {
+  if (!activityListEl) return;
+  const timeline = getTimeline();
+  activityListEl.innerHTML = "";
+
+  if (!timeline.length) {
+    const li = document.createElement("li");
+    li.textContent = "No actions yet. Start with backend health check.";
+    activityListEl.appendChild(li);
+    return;
+  }
+
+  for (const item of timeline) {
+    const li = document.createElement("li");
+    li.className = item.status === "success" ? "ok" : "fail";
+    li.textContent = `[${item.time}] ${item.label}`;
+    activityListEl.appendChild(li);
+  }
+}
 
 function getBaseUrl() {
   const fallback = "http://127.0.0.1:8000";
@@ -31,10 +96,12 @@ function setToken(token) {
   if (!token) {
     localStorage.removeItem(tokenKey);
     renderTokenPreview();
+    setAuthStatusFromToken();
     return;
   }
   localStorage.setItem(tokenKey, token);
   renderTokenPreview();
+  setAuthStatusFromToken();
 }
 
 function log(title, data) {
@@ -76,6 +143,24 @@ async function api(path, options = {}) {
   return payload;
 }
 
+async function runAction(config) {
+  const { label, path, method = "GET", body, onSuccess } = config;
+
+  try {
+    const res = await api(path, { method, body });
+    if (typeof onSuccess === "function") {
+      onSuccess(res);
+    }
+    setLastAction("success", label);
+    pushTimeline("success", `${label} succeeded`);
+    log(`${label} success`, res);
+  } catch (err) {
+    setLastAction("error", label);
+    pushTimeline("fail", `${label} failed`);
+    log(`${label} failed`, err);
+  }
+}
+
 function formDataToObject(form) {
   return Object.fromEntries(new FormData(form).entries());
 }
@@ -89,12 +174,16 @@ function bindHealthButton() {
   const healthBtn = document.getElementById("healthBtn");
   if (!healthBtn) return;
   healthBtn.addEventListener("click", async () => {
-    try {
-      const data = await api("/health");
-      log("Backend health check success", data);
-    } catch (err) {
-      log("Backend health check failed", err);
+    healthBtn.disabled = true;
+    await runAction({
+      label: "Backend health check",
+      path: "/health",
+      onSuccess: () => setBackendStatus("success", "Live")
+    });
+    if (statusLastEl && statusLastEl.className.includes("error")) {
+      setBackendStatus("error", "Not reachable");
     }
+    healthBtn.disabled = false;
   });
 }
 
@@ -107,12 +196,12 @@ function bindAuthPage() {
     registerForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = formDataToObject(e.currentTarget);
-      try {
-        const res = await api("/auth/register", { method: "POST", body: data });
-        log("Register success", res);
-      } catch (err) {
-        log("Register failed", err);
-      }
+      await runAction({
+        label: "Register user",
+        path: "/auth/register",
+        method: "POST",
+        body: data
+      });
     });
   }
 
@@ -120,13 +209,13 @@ function bindAuthPage() {
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = formDataToObject(e.currentTarget);
-      try {
-        const res = await api("/auth/login", { method: "POST", body: data });
-        setToken(res.access_token);
-        log("Login success. Access token stored.", res);
-      } catch (err) {
-        log("Login failed", err);
-      }
+      await runAction({
+        label: "Login user",
+        path: "/auth/login",
+        method: "POST",
+        body: data,
+        onSuccess: (res) => setToken(res.access_token)
+      });
     });
   }
 
@@ -134,12 +223,12 @@ function bindAuthPage() {
     changePasswordForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = formDataToObject(e.currentTarget);
-      try {
-        const res = await api("/auth/change-password", { method: "POST", body: data });
-        log("Change password success", res);
-      } catch (err) {
-        log("Change password failed", err);
-      }
+      await runAction({
+        label: "Change password",
+        path: "/auth/change-password",
+        method: "POST",
+        body: data
+      });
     });
   }
 }
@@ -153,45 +242,25 @@ function bindExplorePage() {
 
   if (meBtn) {
     meBtn.addEventListener("click", async () => {
-      try {
-        const res = await api("/users/me");
-        log("Profile data fetched", res);
-      } catch (err) {
-        log("Profile fetch failed", err);
-      }
+      await runAction({ label: "Fetch profile", path: "/users/me" });
     });
   }
 
   if (categoriesBtn) {
     categoriesBtn.addEventListener("click", async () => {
-      try {
-        const res = await api("/categories/");
-        log("Categories fetched", res);
-      } catch (err) {
-        log("Categories fetch failed", err);
-      }
+      await runAction({ label: "Fetch categories", path: "/categories/" });
     });
   }
 
   if (plansBtn) {
     plansBtn.addEventListener("click", async () => {
-      try {
-        const res = await api("/rental-plans/");
-        log("Rental plans fetched", res);
-      } catch (err) {
-        log("Rental plans fetch failed", err);
-      }
+      await runAction({ label: "Fetch rental plans", path: "/rental-plans/" });
     });
   }
 
   if (assetsBtn) {
     assetsBtn.addEventListener("click", async () => {
-      try {
-        const res = await api("/assets/");
-        log("Assets fetched", res);
-      } catch (err) {
-        log("Assets fetch failed", err);
-      }
+      await runAction({ label: "Fetch assets", path: "/assets/" });
     });
   }
 
@@ -203,12 +272,10 @@ function bindExplorePage() {
       if (data.name) params.set("name", data.name);
       if (data.category_name) params.set("category_name", data.category_name);
       const query = params.toString();
-      try {
-        const res = await api(`/assets/${query ? `?${query}` : ""}`);
-        log("Filtered assets fetched", res);
-      } catch (err) {
-        log("Filtered assets fetch failed", err);
-      }
+      await runAction({
+        label: "Fetch filtered assets",
+        path: `/assets/${query ? `?${query}` : ""}`
+      });
     });
   }
 }
@@ -222,12 +289,12 @@ function bindAdminPage() {
     categoryCreateForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const data = formDataToObject(e.currentTarget);
-      try {
-        const res = await api("/categories/", { method: "POST", body: data });
-        log("Category created", res);
-      } catch (err) {
-        log("Category creation failed", err);
-      }
+      await runAction({
+        label: "Create category",
+        path: "/categories/",
+        method: "POST",
+        body: data
+      });
     });
   }
 
@@ -242,12 +309,12 @@ function bindAdminPage() {
         deposit_amount: toNumber(data.deposit_amount),
         daily_fine_rate: toNumber(data.daily_fine_rate)
       };
-      try {
-        const res = await api("/rental-plans/", { method: "POST", body: payload });
-        log("Rental plan created", res);
-      } catch (err) {
-        log("Rental plan creation failed", err);
-      }
+      await runAction({
+        label: "Create rental plan",
+        path: "/rental-plans/",
+        method: "POST",
+        body: payload
+      });
     });
   }
 
@@ -261,12 +328,12 @@ function bindAdminPage() {
         category_id: toNumber(data.category_id),
         quantity: toNumber(data.quantity)
       };
-      try {
-        const res = await api("/assets/", { method: "POST", body: payload });
-        log("Assets created in bulk", res);
-      } catch (err) {
-        log("Asset creation failed", err);
-      }
+      await runAction({
+        label: "Create assets",
+        path: "/assets/",
+        method: "POST",
+        body: payload
+      });
     });
   }
 }
@@ -277,25 +344,23 @@ function bindSessionPage() {
 
   if (refreshBtn) {
     refreshBtn.addEventListener("click", async () => {
-      try {
-        const res = await api("/auth/refresh", { method: "POST" });
-        setToken(res.access_token);
-        log("Access token refreshed", res);
-      } catch (err) {
-        log("Refresh failed", err);
-      }
+      await runAction({
+        label: "Refresh token",
+        path: "/auth/refresh",
+        method: "POST",
+        onSuccess: (res) => setToken(res.access_token)
+      });
     });
   }
 
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
-      try {
-        const res = await api("/auth/logout", { method: "POST" });
-        setToken(null);
-        log("Logged out successfully", res);
-      } catch (err) {
-        log("Logout failed", err);
-      }
+      await runAction({
+        label: "Logout",
+        path: "/auth/logout",
+        method: "POST",
+        onSuccess: () => setToken(null)
+      });
     });
   }
 }
@@ -318,12 +383,19 @@ function initHomePage() {
   clearBtn.addEventListener("click", () => {
     if (!outputEl) return;
     outputEl.textContent = "Console cleared.";
+    localStorage.removeItem(timelineKey);
+    renderTimeline();
+    setLastAction("neutral", "None yet");
   });
 }
 
 function init() {
   initBaseUrlInput();
   renderTokenPreview();
+  setAuthStatusFromToken();
+  setBackendStatus("pending", "Not checked");
+  setLastAction("neutral", "None yet");
+  renderTimeline();
   bindHealthButton();
   initHomePage();
   bindAuthPage();

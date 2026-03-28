@@ -69,7 +69,12 @@ async def update_category(
         raise HTTPException(status_code=404, detail="Category not found")
 
     if data.name is not None:
-        existing = await db.execute(select(Category).where(Category.name == data.name))
+        existing = await db.execute(
+            select(Category).where(
+                Category.name == data.name,
+                Category.id != category_id
+            )
+        )
         if existing.scalars().first():
             raise HTTPException(status_code=400, detail="Category with this name already exists")
         category.name = data.name
@@ -97,5 +102,5 @@ async def delete_category(
     if assets.scalars().first():
         raise HTTPException(status_code=400, detail="Cannot delete category with existing assets")
 
-    await db.delete(category)
+    db.delete(category)
     await db.commit()

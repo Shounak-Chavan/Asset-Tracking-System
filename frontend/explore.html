@@ -43,6 +43,28 @@
       <div class="callout">Presentation line: These endpoints require bearer token and return business data for logged-in users.</div>
     </section>
 
+    <section class="card status-board">
+      <h2>Live Working Status</h2>
+      <div class="status-grid">
+        <div class="status-item">
+          <span>Backend</span>
+          <b id="statusBackend" class="pill pending">Not checked</b>
+        </div>
+        <div class="status-item">
+          <span>Authentication</span>
+          <b id="statusAuth" class="pill pending">No token</b>
+        </div>
+        <div class="status-item">
+          <span>Last Action</span>
+          <b id="statusLast" class="pill neutral">None yet</b>
+        </div>
+      </div>
+      <div class="history-wrap">
+        <h3>Recent Actions</h3>
+        <ul id="activityList" class="history-list"></ul>
+      </div>
+    </section>
+
     <section class="page-grid">
       <article class="card">
         <h2>Read Endpoints</h2>

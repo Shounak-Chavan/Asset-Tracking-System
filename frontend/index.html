@@ -37,12 +37,37 @@
           Backend Base URL
           <input id="baseUrl" type="text" value="http://127.0.0.1:8000" />
         </label>
-        <button id="healthBtn" class="btn">Verify Backend Live</button>
+        <div class="btn-row">
+          <button id="healthBtn" class="btn">Verify Backend Live</button>
+          <button id="clearLogBtn" class="btn ghost">Clear Console</button>
+        </div>
       </div>
 
       <div class="token-box">
         <span>Current Access Token</span>
         <code id="tokenPreview">Not set</code>
+      </div>
+    </section>
+
+    <section class="card status-board">
+      <h2>Live Working Status</h2>
+      <div class="status-grid">
+        <div class="status-item">
+          <span>Backend</span>
+          <b id="statusBackend" class="pill pending">Not checked</b>
+        </div>
+        <div class="status-item">
+          <span>Authentication</span>
+          <b id="statusAuth" class="pill pending">No token</b>
+        </div>
+        <div class="status-item">
+          <span>Last Action</span>
+          <b id="statusLast" class="pill neutral">None yet</b>
+        </div>
+      </div>
+      <div class="history-wrap">
+        <h3>Recent Actions</h3>
+        <ul id="activityList" class="history-list"></ul>
       </div>
     </section>
 

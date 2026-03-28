@@ -1,8 +1,9 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from datetime import date, datetime
 from decimal import Decimal
 from typing import List
 from app.models.bookings import BookingStatus
+from app.schemas.rental_plan import RentalPlanResponse
 
 class BookingCreate(BaseModel):
     rental_plan_id: int
@@ -18,6 +19,12 @@ class BookingResponse(BaseModel):
     deposit_amount: Decimal
     rent_amount: Decimal
     created_at: datetime
+
+    rental_plan : RentalPlanResponse
+
+    @field_serializer("deposit_amount", "rent_amount")
+    def serialize_decimal(self, value: Decimal):
+        return float(value)
 
     class Config:
         from_attributes = True

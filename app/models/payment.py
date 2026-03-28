@@ -23,15 +23,15 @@ class Payment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
-    booking_id = Column(ForeignKey("bookings.id"), nullable=False, index=True)
+    booking_id = Column(Integer, ForeignKey("bookings.id"), nullable=False, index=True)
 
     type = Column(Enum(PaymentType), nullable=False)
     amount = Column(Numeric(10, 2), nullable=False)
 
     status = Column(Enum(PaymentStatus), default=PaymentStatus.pending, nullable=False)
 
-    razorpay_order_id = Column(String, nullable=True, unique=True)
-    razorpay_payment_id = Column(String, nullable=True , unique=True)
+    razorpay_order_id = Column(String, nullable=True)
+    razorpay_payment_id = Column(String, nullable=True)
 
     created_at = Column(
         DateTime(timezone=True),

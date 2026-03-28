@@ -16,4 +16,4 @@ class RentalPlan(Base):
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
-    bookings = relationship("Booking", backref="rental_plan")
+    bookings = relationship("Booking", back_populates="rental_plan")

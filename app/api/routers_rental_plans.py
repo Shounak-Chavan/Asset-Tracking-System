@@ -80,7 +80,12 @@ async def update_rental_plan(
 
     if data.name is not None:
         # check name uniqueness
-        existing = await db.execute(select(RentalPlan).where(RentalPlan.name == data.name))
+        existing = await db.execute(
+            select(RentalPlan).where(
+                RentalPlan.name == data.name,
+                RentalPlan.id != plan_id
+            )
+        )
         if existing.scalars().first():
             raise HTTPException(status_code=400, detail="Plan with this name already exists")
         plan.name = data.name

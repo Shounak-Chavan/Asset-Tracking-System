@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 from app.models.payment import PaymentType, PaymentStatus
 from datetime import datetime
 from decimal import Decimal
@@ -26,6 +26,10 @@ class PaymentResponse(BaseModel):
     razorpay_order_id: str | None
     razorpay_payment_id: str | None
     created_at: datetime
+
+    @field_serializer("amount")
+    def serialize_decimal(self, value: Decimal):
+        return float(value)
 
     class Config:
         from_attributes = True
