@@ -1,5 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 from fastapi import HTTPException 
 
 from app.models.allocations import Allocation
@@ -55,3 +56,25 @@ async def allocate_asset(
     await db.refresh(allocation)
 
     return allocation
+
+
+async def reject_booking_request(
+    db: AsyncSession,
+    booking_id: int,
+):
+    result = await db.execute(
+        select(Booking)
+        .options(selectinload(Booking.rental_plan))
+        .where(Booking.id == booking_id)
+    )
+    booking = result.scalar_one_or_none()
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.status not in {BookingStatus.pending, BookingStatus.booked}:
+        raise HTTPException(status_code=400, detail="Only pending or booked requests can be rejected")
+
+    booking.status = BookingStatus.cancelled
+    await db.commit()
+    await db.refresh(booking, attribute_names=["rental_plan"])
+    return booking

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, Date, DateTime, Enum, Numeric
+from sqlalchemy import Column, Integer, ForeignKey, Date, DateTime, Enum, Numeric, String
 from datetime import datetime, timezone
 import enum
 
@@ -25,6 +25,10 @@ class Booking(Base):
 
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     rental_plan_id = Column(Integer, ForeignKey("rental_plans.id"), nullable=False)
+    category_id = Column(Integer, ForeignKey("categories.id"), nullable=True)
+    requested_asset_id = Column(Integer, ForeignKey("assets.id"), nullable=True)
+    aadhaar_number = Column(String(12), nullable=True)
+    pan_number = Column(String(10), nullable=True)
 
     status = Column(Enum(BookingStatus), nullable=False, default=BookingStatus.pending)
 
@@ -40,3 +44,5 @@ class Booking(Base):
         nullable=False
     )
     rental_plan = relationship("RentalPlan", back_populates="bookings")
+    category = relationship("Category")
+    requested_asset = relationship("Asset", foreign_keys=[requested_asset_id])

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, field_serializer, Field
 from datetime import date, datetime
 from decimal import Decimal
 
@@ -7,6 +7,8 @@ from decimal import Decimal
 
 class ReturnCreate(BaseModel):
     returned_at: date
+    damage_amount: Decimal = Field(default=Decimal('0'), ge=Decimal('0'))
+    damage_notes: str | None = None
 
 # RESPONSE SCHEMA
 
@@ -16,11 +18,13 @@ class ReturnResponse(BaseModel):
     returned_at: date
     days_late: int
     fine_amount: Decimal
+    damage_amount: Decimal
+    damage_notes: str | None
     deposit_refunded: bool
     processed_by: int
     created_at: datetime
 
-    @field_serializer("fine_amount")
+    @field_serializer("fine_amount", "damage_amount")
     def serialize_decimal(self, value: Decimal):
         return float(value)
 

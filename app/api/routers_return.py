@@ -21,7 +21,9 @@ async def process_return_api(
         db=db,
         booking_id=booking_id,
         admin_id=current_user.id,
-        returned_at=data.returned_at
+        returned_at=data.returned_at,
+        damage_amount=data.damage_amount,
+        damage_notes=data.damage_notes
     )
 
     return return_record

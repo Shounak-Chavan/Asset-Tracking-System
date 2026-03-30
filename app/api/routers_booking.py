@@ -3,8 +3,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.core.dependencies import get_current_user
+from app.core.rbac import require_roles
 from app.schemas.booking import BookingResponse, BookingCreate
 from app.services import booking_service
+from app.models.user import UserRole
 
 router = APIRouter(prefix="/bookings", tags=["bookings"])
 
@@ -28,6 +30,15 @@ async def get_user_bookings(
     bookings = await booking_service.get_user_bookings(db, current_user)
     return bookings
 
+# GET /bookings/admin/all - admin get all bookings
+@router.get("/admin/all", response_model=list[BookingResponse])
+async def admin_get_all_bookings(
+    current_user = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    bookings = await booking_service.get_all_bookings(db)
+    return bookings
+
 # DELETE /bookings/{booking_id} - cancel a booking
 @router.delete("/{booking_id}", response_model=BookingResponse)
 async def cancel_booking(
@@ -36,3 +47,12 @@ async def cancel_booking(
     db: AsyncSession = Depends(get_db)
 ):
     return await booking_service.cancel_booking(db, current_user, booking_id)
+
+
+@router.patch("/{booking_id}/request-return", response_model=BookingResponse)
+async def request_return(
+    booking_id: int,
+    current_user = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    return await booking_service.request_return(db, current_user, booking_id)

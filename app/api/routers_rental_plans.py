@@ -30,7 +30,8 @@ async def create_rental_plan(
         duration_days=data.duration_days,
         daily_rate=data.daily_rate,
         deposit_amount=data.deposit_amount,
-        daily_fine_rate=data.daily_fine_rate
+        daily_fine_rate=data.daily_fine_rate,
+        damage_fee=data.damage_fee
 
     )
     db.add(plan)
@@ -98,6 +99,8 @@ async def update_rental_plan(
         plan.deposit_amount = data.deposit_amount
     if data.daily_fine_rate is not None:
         plan.daily_fine_rate = data.daily_fine_rate
+    if data.damage_fee is not None:
+        plan.damage_fee = data.damage_fee
     if data.is_active is not None:
         plan.is_active = data.is_active
 

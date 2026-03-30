@@ -6,6 +6,8 @@ from fastapi import HTTPException
 
 from app.models.bookings import Booking, BookingStatus
 from app.models.rental_plan import RentalPlan
+from app.models.asset import Asset
+from app.models.allocations import Allocation
 
 
 async def create_booking(db: AsyncSession, user, data):
@@ -18,16 +20,32 @@ async def create_booking(db: AsyncSession, user, data):
     if data.pickup_date < date.today():
         raise HTTPException(status_code=400, detail="Pickup date cannot be in the past")
 
-    # 3. Calculate dates
+    # 3. Validate optional requested asset and category consistency
+    resolved_category_id = data.category_id
+    if data.requested_asset_id is not None:
+        requested_asset = await db.get(Asset, data.requested_asset_id)
+        if not requested_asset:
+            raise HTTPException(status_code=404, detail="Requested asset not found")
+
+        if resolved_category_id is not None and requested_asset.category_id != resolved_category_id:
+            raise HTTPException(status_code=400, detail="Requested asset does not belong to selected category")
+
+        resolved_category_id = requested_asset.category_id
+
+    # 4. Calculate dates
     due_date = data.pickup_date + timedelta(days=plan.duration_days)
 
-    # 4. Calculate money
+    # 5. Calculate money
     rent_amount = plan.daily_rate * plan.duration_days
 
-    # 5. Create booking
+    # 6. Create booking
     booking = Booking(
         user_id=user.id,
         rental_plan_id=plan.id,
+        category_id=resolved_category_id,
+        requested_asset_id=data.requested_asset_id,
+        aadhaar_number=data.aadhaar_number,
+        pan_number=data.pan_number,
         pickup_date=data.pickup_date,
         due_date=due_date,
         deposit_amount=plan.deposit_amount,
@@ -52,12 +70,61 @@ async def get_user_bookings(db: AsyncSession, user):
         .where(Booking.user_id == user.id)
         .order_by(Booking.created_at.desc())
     )
-    return result.scalars().all()
+    bookings = result.scalars().all()
+
+    if not bookings:
+        return bookings
+
+    booking_ids = [booking.id for booking in bookings]
+    allocation_result = await db.execute(
+        select(Allocation).where(Allocation.booking_id.in_(booking_ids))
+    )
+    allocation_by_booking_id = {
+        allocation.booking_id: allocation.asset_id
+        for allocation in allocation_result.scalars().all()
+    }
+
+    for booking in bookings:
+        booking.allocated_asset_id = allocation_by_booking_id.get(booking.id)
+
+    return bookings
+
+
+# Get all bookings (admin)
+async def get_all_bookings(db: AsyncSession):
+    result = await db.execute(
+        select(Booking)
+        .options(selectinload(Booking.rental_plan))
+        .order_by(Booking.created_at.desc())
+    )
+    bookings = result.scalars().all()
+
+    if not bookings:
+        return bookings
+
+    booking_ids = [booking.id for booking in bookings]
+    allocation_result = await db.execute(
+        select(Allocation).where(Allocation.booking_id.in_(booking_ids))
+    )
+    allocation_by_booking_id = {
+        allocation.booking_id: allocation.asset_id
+        for allocation in allocation_result.scalars().all()
+    }
+
+    for booking in bookings:
+        booking.allocated_asset_id = allocation_by_booking_id.get(booking.id)
+
+    return bookings
 
 
 # Cancel a booking
 async def cancel_booking(db: AsyncSession, user, booking_id: int):
-    booking = await db.get(Booking, booking_id)
+    result = await db.execute(
+        select(Booking)
+        .options(selectinload(Booking.rental_plan))
+        .where(Booking.id == booking_id)
+    )
+    booking = result.scalar_one_or_none()
     if not booking or booking.user_id != user.id:
         raise HTTPException(status_code=404, detail="Booking not found")
 
@@ -66,6 +133,32 @@ async def cancel_booking(db: AsyncSession, user, booking_id: int):
 
     booking.status = BookingStatus.cancelled
     await db.commit()
-    await db.refresh(booking)
+    await db.refresh(booking, attribute_names=["rental_plan"])
 
+    return booking
+
+
+async def request_return(db: AsyncSession, user, booking_id: int):
+    result = await db.execute(
+        select(Booking)
+        .options(selectinload(Booking.rental_plan))
+        .where(Booking.id == booking_id)
+    )
+    booking = result.scalar_one_or_none()
+    if not booking or booking.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    if booking.status not in {BookingStatus.allocated, BookingStatus.picked_up, BookingStatus.overdue}:
+        raise HTTPException(status_code=400, detail="Return can be requested only for allocated, picked_up, or overdue bookings")
+
+    allocation_result = await db.execute(
+        select(Allocation).where(Allocation.booking_id == booking_id)
+    )
+    allocation = allocation_result.scalar_one_or_none()
+    if not allocation:
+        raise HTTPException(status_code=400, detail="No allocated asset found for this booking")
+
+    booking.status = BookingStatus.ready_for_pickup
+    await db.commit()
+    await db.refresh(booking, attribute_names=["rental_plan"])
     return booking

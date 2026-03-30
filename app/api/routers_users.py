@@ -5,10 +5,13 @@ from sqlalchemy.future import select
 from app.core.dependencies import get_current_user
 from app.db.session import get_db
 from app.models.user import User, UserRole
-from app.schemas.user import UserCreateAdmin, UserUpdate, UserUpdateAdmin, UserRoleUpdate, UserActivate
+from app.models.bookings import Booking, BookingStatus
+from app.models.payment import Payment, PaymentType, PaymentStatus
+from app.schemas.user import UserCreateAdmin, UserUpdate, UserUpdateAdmin, UserRoleUpdate, UserActivate, UserHistoryResponse
 from app.schemas.auth import UserResponse
 from app.core.rbac import require_roles
 from app.core.security import hash_password
+from decimal import Decimal
 
 router = APIRouter(prefix="/users",tags=["users"])
 
@@ -53,6 +56,85 @@ async def get_all_users(
     result = await db.execute(query)
     users = result.scalars().all()
     return users
+
+
+# GET /users/{id}/history - admin view for user's booking and payment history
+@router.get("/{user_id}/history", response_model=UserHistoryResponse)
+async def get_user_history(
+    user_id: int,
+    current_user: User = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    bookings_result = await db.execute(
+        select(Booking)
+        .where(Booking.user_id == user_id)
+        .order_by(Booking.created_at.desc())
+    )
+    bookings = bookings_result.scalars().all()
+
+    booking_ids = [booking.id for booking in bookings]
+    payments: list[Payment] = []
+
+    if booking_ids:
+        payments_result = await db.execute(
+            select(Payment)
+            .where(Payment.booking_id.in_(booking_ids))
+            .order_by(Payment.created_at.desc())
+        )
+        payments = payments_result.scalars().all()
+
+    total_deposit_paid = sum(
+        (payment.amount for payment in payments if payment.type == PaymentType.deposit and payment.status == PaymentStatus.paid),
+        Decimal("0"),
+    )
+    total_rent_paid = sum(
+        (payment.amount for payment in payments if payment.type == PaymentType.rent and payment.status == PaymentStatus.paid),
+        Decimal("0"),
+    )
+    total_fine_paid = sum(
+        (payment.amount for payment in payments if payment.type == PaymentType.fine and payment.status == PaymentStatus.paid),
+        Decimal("0"),
+    )
+    total_deposit_refunded = sum(
+        (payment.amount for payment in payments if payment.type == PaymentType.deposit_refund and payment.status == PaymentStatus.paid),
+        Decimal("0"),
+    )
+
+    active_statuses = {
+        BookingStatus.pending,
+        BookingStatus.booked,
+        BookingStatus.allocated,
+        BookingStatus.ready_for_pickup,
+        BookingStatus.picked_up,
+        BookingStatus.overdue,
+    }
+
+    active_bookings = sum(1 for booking in bookings if booking.status in active_statuses)
+
+    return {
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "role": user.role,
+        },
+        "summary": {
+            "total_bookings": len(bookings),
+            "active_bookings": active_bookings,
+            "total_deposit_paid": total_deposit_paid,
+            "total_rent_paid": total_rent_paid,
+            "total_fine_paid": total_fine_paid,
+            "total_deposit_refunded": total_deposit_refunded,
+        },
+        "bookings": bookings,
+        "payments": payments,
+    }
 
 # GET /users/{id} - get user by id (admin only)
 @router.get("/{user_id}", response_model=UserResponse)

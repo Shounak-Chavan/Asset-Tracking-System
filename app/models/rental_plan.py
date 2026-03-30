@@ -13,6 +13,7 @@ class RentalPlan(Base):
     daily_rate = Column(Numeric(10, 2), nullable=False)
     deposit_amount = Column(Numeric(10, 2), nullable=False)
     daily_fine_rate = Column(Numeric(10, 2), nullable=False)
+    damage_fee = Column(Numeric(10, 2), nullable=False, default=0)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
 
