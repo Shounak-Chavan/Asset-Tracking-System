@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate, Link } from 'react-router-dom'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { Mail, Lock, LogIn, AlertCircle, Loader2, Zap } from 'lucide-react'
+import { LogIn, AlertCircle, Loader2, Zap } from 'lucide-react'
 import { useAuth } from '../auth-context'
 
 const schema = z.object({
@@ -42,7 +42,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center">
+    <div className="auth-shell">
       <motion.div
         className="w-full max-w-md"
         initial={{ opacity: 0, y: 20 }}
@@ -71,9 +71,7 @@ export function LoginPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             {/* Email */}
             <div className="form-group">
-              <label className="form-label flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-primary-400" /> Email address
-              </label>
+              <label className="form-label">Email address</label>
               <input
                 type="email"
                 className={`form-input ${errors.email ? 'border-rose-500/50' : ''}`}
@@ -90,9 +88,7 @@ export function LoginPage() {
 
             {/* Password */}
             <div className="form-group">
-              <label className="form-label flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-primary-400" /> Password
-              </label>
+              <label className="form-label">Password</label>
               <input
                 type="password"
                 className={`form-input ${errors.password ? 'border-rose-500/50' : ''}`}

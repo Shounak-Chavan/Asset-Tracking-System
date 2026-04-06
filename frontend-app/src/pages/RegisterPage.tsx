@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { useNavigate, Link } from 'react-router-dom'
 import { z } from 'zod'
 import { motion } from 'framer-motion'
-import { User, Mail, Lock, UserPlus, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
+import { UserPlus, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react'
 import { useAuth } from '../auth-context'
 
 const schema = z.object({
@@ -46,7 +46,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div className="min-h-[70vh] flex items-center justify-center">
+    <div className="auth-shell">
       <motion.div
         className="w-full max-w-md"
         initial={{ opacity: 0, y: 20 }}
@@ -75,9 +75,7 @@ export function RegisterPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
             {/* Full Name */}
             <div className="form-group">
-              <label className="form-label flex items-center gap-1.5">
-                <User className="w-3.5 h-3.5 text-primary-400" /> Full Name
-              </label>
+              <label className="form-label">Full Name</label>
               <input
                 type="text"
                 className={`form-input ${errors.full_name ? 'border-rose-500/50' : ''}`}
@@ -94,9 +92,7 @@ export function RegisterPage() {
 
             {/* Email */}
             <div className="form-group">
-              <label className="form-label flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-primary-400" /> Email address
-              </label>
+              <label className="form-label">Email address</label>
               <input
                 type="email"
                 className={`form-input ${errors.email ? 'border-rose-500/50' : ''}`}
@@ -113,9 +109,7 @@ export function RegisterPage() {
 
             {/* Password */}
             <div className="form-group">
-              <label className="form-label flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-primary-400" /> Password
-              </label>
+              <label className="form-label">Password</label>
               <input
                 type="password"
                 className={`form-input ${errors.password ? 'border-rose-500/50' : ''}`}

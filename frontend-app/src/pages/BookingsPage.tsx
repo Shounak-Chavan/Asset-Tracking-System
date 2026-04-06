@@ -128,16 +128,16 @@ export function BookingsPage() {
   return (
     <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold text-white">My Bookings</h1>
-          <p className="text-surface-400 text-sm mt-1">View all your bookings in one place</p>
+          <h1 className="page-title">My Bookings</h1>
+          <p className="page-subtitle">View and manage all your bookings in one place</p>
         </div>
         <button
           className="btn-primary btn"
           onClick={() => navigate('/assets')}
         >
-          Create Booking
+          + New Booking
         </button>
       </div>
 

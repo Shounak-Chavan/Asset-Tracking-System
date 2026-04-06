@@ -214,16 +214,16 @@ export function HomePage() {
     <div className="flex flex-col gap-8">
       {/* Welcome Banner */}
       <motion.div
-        className="flex items-center justify-between"
+        className="page-header"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="page-title">
             Good morning, {user?.full_name?.split(' ')[0] ?? 'there'} 👋
           </h1>
-          <p className="text-surface-400 mt-1 text-sm">
+          <p className="page-subtitle">
             Here's what's happening with your assets today.
           </p>
         </div>

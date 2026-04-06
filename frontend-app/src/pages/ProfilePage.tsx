@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { AnimatePresence, motion } from 'framer-motion'
 import { z } from 'zod'
+import { User, Mail, Phone, Lock, Shield, CheckCircle2, AlertCircle } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
 
@@ -50,7 +51,7 @@ export function ProfilePage() {
       return api.updateMe(token, payload)
     },
     onSuccess: async () => {
-      setMessage('Profile updated')
+      setMessage('Profile updated successfully')
       await queryClient.invalidateQueries({ queryKey: ['me'] })
     },
   })
@@ -64,71 +65,150 @@ export function ProfilePage() {
       })
     },
     onSuccess: () => {
-      setMessage('Password changed')
+      setMessage('Password changed successfully')
       setIsPasswordOpen(false)
       passwordForm.reset()
     },
   })
 
-  return (
-    <section className="max-w-5xl mx-auto px-6 py-8 space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-white">{user?.role === 'admin' ? 'Admin Profile' : 'User Profile'}</h1>
-        <p className="text-sm text-slate-400">Manage account details and keep credentials updated.</p>
-      </header>
+  const initials = (user?.full_name ?? 'U')
+    .split(' ')
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900 shadow-lg p-6">
-        <div className="max-w-3xl mx-auto flex flex-col items-center text-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-2xl font-semibold text-indigo-300">
-            {(user?.full_name ?? 'U').split(' ').map((part) => part[0]).join('').slice(0, 2).toUpperCase()}
+  return (
+    <div className="flex flex-col gap-6">
+      {/* Page Header */}
+      <div className="page-header">
+        <div>
+          <h1 className="page-title">
+            {user?.role === 'admin' ? 'Admin Profile' : 'My Profile'}
+          </h1>
+          <p className="page-subtitle">Manage your account details and security settings</p>
+        </div>
+      </div>
+
+      {/* Profile Banner */}
+      <div className="card">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+          {/* Avatar */}
+          <div
+            className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-black text-white flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)' }}
+          >
+            {initials}
           </div>
-          <div className="space-y-1">
-            <p className="text-lg font-semibold text-white">{user?.full_name ?? 'User'}</p>
-            <p className="text-sm text-zinc-400">{user?.email ?? 'No email available'}</p>
-            <p className="text-xs text-zinc-500 capitalize">Role: {user?.role ?? 'user'}</p>
+
+          {/* User Info */}
+          <div className="flex flex-col gap-1 text-center sm:text-left flex-1">
+            <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#ffffff' }}>
+              {user?.full_name ?? 'User'}
+            </h2>
+            <div className="flex items-center gap-1.5 justify-center sm:justify-start" style={{ color: '#71717a', fontSize: '0.875rem' }}>
+              <Mail style={{ width: '0.875rem', height: '0.875rem' }} />
+              {user?.email ?? '—'}
+            </div>
+            {user?.phone && (
+              <div className="flex items-center gap-1.5 justify-center sm:justify-start" style={{ color: '#71717a', fontSize: '0.875rem' }}>
+                <Phone style={{ width: '0.875rem', height: '0.875rem' }} />
+                {user.phone}
+              </div>
+            )}
+            <div className="mt-1 flex justify-center sm:justify-start">
+              <span className={`badge ${user?.role === 'admin' ? 'badge-purple' : 'badge-blue'}`}>
+                {user?.role === 'admin' ? <Shield style={{ width: '0.75rem', height: '0.75rem' }} /> : <User style={{ width: '0.75rem', height: '0.75rem' }} />}
+                {user?.role === 'admin' ? 'Administrator' : 'User'}
+              </span>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        <div className="rounded-2xl border shadow-lg p-6 bg-zinc-900 border-zinc-800 space-y-6">
-          <h2 className="text-lg font-semibold text-white">Profile Information</h2>
-          <form
-            className="space-y-6"
-            onSubmit={profileForm.handleSubmit((values) => updateProfileMutation.mutate(values))}
+      {/* Success message */}
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex items-center gap-2.5 rounded-xl px-4 py-3"
+            style={{ background: 'rgb(16 185 129 / 0.08)', border: '1px solid rgb(16 185 129 / 0.2)' }}
           >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="form-group md:col-span-2">
+            <CheckCircle2 style={{ width: '1rem', height: '1rem', color: '#34d399', flexShrink: 0 }} />
+            <span style={{ fontSize: '0.875rem', color: '#6ee7b7' }}>{message}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Grid of cards */}
+      <div className="flex flex-col gap-5">
+        {/* Profile Information */}
+        <div className="card">
+          <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7', marginBottom: '1.25rem' }}>
+            Profile Information
+          </h2>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={profileForm.handleSubmit((values) => {
+              setMessage('')
+              updateProfileMutation.mutate(values)
+            })}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="form-group">
                 <label className="form-label">Full Name</label>
-                <input className="w-full h-10 px-3 rounded-lg border border-zinc-700 bg-zinc-800 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200" type="text" {...profileForm.register('full_name')} />
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="Your full name"
+                  {...profileForm.register('full_name')}
+                />
                 {profileForm.formState.errors.full_name && (
-                  <p className="text-xs text-rose-400">{profileForm.formState.errors.full_name.message}</p>
+                  <p className="error-text text-xs flex items-center gap-1 mt-0.5">
+                    <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
+                    {profileForm.formState.errors.full_name.message}
+                  </p>
                 )}
               </div>
-              <div className="form-group md:col-span-2">
-                <label className="form-label">Phone</label>
-                <input className="w-full h-10 px-3 rounded-lg border border-zinc-700 bg-zinc-800 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200" type="text" {...profileForm.register('phone')} />
+              <div className="form-group">
+                <label className="form-label">Phone Number</label>
+                <input
+                  className="form-input"
+                  type="text"
+                  placeholder="+91 98765 43210"
+                  {...profileForm.register('phone')}
+                />
                 {profileForm.formState.errors.phone && (
-                  <p className="text-xs text-rose-400">{profileForm.formState.errors.phone.message}</p>
+                  <p className="error-text text-xs flex items-center gap-1 mt-0.5">
+                    <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
+                    {profileForm.formState.errors.phone.message}
+                  </p>
                 )}
               </div>
             </div>
-            <div className="mt-4 flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-3 mt-1">
               <button className="btn btn-primary" type="submit" disabled={updateProfileMutation.isPending}>
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save Profile'}
+                {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
               </button>
               {updateProfileMutation.error && (
-                <p className="text-xs text-rose-400">{updateProfileMutation.error.message}</p>
+                <p className="error-text text-xs">{updateProfileMutation.error.message}</p>
               )}
             </div>
           </form>
         </div>
 
-        <div className="rounded-2xl border shadow-lg p-6 bg-zinc-900 border-zinc-800 space-y-6">
-          <div className="flex items-center justify-between gap-4">
+        {/* Password & Security */}
+        <div className="card">
+          <div className="flex items-center justify-between gap-4 mb-5">
             <div>
-              <h2 className="text-lg font-semibold text-white">Password & Security</h2>
-              <p className="text-sm text-zinc-400">Update your credentials only when needed.</p>
+              <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7' }}>
+                Password & Security
+              </h2>
+              <p style={{ fontSize: '0.8125rem', color: '#71717a', marginTop: '0.25rem' }}>
+                Keep your account secure with a strong password
+              </p>
             </div>
             {!isPasswordOpen && (
               <button
@@ -139,6 +219,7 @@ export function ProfilePage() {
                   setIsPasswordOpen(true)
                 }}
               >
+                <Lock style={{ width: '0.875rem', height: '0.875rem' }} />
                 Change Password
               </button>
             )}
@@ -147,39 +228,67 @@ export function ProfilePage() {
           <AnimatePresence>
             {isPasswordOpen && (
               <motion.form
-                className="space-y-6"
-                onSubmit={passwordForm.handleSubmit((values) => changePasswordMutation.mutate(values))}
-                initial={{ opacity: 0, y: -8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.2 }}
+                className="flex flex-col gap-4"
+                onSubmit={passwordForm.handleSubmit((values) => {
+                  setMessage('')
+                  changePasswordMutation.mutate(values)
+                })}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22 }}
+                style={{ overflow: 'hidden' }}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="form-group md:col-span-2">
-                    <label className="form-label">Current Password</label>
-                    <input className="w-full h-10 px-3 rounded-lg border border-zinc-700 bg-zinc-800 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200" type="password" {...passwordForm.register('current_password')} />
-                    {passwordForm.formState.errors.current_password && (
-                      <p className="text-xs text-rose-400">{passwordForm.formState.errors.current_password.message}</p>
-                    )}
-                  </div>
+                <div className="form-group">
+                  <label className="form-label">Current Password</label>
+                  <input
+                    className="form-input"
+                    type="password"
+                    placeholder="••••••••"
+                    {...passwordForm.register('current_password')}
+                  />
+                  {passwordForm.formState.errors.current_password && (
+                    <p className="error-text text-xs flex items-center gap-1 mt-0.5">
+                      <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
+                      {passwordForm.formState.errors.current_password.message}
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="form-group">
                     <label className="form-label">New Password</label>
-                    <input className="w-full h-10 px-3 rounded-lg border border-zinc-700 bg-zinc-800 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200" type="password" {...passwordForm.register('new_password')} />
+                    <input
+                      className="form-input"
+                      type="password"
+                      placeholder="Min. 6 characters"
+                      {...passwordForm.register('new_password')}
+                    />
                     {passwordForm.formState.errors.new_password && (
-                      <p className="text-xs text-rose-400">{passwordForm.formState.errors.new_password.message}</p>
+                      <p className="error-text text-xs flex items-center gap-1 mt-0.5">
+                        <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
+                        {passwordForm.formState.errors.new_password.message}
+                      </p>
                     )}
                   </div>
                   <div className="form-group">
                     <label className="form-label">Confirm Password</label>
-                    <input className="w-full h-10 px-3 rounded-lg border border-zinc-700 bg-zinc-800 text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all duration-200" type="password" {...passwordForm.register('confirm_password')} />
+                    <input
+                      className="form-input"
+                      type="password"
+                      placeholder="Repeat new password"
+                      {...passwordForm.register('confirm_password')}
+                    />
                     {passwordForm.formState.errors.confirm_password && (
-                      <p className="text-xs text-rose-400">{passwordForm.formState.errors.confirm_password.message}</p>
+                      <p className="error-text text-xs flex items-center gap-1 mt-0.5">
+                        <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
+                        {passwordForm.formState.errors.confirm_password.message}
+                      </p>
                     )}
                   </div>
                 </div>
-                <div className="mt-4 flex flex-wrap items-center gap-4">
-                  <button className="btn btn-secondary" type="submit" disabled={changePasswordMutation.isPending}>
-                    {changePasswordMutation.isPending ? 'Updating...' : 'Save Password'}
+                <div className="flex items-center gap-3 flex-wrap mt-1">
+                  <button className="btn btn-primary" type="submit" disabled={changePasswordMutation.isPending}>
+                    {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
                   </button>
                   <button
                     className="btn btn-ghost"
@@ -193,20 +302,21 @@ export function ProfilePage() {
                     Cancel
                   </button>
                   {changePasswordMutation.error && (
-                    <p className="text-xs text-rose-400">{changePasswordMutation.error.message}</p>
+                    <p className="error-text text-xs">{changePasswordMutation.error.message}</p>
                   )}
                 </div>
               </motion.form>
             )}
           </AnimatePresence>
+
+          {!isPasswordOpen && (
+            <div className="flex items-center gap-2" style={{ color: '#52525b', fontSize: '0.875rem' }}>
+              <Lock style={{ width: '0.875rem', height: '0.875rem' }} />
+              Password last updated: —
+            </div>
+          )}
         </div>
       </div>
-
-      {message && (
-        <div className="rounded-2xl shadow-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
-          <p className="text-sm text-emerald-300">{message}</p>
-        </div>
-      )}
-    </section>
+    </div>
   )
 }

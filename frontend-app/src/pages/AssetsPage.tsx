@@ -301,17 +301,17 @@ export function AssetsPage() {
     (!isUserMode && (allocationsQuery.isLoading || adminBookingsQuery.isLoading || usersQuery.isLoading))
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8 flex flex-col gap-6">
+    <div className="flex flex-col gap-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="page-header">
         <div>
-          <h1 className="text-2xl font-bold text-white">
+          <h1 className="page-title">
             {isUserMode ? 'Browse Assets' : 'Assets Gallery'}
           </h1>
-          <p className="text-surface-400 text-sm mt-1">
+          <p className="page-subtitle">
             {isUserMode
-              ? 'Select a category to browse available asset types'
-              : 'Admin view: manage and monitor all assets'}
+              ? 'Select a category to see available asset types'
+              : 'Admin view — manage and monitor all assets'}
           </p>
         </div>
         {!isUserMode && (
