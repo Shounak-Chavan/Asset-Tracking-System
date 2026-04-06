@@ -122,7 +122,7 @@ export function AdminOperationsPage() {
   const returnableBookings = useMemo(() =>
     bookingsQuery.data?.filter((b) => b.status === 'ready_for_pickup') ?? [], [bookingsQuery.data])
 
-  const allBookings = bookingsQuery.data ?? []
+  const allBookings = useMemo(() => bookingsQuery.data ?? [], [bookingsQuery.data])
 
   // Build user map for display
   const userById = useMemo(() => {

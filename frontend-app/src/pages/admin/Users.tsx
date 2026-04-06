@@ -2,8 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Users, ChevronRight, X, Shield, User as UserIcon,
-  CheckCircle2, XCircle, BarChart3, History,
+  Users, X, Shield, User as UserIcon,
+  CheckCircle2, XCircle, History,
 } from 'lucide-react'
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
@@ -274,13 +274,13 @@ export function AdminUsersPage() {
                 {/* Summary Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
                   {[
-                    { label: 'Total Bookings', value: historyQuery.data.summary.total_bookings, icon: BarChart3 },
-                    { label: 'Active Bookings', value: historyQuery.data.summary.active_bookings, icon: CheckCircle2 },
-                    { label: 'Deposit Paid', value: `₹${historyQuery.data.summary.total_deposit_paid.toLocaleString()}`, icon: Shield },
-                    { label: 'Rent Paid', value: `₹${historyQuery.data.summary.total_rent_paid.toLocaleString()}`, icon: CheckCircle2 },
-                    { label: 'Fine Paid', value: `₹${historyQuery.data.summary.total_fine_paid.toLocaleString()}`, icon: XCircle },
-                    { label: 'Deposit Refunded', value: `₹${historyQuery.data.summary.total_deposit_refunded.toLocaleString()}`, icon: CheckCircle2 },
-                  ].map(({ label, value, icon: Icon }) => (
+                    { label: 'Total Bookings', value: historyQuery.data.summary.total_bookings },
+                    { label: 'Active Bookings', value: historyQuery.data.summary.active_bookings },
+                    { label: 'Deposit Paid', value: `₹${historyQuery.data.summary.total_deposit_paid.toLocaleString()}` },
+                    { label: 'Rent Paid', value: `₹${historyQuery.data.summary.total_rent_paid.toLocaleString()}` },
+                    { label: 'Fine Paid', value: `₹${historyQuery.data.summary.total_fine_paid.toLocaleString()}` },
+                    { label: 'Deposit Refunded', value: `₹${historyQuery.data.summary.total_deposit_refunded.toLocaleString()}` },
+                  ].map(({ label, value }) => (
                     <div
                       key={label}
                       className="rounded-xl p-3.5"
@@ -461,7 +461,7 @@ export function AdminUsersPage() {
                               <td>#{payment.id}</td>
                               <td>#{payment.booking_id}</td>
                               <td>
-                                <span className={`badge ${payment.type === 'refund' ? 'badge-green' : 'badge-blue'}`} style={{ display: 'inline-flex', fontSize: '0.75rem' }}>
+                                <span className={`badge ${payment.type === 'deposit_refund' ? 'badge-green' : 'badge-blue'}`} style={{ display: 'inline-flex', fontSize: '0.75rem' }}>
                                   {payment.type}
                                 </span>
                               </td>
