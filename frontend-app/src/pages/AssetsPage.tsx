@@ -142,6 +142,7 @@ export function AssetsPage() {
   const [nameFilter, setNameFilter] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null)
+  const [nameSearch, setNameSearch] = useState('')  // user-mode client-side search
   const [activeAdminTab, setActiveAdminTab] = useState<'allocated' | 'unallocated' | null>(null)
   const [selectedAdminCategoryId, setSelectedAdminCategoryId] = useState<number | null>(null)
   const [selectedAssetForBooking, setSelectedAssetForBooking] = useState<Asset | null>(null)
@@ -155,15 +156,12 @@ export function AssetsPage() {
     enabled: Boolean(token),
   })
 
-  const selectedCategoryName = useMemo(() => {
-    if (!selectedCategoryId) return ''
-    return categoriesQuery.data?.find((category) => category.id === selectedCategoryId)?.name ?? ''
-  }, [selectedCategoryId, categoriesQuery.data])
 
   const isUserMode = user?.role !== 'admin'
 
+
   const assetsQuery = useQuery({
-    queryKey: ['assets', token, nameFilter, categoryFilter, selectedCategoryName, isUserMode],
+    queryKey: ['assets', token, nameFilter, categoryFilter, isUserMode],
     queryFn: async () => {
       if (!token) return []
       if (isUserMode) return api.listAssets(token)
@@ -172,7 +170,7 @@ export function AssetsPage() {
         category_name: categoryFilter || undefined,
       })
     },
-    enabled: Boolean(token) && (!isUserMode || Boolean(selectedCategoryName)),
+    enabled: Boolean(token),  // always load; filter client-side for users
   })
 
   const allocationsQuery = useQuery({
@@ -214,29 +212,34 @@ export function AssetsPage() {
 
   const displayAssets = useMemo(() => {
     const source = assetsQuery.data ?? []
-    if (!isUserMode) {
-      return source
-    }
-    const inCategory = source.filter((asset) => asset.category_id === selectedCategoryId)
-    const representativeByName = new Map<string, Asset>()
+    if (!isUserMode) return source
 
-    inCategory.forEach((asset) => {
+    // Deduplicate by name within category (or all if no category selected)
+    const inCategory = selectedCategoryId
+      ? source.filter((asset) => asset.category_id === selectedCategoryId)
+      : source
+
+    // Apply name search
+    const searched = nameSearch.trim()
+      ? inCategory.filter((a) => a.name.toLowerCase().includes(nameSearch.toLowerCase()))
+      : inCategory
+
+    const representativeByName = new Map<string, Asset>()
+    searched.forEach((asset) => {
       const key = asset.name.trim().toLowerCase()
       const existing = representativeByName.get(key)
-
       if (!existing) {
         representativeByName.set(key, asset)
         return
       }
-
-      // Prefer an available asset so users can actually create bookings.
+      // Prefer available assets so users can actually book
       if (existing.status !== 'available' && asset.status === 'available') {
         representativeByName.set(key, asset)
       }
     })
 
     return Array.from(representativeByName.values())
-  }, [assetsQuery.data, isUserMode, selectedCategoryId])
+  }, [assetsQuery.data, isUserMode, selectedCategoryId, nameSearch])
 
   const categoryNameById = useMemo(() => {
     const map: Record<number, string> = {}
@@ -310,7 +313,7 @@ export function AssetsPage() {
           </h1>
           <p className="page-subtitle">
             {isUserMode
-              ? 'Select a category to see available asset types'
+              ? 'Search and book available assets instantly'
               : 'Admin view — manage and monitor all assets'}
           </p>
         </div>
@@ -324,71 +327,96 @@ export function AssetsPage() {
       {/* ── USER MODE ── */}
       {isUserMode && (
         <>
-          {/* Category Filter Strip */}
-          <div className="card">
-            <p className="text-sm font-medium text-surface-300 mb-3 flex items-center gap-2">
-              <Filter className="w-4 h-4 text-primary-400" />
-              Select a Category
-            </p>
-            {categoriesQuery.isLoading ? (
-              <div className="flex gap-2 flex-wrap">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="skeleton h-9 w-24 rounded-xl" />
-                ))}
-              </div>
-            ) : (
-              <div className="flex gap-2 flex-wrap">
-                {categoriesQuery.data?.map((category) => (
-                  <motion.button
-                    key={category.id}
-                    type="button"
-                    className={`chip ${selectedCategoryId === category.id ? 'chip-active' : ''}`}
-                    onClick={() => setSelectedCategoryId(category.id)}
-                    whileTap={{ scale: 0.96 }}
-                  >
-                    {category.name}
-                  </motion.button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {!selectedCategoryId ? (
-            <div className="empty-state py-20">
-              <div className="empty-state-icon">
-                <Package2 className="w-8 h-8" />
-              </div>
-              <p className="empty-state-title">Select a category above</p>
-              <p className="empty-state-desc">Choose a category to browse available assets</p>
+          {/* Search + Category Filter Strip */}
+          <div className="card flex flex-col gap-4">
+            {/* Search bar */}
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-500" />
+              <input
+                className="form-input"
+                style={{ paddingLeft: '2.25rem' }}
+                placeholder="Search assets by name…"
+                value={nameSearch}
+                onChange={(e) => setNameSearch(e.target.value)}
+              />
             </div>
-          ) : (
-            <>
-              {isLoading ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {Array.from({ length: 8 }).map((_, i) => <AssetCardSkeleton key={i} />)}
-                </div>
-              ) : displayAssets.length === 0 ? (
-                <div className="empty-state py-16">
-                  <div className="empty-state-icon"><AlertCircle className="w-8 h-8" /></div>
-                  <p className="empty-state-title">No assets in this category</p>
-                  <p className="empty-state-desc">Try selecting a different category</p>
+
+            {/* Category chips */}
+            <div>
+              <p className="text-xs font-semibold text-surface-500 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
+                <Filter className="w-3.5 h-3.5" /> Filter by Category
+              </p>
+              {categoriesQuery.isLoading ? (
+                <div className="flex gap-2 flex-wrap">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="skeleton h-8 w-24 rounded-full" />
+                  ))}
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  <AnimatePresence>
-                    {displayAssets.map((asset, i) => (
-                      <AssetCard
-                        key={asset.id}
-                        asset={asset}
-                        imageIndex={i}
-                        onBook={() => setSelectedAssetForBooking(asset)}
-                        categoryName={categoryNameById[asset.category_id]}
-                      />
-                    ))}
-                  </AnimatePresence>
+                <div className="flex gap-2 flex-wrap">
+                  <motion.button
+                    type="button"
+                    className={`chip ${selectedCategoryId === null ? 'chip-active' : ''}`}
+                    onClick={() => setSelectedCategoryId(null)}
+                    whileTap={{ scale: 0.96 }}
+                  >
+                    All
+                  </motion.button>
+                  {categoriesQuery.data?.map((category) => (
+                    <motion.button
+                      key={category.id}
+                      type="button"
+                      className={`chip ${selectedCategoryId === category.id ? 'chip-active' : ''}`}
+                      onClick={() => setSelectedCategoryId(
+                        selectedCategoryId === category.id ? null : category.id
+                      )}
+                      whileTap={{ scale: 0.96 }}
+                    >
+                      {category.name}
+                    </motion.button>
+                  ))}
                 </div>
               )}
-            </>
+            </div>
+          </div>
+
+          {/* Assets grid — always shows, filters applied client-side */}
+          {assetsQuery.isLoading ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {Array.from({ length: 8 }).map((_, i) => <AssetCardSkeleton key={i} />)}
+            </div>
+          ) : displayAssets.length === 0 ? (
+            <div className="empty-state py-16">
+              <div className="empty-state-icon"><AlertCircle className="w-8 h-8" /></div>
+              <p className="empty-state-title">No assets found</p>
+              <p className="empty-state-desc">
+                {nameSearch || selectedCategoryId
+                  ? 'No assets match your filters.'
+                  : 'No assets available right now.'}
+              </p>
+              {(nameSearch || selectedCategoryId) && (
+                <button
+                  className="btn btn-ghost btn-sm mt-3"
+                  onClick={() => { setNameSearch(''); setSelectedCategoryId(null) }}
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <AnimatePresence>
+                {displayAssets.map((asset, i) => (
+                  <AssetCard
+                    key={asset.id}
+                    asset={asset}
+                    imageIndex={i}
+                    onBook={() => setSelectedAssetForBooking(asset)}
+                    categoryName={categoryNameById[asset.category_id]}
+                  />
+                ))}
+              </AnimatePresence>
+            </div>
           )}
         </>
       )}

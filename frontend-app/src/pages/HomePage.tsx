@@ -1,20 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import {
-  Package2,
-  CalendarCheck2,
-  CheckCircle2,
-  DollarSign,
-  TrendingUp,
-  Clock,
-  ArrowRight,
-  Zap,
-  Shield,
-  BarChart3,
+  Package2, CalendarCheck2, CheckCircle2, TrendingUp, Clock,
+  ArrowRight, Zap, Shield, BarChart3, IndianRupee, Sparkles,
 } from 'lucide-react'
 import { useAuth } from '../auth-context'
 import { api } from '../api'
 import { useNavigate } from 'react-router-dom'
+import { getAssetImage } from '../imageStore'
 import type { Booking, Asset } from '../types'
 
 const fallbackImages = [
@@ -23,6 +16,13 @@ const fallbackImages = [
   'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
 ]
+
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 17) return 'Good afternoon'
+  return 'Good evening'
+}
 
 interface StatCardProps {
   label: string
@@ -72,7 +72,7 @@ function SkeletonStatCard() {
 function SkeletonAssetCard() {
   return (
     <div className="asset-card">
-      <div className="skeleton w-full h-48" />
+      <div className="skeleton w-full" style={{ height: '11rem' }} />
       <div className="p-4 flex flex-col gap-2">
         <div className="skeleton h-4 w-3/4 rounded" />
         <div className="skeleton h-3 w-1/2 rounded" />
@@ -90,6 +90,10 @@ const statusConfig: Record<string, { label: string; cls: string }> = {
   returned:  { label: 'Returned',  cls: 'badge badge-gray' },
   cancelled: { label: 'Cancelled', cls: 'badge badge-red' },
   overdue:   { label: 'Overdue',   cls: 'badge badge-red' },
+}
+
+function formatDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })
 }
 
 export function HomePage() {
@@ -137,9 +141,10 @@ export function HomePage() {
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 6)
 
-  // Feature assets - first 4 unique names
+  // Featured available assets - deduplicated by name
   const seen = new Set<string>()
   const featuredAssets = assets.filter((a) => {
+    if (a.status !== 'available') return false
     const key = a.name.toLowerCase()
     if (seen.has(key)) return false
     seen.add(key)
@@ -147,8 +152,9 @@ export function HomePage() {
   }).slice(0, 4)
 
   const statsLoading = bookingsQuery.isLoading || assetsQuery.isLoading || adminBookingsQuery.isLoading
+  const firstName = user?.full_name?.split(' ')[0] ?? 'there'
 
-  // Guest landing
+  // ── Guest landing ────────────────────────────────────────────────────────
   if (!token) {
     return (
       <div className="flex flex-col gap-10">
@@ -210,26 +216,48 @@ export function HomePage() {
     )
   }
 
+  // ── Authenticated dashboard ──────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-8">
       {/* Welcome Banner */}
       <motion.div
-        className="page-header"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
       >
-        <div>
-          <h1 className="page-title">
-            Good morning, {user?.full_name?.split(' ')[0] ?? 'there'} 👋
-          </h1>
-          <p className="page-subtitle">
-            Here's what's happening with your assets today.
-          </p>
+        {/* Greeting row */}
+        <div
+          className="relative overflow-hidden rounded-2xl p-6 mb-4"
+          style={{
+            background: 'linear-gradient(135deg, rgb(99 102 241 / 0.12) 0%, rgb(67 56 202 / 0.06) 50%, transparent 100%)',
+            border: '1px solid rgb(99 102 241 / 0.18)',
+          }}
+        >
+          <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(ellipse at top right, rgb(99 102 241 / 0.2) 0%, transparent 60%)' }} />
+          <div className="relative flex items-center justify-between gap-4 flex-wrap">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Sparkles className="w-4 h-4" style={{ color: '#818cf8' }} />
+                <span style={{ fontSize: '0.8125rem', color: '#818cf8', fontWeight: '600', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                  {getGreeting()}
+                </span>
+              </div>
+              <h1 style={{ fontSize: '1.625rem', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.03em' }}>
+                {firstName} 👋
+              </h1>
+              <p style={{ color: '#71717a', fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                Here's what's happening with your assets today.
+              </p>
+            </div>
+            <button
+              className="btn btn-primary"
+              onClick={() => navigate('/assets')}
+              style={{ flexShrink: 0 }}
+            >
+              <Package2 className="w-4 h-4" /> Browse Assets
+            </button>
+          </div>
         </div>
-        <button className="btn-primary btn" onClick={() => navigate('/assets')}>
-          <Package2 className="w-4 h-4" /> Browse Assets
-        </button>
       </motion.div>
 
       {/* Stats Grid */}
@@ -239,12 +267,12 @@ export function HomePage() {
         ) : (
           <>
             <StatCard label="Total Assets" value={totalAssets} icon={<Package2 className="w-5 h-5 text-primary-400" />} iconBg="bg-primary-500/15" change="+12% this month" positive delay={0} />
-            <StatCard label="Active Bookings" value={activeBookings} icon={<CalendarCheck2 className="w-5 h-5 text-emerald-400" />} iconBg="bg-emerald-500/15" change="4 pending deposit" positive delay={0.08} />
+            <StatCard label="Active Bookings" value={activeBookings} icon={<CalendarCheck2 className="w-5 h-5 text-emerald-400" />} iconBg="bg-emerald-500/15" delay={0.08} />
             <StatCard label="Available" value={availableAssets} icon={<CheckCircle2 className="w-5 h-5 text-blue-400" />} iconBg="bg-blue-500/15" delay={0.16} />
             <StatCard
               label={isAdmin ? 'Total Revenue' : 'Allocated'}
               value={isAdmin ? `₹${totalRevenue.toLocaleString()}` : allocatedAssets}
-              icon={<DollarSign className="w-5 h-5 text-amber-400" />}
+              icon={<IndianRupee className="w-5 h-5 text-amber-400" />}
               iconBg="bg-amber-500/15"
               change={isAdmin ? '+8% this week' : undefined}
               positive={isAdmin}
@@ -259,7 +287,7 @@ export function HomePage() {
         <div className="section-header">
           <div>
             <h2 className="section-title">Featured Assets</h2>
-            <p className="section-subtitle">Browse available items and book instantly</p>
+            <p className="section-subtitle">Available items ready to book instantly</p>
           </div>
           <button className="btn-ghost btn btn-sm" onClick={() => navigate('/assets')}>
             View all <ArrowRight className="w-3.5 h-3.5" />
@@ -271,46 +299,53 @@ export function HomePage() {
             ? Array.from({ length: 4 }).map((_, i) => <SkeletonAssetCard key={i} />)
             : featuredAssets.length === 0
             ? (
-              <div className="col-span-4 empty-state">
+              <div className="col-span-4 empty-state py-14">
                 <div className="empty-state-icon"><Package2 className="w-8 h-8" /></div>
-                <p className="empty-state-title">No assets yet</p>
+                <p className="empty-state-title">No available assets</p>
                 <p className="empty-state-desc">Assets will appear here once added by admin.</p>
               </div>
             )
-            : featuredAssets.map((asset, i) => (
-              <motion.article
-                key={asset.id}
-                className="asset-card card-hover"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 * i, duration: 0.35 }}
-                whileHover={{ y: -4 }}
-              >
-                <img
-                  src={fallbackImages[i % fallbackImages.length]}
-                  alt={asset.name}
-                  loading="lazy"
-                />
-                <div className="asset-body">
-                  <div className="flex items-start justify-between gap-2 mb-2">
-                    <h3 className="font-semibold text-white text-sm leading-tight">{asset.name}</h3>
-                    <span className={`status-badge status-${asset.status}`}>
-                      {asset.status}
-                    </span>
+            : featuredAssets.map((asset, i) => {
+              const customImg = getAssetImage(asset.asset_code)
+              const img = customImg ?? fallbackImages[i % fallbackImages.length]
+              return (
+                <motion.article
+                  key={asset.id}
+                  className="asset-card card-hover"
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.05 * i, duration: 0.35 }}
+                  whileHover={{ y: -4 }}
+                >
+                  <div className="relative overflow-hidden" style={{ height: '11rem' }}>
+                    <img
+                      src={img}
+                      alt={asset.name}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-2 right-2">
+                      <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>Available</span>
+                    </div>
                   </div>
-                  <p className="text-xs text-surface-400 mb-3 line-clamp-2">
-                    {asset.description ?? 'No description available.'}
-                  </p>
-                  <button
-                    className="btn-primary btn w-full btn-sm"
-                    onClick={() => navigate('/assets')}
-                    disabled={asset.status !== 'available'}
-                  >
-                    {asset.status === 'available' ? 'Book Now' : 'Unavailable'}
-                  </button>
-                </div>
-              </motion.article>
-            ))
+                  <div className="asset-body">
+                    <div>
+                      <h3 className="font-semibold text-white leading-tight" style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}>{asset.name}</h3>
+                      <p className="text-xs text-surface-400 line-clamp-2">
+                        {asset.description || 'No description available.'}
+                      </p>
+                    </div>
+                    <button
+                      className="btn btn-primary w-full"
+                      style={{ marginTop: 'auto', fontSize: '0.8125rem' }}
+                      onClick={() => navigate('/assets')}
+                    >
+                      Book Now
+                    </button>
+                  </div>
+                </motion.article>
+              )
+            })
           }
         </div>
       </div>
@@ -344,6 +379,9 @@ export function HomePage() {
               <div className="empty-state-icon"><Clock className="w-7 h-7" /></div>
               <p className="empty-state-title">No bookings yet</p>
               <p className="empty-state-desc">Go to Assets to create your first booking.</p>
+              <button className="btn btn-primary btn-sm mt-4" onClick={() => navigate('/assets')}>
+                Browse Assets
+              </button>
             </div>
           ) : (
             <table className="table">
@@ -364,13 +402,13 @@ export function HomePage() {
                   const cfg = statusConfig[booking.status] ?? { label: booking.status, cls: 'badge badge-gray' }
                   return (
                     <tr key={booking.id}>
-                      <td className="font-mono text-surface-400 text-xs">#{booking.id}</td>
+                      <td style={{ fontFamily: 'monospace', fontSize: '0.8125rem', color: '#71717a' }}>#{booking.id}</td>
                       <td className="font-medium">{booking.rental_plan?.name ?? `Plan #${booking.rental_plan_id}`}</td>
                       <td><span className={cfg.cls}>{cfg.label}</span></td>
-                      <td className="text-surface-400">{booking.pickup_date}</td>
-                      <td className="text-surface-400">{booking.due_date}</td>
-                      <td className="text-white font-medium">₹{booking.deposit_amount}</td>
-                      <td className="text-white font-medium">₹{booking.rent_amount}</td>
+                      <td style={{ color: '#a1a1aa' }}>{formatDate(booking.pickup_date)}</td>
+                      <td style={{ color: '#a1a1aa' }}>{formatDate(booking.due_date)}</td>
+                      <td style={{ color: '#ffffff', fontWeight: '600' }}>₹{booking.deposit_amount}</td>
+                      <td style={{ color: '#ffffff', fontWeight: '600' }}>₹{booking.rent_amount}</td>
                       <td>
                         <button className="btn-ghost btn btn-sm" onClick={() => navigate('/bookings')}>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -384,43 +422,6 @@ export function HomePage() {
           )}
         </div>
       </div>
-
-      {/* Activity Timeline (admin only) */}
-      {isAdmin && recentBookings.length > 0 && (
-        <div>
-          <div className="section-header">
-            <div>
-              <h2 className="section-title">Activity Timeline</h2>
-              <p className="section-subtitle">Recent booking events</p>
-            </div>
-          </div>
-          <div className="card flex flex-col gap-0">
-            {recentBookings.slice(0, 5).map((booking, i) => {
-              const cfg = statusConfig[booking.status] ?? { label: booking.status, cls: 'badge badge-gray' }
-              const dotColors = ['bg-primary-600/20', 'bg-emerald-600/20', 'bg-amber-600/20', 'bg-violet-600/20', 'bg-blue-600/20']
-              const iconColors = ['text-primary-400', 'text-emerald-400', 'text-amber-400', 'text-violet-400', 'text-blue-400']
-              return (
-                <div key={booking.id} className="timeline-item">
-                  <div className={`timeline-dot ${dotColors[i % dotColors.length]}`}>
-                    <CalendarCheck2 className={`w-4 h-4 ${iconColors[i % iconColors.length]}`} />
-                  </div>
-                  <div className="timeline-content">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium text-white">
-                        Booking #{booking.id}
-                      </span>
-                      <span className={cfg.cls}>{cfg.label}</span>
-                    </div>
-                    <p className="text-xs text-surface-400 mt-0.5">
-                      {booking.rental_plan?.name} · Pickup {booking.pickup_date}
-                    </p>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
