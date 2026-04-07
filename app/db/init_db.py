@@ -2,10 +2,7 @@ import asyncio
 
 from app.db.session import engine
 from app.db.base import Base
-
-from app.models.user import User
-from app.models.token import RefreshToken
-from app.models.department import Department
+import app.models  # noqa: F401
 
 async def init_db():
     # Create all tables in the database

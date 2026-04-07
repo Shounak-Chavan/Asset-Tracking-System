@@ -1,0 +1,162 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.future import select
+from sqlalchemy import func
+import re
+from app.utils.asset_utils import generate_asset_code
+from app.core.dependencies import get_current_user
+from app.core.rbac import require_roles
+from app.db.session import get_db
+from app.models.asset import Asset, AssetStatus
+from app.models.category import Category
+from app.models.user import User, UserRole
+from app.schemas.asset import AssetCreate, AssetUpdate, AssetResponse
+
+router = APIRouter(prefix="/assets", tags=["assets"])
+
+
+# POST /assets/ - admin creates assets (single or bulk)
+@router.post("/", response_model=list[AssetResponse], status_code=status.HTTP_201_CREATED)
+async def create_asset(
+    data: AssetCreate,
+    current_user: User = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    # Check if category exists
+    result = await db.execute(select(Category).where(Category.id == data.category_id))
+    if not result.scalars().first():
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    # Generate slug from name
+    slug = re.sub(r'\s+', '-', data.name.strip().upper())
+    slug = re.sub(r'[^A-Z0-9-]', '', slug)
+
+    # Count existing assets with same slug prefix
+    result = await db.execute(
+        select(func.count()).where(Asset.asset_code.like(f"{slug}-%"))
+    )
+    existing_count = result.scalar()
+
+    # Create assets in bulk
+    created_assets = []
+    for i in range(data.quantity):
+        asset_code = generate_asset_code(data.name, existing_count + i + 1)
+        asset = Asset(
+            asset_code=asset_code,
+            name=data.name,
+            description=data.description,
+            category_id=data.category_id,
+            status=AssetStatus.available
+        )
+        db.add(asset)
+        created_assets.append(asset)
+
+    await db.commit()
+    for asset in created_assets:
+        await db.refresh(asset)
+
+    return created_assets
+
+
+# GET /assets/ - filtered list
+@router.get("/", response_model=list[AssetResponse])
+async def get_all_assets(
+    name: str | None = None,
+    category_name: str | None = None,
+    status: AssetStatus | None = None,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Asset).join(Category, Asset.category_id == Category.id)
+
+    # Admin sees all, user sees only active + available
+    if current_user.role != UserRole.admin:
+        query = query.where(
+            Asset.status == AssetStatus.available,
+            Asset.is_active == True
+        )
+
+    if name is not None:
+        query = query.where(Asset.name.ilike(f"%{name}%"))
+
+    if category_name is not None:
+        query = query.where(Category.name.ilike(f"%{category_name}%"))
+
+    if status is not None:
+        if current_user.role == UserRole.admin:
+            query = query.where(Asset.status == status)
+        # users can't filter by status — they always see available only
+
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+# GET /assets/{asset_id} - get single asset
+@router.get("/{asset_id}", response_model=AssetResponse)
+async def get_asset(
+    asset_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    query = select(Asset).where(Asset.id == asset_id)
+
+    # users can only see active assets
+    if current_user.role != UserRole.admin:
+        query = query.where(Asset.is_active == True)
+
+    result = await db.execute(query)
+    asset = result.scalars().first()
+
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    return asset
+
+
+# PATCH /assets/{asset_id} - admin edits an asset
+@router.patch("/{asset_id}", response_model=AssetResponse)
+async def update_asset(
+    asset_id: int,
+    data: AssetUpdate,
+    current_user: User = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Asset).where(Asset.id == asset_id))
+    asset = result.scalars().first()
+
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    if data.name is not None:
+        asset.name = data.name
+    if data.description is not None:
+        asset.description = data.description
+    if data.category_id is not None:
+        cat = await db.execute(select(Category).where(Category.id == data.category_id))
+        if not cat.scalars().first():
+            raise HTTPException(status_code=404, detail="Category not found")
+        asset.category_id = data.category_id
+    if data.status is not None:
+        asset.status = data.status
+
+    db.add(asset)
+    await db.commit()
+    await db.refresh(asset)
+    return asset
+
+
+# DELETE /assets/{asset_id} - admin soft deletes
+@router.delete("/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_asset(
+    asset_id: int,
+    current_user: User = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(Asset).where(Asset.id == asset_id))
+    asset = result.scalars().first()
+
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    asset.is_active = False
+    db.add(asset)
+    await db.commit()

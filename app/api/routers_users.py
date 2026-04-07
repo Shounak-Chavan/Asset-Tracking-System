@@ -4,46 +4,17 @@ from sqlalchemy.future import select
 
 from app.core.dependencies import get_current_user
 from app.db.session import get_db
-from app.models.department import Department
 from app.models.user import User, UserRole
-from app.schemas.user import UserCreateAdmin, UserUpdate, UserUpdateAdmin, UserRoleUpdate, UserActivate
+from app.models.bookings import Booking, BookingStatus
+from app.models.payment import Payment, PaymentType, PaymentStatus
+from app.schemas.user import UserCreateAdmin, UserUpdate, UserUpdateAdmin, UserRoleUpdate, UserActivate, UserHistoryResponse
 from app.schemas.auth import UserResponse
 from app.core.rbac import require_roles
 from app.core.security import hash_password
+from decimal import Decimal
 
 router = APIRouter(prefix="/users",tags=["users"])
 
-# POST /users/ - admin creates user account
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def create_user(
-    data: UserCreateAdmin,
-    current_user: User = Depends(require_roles([UserRole.system_admin])),
-    db: AsyncSession = Depends(get_db)
-):
-    result = await db.execute(select(User).where(User.email == data.email))
-    existing_user = result.scalars().first()
-
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    if data.department_id is not None:
-        dept_result = await db.execute(select(Department).where(Department.id == data.department_id))
-        if not dept_result.scalars().first():
-            raise HTTPException(status_code=404, detail="Department not found")
-
-    new_user = User(
-        full_name=data.full_name,
-        email=data.email,
-        password_hash=hash_password(data.password),
-        role=data.role,
-        employee_id=data.employee_id,
-        phone=data.phone,
-        department_id=data.department_id
-    )
-
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
-    return new_user
 
 # GET /users/me - own profile
 @router.get("/me", response_model=UserResponse)
@@ -67,19 +38,15 @@ async def update_me(
     await db.refresh(current_user)
     return current_user
 
-# GET /users/ - list all users (system_admin only, with optional filters)
+# GET /users/ - list all users (admin only, with optional filters)
 @router.get("/", response_model=list[UserResponse])
 async def get_all_users(
     role:UserRole | None = None,
     is_active:bool | None = None,   
-    current_user: User = Depends(require_roles([UserRole.system_admin,UserRole.dept_admin])),
+    current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
     query = select(User)
-
-    # dept_admin scoped to their department only
-    if current_user.role == UserRole.dept_admin:
-        query = query.where(User.department_id == current_user.department_id)
 
     if role:
         query = query.where(User.role == role)
@@ -90,11 +57,90 @@ async def get_all_users(
     users = result.scalars().all()
     return users
 
-# GET /users/{id} - get user by id (system_admin only)
+
+# GET /users/{id}/history - admin view for user's booking and payment history
+@router.get("/{user_id}/history", response_model=UserHistoryResponse)
+async def get_user_history(
+    user_id: int,
+    current_user: User = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalars().first()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    bookings_result = await db.execute(
+        select(Booking)
+        .where(Booking.user_id == user_id)
+        .order_by(Booking.created_at.desc())
+    )
+    bookings = bookings_result.scalars().all()
+
+    booking_ids = [booking.id for booking in bookings]
+    payments: list[Payment] = []
+
+    if booking_ids:
+        payments_result = await db.execute(
+            select(Payment)
+            .where(Payment.booking_id.in_(booking_ids))
+            .order_by(Payment.created_at.desc())
+        )
+        payments = payments_result.scalars().all()
+
+    total_deposit_paid = sum(
+        (payment.amount for payment in payments if payment.type == PaymentType.deposit and payment.status == PaymentStatus.paid),
+        Decimal("0"),
+    )
+    total_rent_paid = sum(
+        (payment.amount for payment in payments if payment.type == PaymentType.rent and payment.status == PaymentStatus.paid),
+        Decimal("0"),
+    )
+    total_fine_paid = sum(
+        (payment.amount for payment in payments if payment.type == PaymentType.fine and payment.status == PaymentStatus.paid),
+        Decimal("0"),
+    )
+    total_deposit_refunded = sum(
+        (payment.amount for payment in payments if payment.type == PaymentType.deposit_refund and payment.status == PaymentStatus.paid),
+        Decimal("0"),
+    )
+
+    active_statuses = {
+        BookingStatus.pending,
+        BookingStatus.booked,
+        BookingStatus.allocated,
+        BookingStatus.ready_for_pickup,
+        BookingStatus.picked_up,
+        BookingStatus.overdue,
+    }
+
+    active_bookings = sum(1 for booking in bookings if booking.status in active_statuses)
+
+    return {
+        "user": {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "role": user.role,
+        },
+        "summary": {
+            "total_bookings": len(bookings),
+            "active_bookings": active_bookings,
+            "total_deposit_paid": total_deposit_paid,
+            "total_rent_paid": total_rent_paid,
+            "total_fine_paid": total_fine_paid,
+            "total_deposit_refunded": total_deposit_refunded,
+        },
+        "bookings": bookings,
+        "payments": payments,
+    }
+
+# GET /users/{id} - get user by id (admin only)
 @router.get("/{user_id}", response_model=UserResponse)
 async def get_user_by_id(
     user_id: int,
-    current_user: User = Depends(require_roles([UserRole.system_admin])),
+    current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(User).where(User.id == user_id))
@@ -105,12 +151,12 @@ async def get_user_by_id(
 
     return user
 
-# PUT /users/{id} - update user by id (system_admin only)
+# PUT /users/{id} - update user by id (admin only)
 @router.put("/{user_id}", response_model=UserResponse)
 async def update_user_by_id(
     user_id: int,
     data: UserUpdateAdmin,
-    current_user: User = Depends(require_roles([UserRole.system_admin])),
+    current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(User).where(User.id == user_id))
@@ -123,26 +169,18 @@ async def update_user_by_id(
         user.full_name = data.full_name
     if data.phone is not None:
         user.phone = data.phone
-    if data.employee_id is not None:
-        user.employee_id = data.employee_id
-    if data.department_id is not None:
-    # Check if department exists
-        dept_result = await db.execute(select(Department).where(Department.id == data.department_id))
-        if not dept_result.scalars().first():
-            raise HTTPException(status_code=404, detail="Department not found")
-        user.department_id = data.department_id
 
     db.add(user)
     await db.commit()
     await db.refresh(user)
     return user
 
-# PATCH /users/{id}/role - assign role (system_admin only)
+# PATCH /users/{id}/role - assign role (admin only)
 @router.patch("/{user_id}/role", response_model=UserResponse)
 async def assign_role(
     user_id: int,
     data: UserRoleUpdate,
-    current_user: User = Depends(require_roles([UserRole.system_admin])),
+    current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(User).where(User.id == user_id))
@@ -158,12 +196,12 @@ async def assign_role(
     await db.refresh(user)
     return user
 
-# PATCH /users/{id}/activate - activate or deactivate (system_admin only)
+# PATCH /users/{id}/activate - activate or deactivate (admin only)
 @router.patch("/{user_id}/activate", response_model=UserResponse)
 async def toggle_active(
     user_id: int,
     data: UserActivate,
-    current_user: User = Depends(require_roles([UserRole.system_admin])),
+    current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(User).where(User.id == user_id))
