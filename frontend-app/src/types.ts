@@ -162,10 +162,13 @@ export interface UserHistoryUser {
   full_name: string
   email: string
   role: Role
+  phone: string | null
 }
 
 export interface UserHistoryResponse {
   user: UserHistoryUser
+  aadhaar_number: string | null
+  pan_number: string | null
   summary: UserHistorySummary
   bookings: Booking[]
   payments: Payment[]

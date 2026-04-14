@@ -271,6 +271,25 @@ export function AdminUsersPage() {
               <p className="error-text text-sm">Failed to load user history.</p>
             ) : historyQuery.data ? (
               <>
+                {/* User Details */}
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
+                  {[
+                    { label: 'Mobile Number', value: historyQuery.data.user.phone ?? 'Not provided' },
+                    { label: 'Aadhaar Number', value: historyQuery.data.aadhaar_number ?? 'Not available' },
+                    { label: 'PAN Number', value: historyQuery.data.pan_number ?? 'Not available' },
+                    { label: 'Account Role', value: historyQuery.data.user.role },
+                  ].map(({ label, value }) => (
+                    <div
+                      key={label}
+                      className="rounded-xl p-3.5"
+                      style={{ background: '#27272a', border: '1px solid #3f3f46' }}
+                    >
+                      <p style={{ fontSize: '0.75rem', color: '#71717a', marginBottom: '0.25rem' }}>{label}</p>
+                      <p style={{ fontSize: '1rem', fontWeight: '700', color: '#ffffff' }}>{value}</p>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Summary Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
                   {[
