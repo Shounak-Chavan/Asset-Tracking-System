@@ -13,6 +13,7 @@ class AssetUpdate(BaseModel):
     description: str | None = None
     category_id: int | None = None
     status: AssetStatus | None = None
+    is_active: bool | None = None
 
 class AssetResponse(BaseModel):
     id: int

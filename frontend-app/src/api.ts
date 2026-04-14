@@ -136,7 +136,7 @@ export const api = {
   updateAsset: (
     token: string,
     assetId: number,
-    payload: { name?: string; description?: string; category_id?: number; status?: string },
+    payload: { name?: string; description?: string; category_id?: number; status?: string; is_active?: boolean },
   ) => request<Asset>(`/assets/${assetId}`, { method: 'PATCH', token, body: payload }),
   deleteAsset: (token: string, assetId: number) =>
     request<void>(`/assets/${assetId}`, { method: 'DELETE', token }),

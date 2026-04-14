@@ -46,11 +46,11 @@ interface AssetCardProps {
   allocatedUser?: User
   booking?: Booking
   categoryName?: string
-  onDeactivate?: () => void
-  deactivating?: boolean
+  onToggleActive?: () => void
+  togglingActive?: boolean
 }
 
-function AssetCard({ asset, imageIndex, onBook, showCode, allocatedUser, booking, categoryName, onDeactivate, deactivating }: AssetCardProps) {
+function AssetCard({ asset, imageIndex, onBook, showCode, allocatedUser, booking, categoryName, onToggleActive, togglingActive }: AssetCardProps) {
   const customImage = getAssetImage(asset.asset_code)
   const img = customImage ?? getAssetFallback(imageIndex)
 
@@ -58,6 +58,7 @@ function AssetCard({ asset, imageIndex, onBook, showCode, allocatedUser, booking
   const isAllocated = asset.status === 'allocated'
 
   const statusBadge = () => {
+    if (!asset.is_active) return <span className="badge badge-red">Deactivated</span>
     if (isAvailable) return <span className="badge badge-green">Available</span>
     if (isAllocated) return <span className="badge badge-purple">Allocated</span>
     return <span className="badge badge-gray capitalize">{asset.status}</span>
@@ -121,14 +122,14 @@ function AssetCard({ asset, imageIndex, onBook, showCode, allocatedUser, booking
           </button>
         )}
 
-        {onDeactivate && (
+        {onToggleActive && (
           <button
-            className="btn-danger btn w-full btn-sm"
+            className={`${asset.is_active ? 'btn-danger' : 'btn-primary'} btn w-full btn-sm`}
             type="button"
-            onClick={onDeactivate}
-            disabled={deactivating}
+            onClick={onToggleActive}
+            disabled={togglingActive}
           >
-            {deactivating ? 'Updating...' : 'Deactivate'}
+            {togglingActive ? 'Updating...' : asset.is_active ? 'Deactivate' : 'Reactivate'}
           </button>
         )}
       </div>
@@ -200,10 +201,10 @@ export function AssetsPage() {
     enabled: Boolean(token) && !isUserMode,
   })
 
-  const deactivateMutation = useMutation({
-    mutationFn: async (assetId: number) => {
+  const activeMutation = useMutation({
+    mutationFn: async ({ assetId, is_active }: { assetId: number; is_active: boolean }) => {
       if (!token) throw new Error('Missing token')
-      return api.deleteAsset(token, assetId)
+      return api.updateAsset(token, assetId, { is_active })
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['assets'] })
@@ -564,16 +565,17 @@ export function AssetsPage() {
                             allocatedUser={isAllocated ? allocatedUser : undefined}
                             booking={isAllocated ? booking : undefined}
                             categoryName={categoryNameById[asset.category_id]}
-                            onDeactivate={
+                            onToggleActive={
                               !isAllocated
                                 ? () => {
-                                    if (window.confirm(`Deactivate ${asset.name} (${asset.asset_code})?`)) {
-                                      deactivateMutation.mutate(asset.id)
+                                    const action = asset.is_active ? 'Deactivate' : 'Reactivate'
+                                    if (window.confirm(`${action} ${asset.name} (${asset.asset_code})?`)) {
+                                      activeMutation.mutate({ assetId: asset.id, is_active: !asset.is_active })
                                     }
                                   }
                                 : undefined
                             }
-                            deactivating={deactivateMutation.isPending}
+                            togglingActive={activeMutation.isPending}
                           />
                         )
                       })}
@@ -584,10 +586,10 @@ export function AssetsPage() {
             )
           )}
 
-          {deactivateMutation.error && (
+          {activeMutation.error && (
             <p className="error-text flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
-              {deactivateMutation.error.message}
+              {activeMutation.error.message}
             </p>
           )}
         </>

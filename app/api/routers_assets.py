@@ -137,6 +137,8 @@ async def update_asset(
         asset.category_id = data.category_id
     if data.status is not None:
         asset.status = data.status
+    if data.is_active is not None:
+        asset.is_active = data.is_active
 
     db.add(asset)
     await db.commit()
