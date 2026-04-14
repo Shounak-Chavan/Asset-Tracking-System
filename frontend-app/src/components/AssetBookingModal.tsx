@@ -13,6 +13,7 @@ import {
   Clock,
 } from 'lucide-react'
 import { api } from '../api'
+import { getAssetImage } from '../imageStore'
 import type { Asset } from '../types'
 import { RentCalculator } from './RentCalculator'
 
@@ -23,6 +24,10 @@ const assetImages: Record<number, string> = {
   3: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
 }
 const fallbackImage = assetImages[0]
+
+function getAssetFallback(assetId: number): string {
+  return assetImages[assetId % 4] ?? fallbackImage
+}
 
 interface AssetBookingModalProps {
   asset: Asset | null
@@ -104,6 +109,8 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
 
   if (!asset) return null
 
+  const previewImage = getAssetImage(asset.asset_code) ?? getAssetFallback(asset.id)
+
   const selectedPlan = plansQuery.data?.find((p) => p.id === selectedPlanId)
   const isFormValid = Boolean(
     selectedPlanId &&
@@ -152,9 +159,10 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
             {/* Asset Preview */}
             <div className="relative rounded-2xl overflow-hidden h-40">
               <img
-                src={fallbackImage}
+                src={previewImage}
                 alt={asset.name}
                 className="w-full h-full object-cover"
+                onError={(e) => { e.currentTarget.src = fallbackImage }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
