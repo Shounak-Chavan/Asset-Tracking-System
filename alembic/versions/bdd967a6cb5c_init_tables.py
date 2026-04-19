@@ -1,8 +1,8 @@
-"""final edit
+"""init tables
 
-Revision ID: 5e17fb91a8b3
+Revision ID: bdd967a6cb5c
 Revises: 
-Create Date: 2026-03-29 12:26:01.054899
+Create Date: 2026-04-19 11:55:23.549009
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '5e17fb91a8b3'
+revision: str = 'bdd967a6cb5c'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -62,32 +62,17 @@ def upgrade() -> None:
     sa.Column('asset_code', sa.String(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('description', sa.String(), nullable=True),
+    sa.Column('image_url', sa.String(), nullable=True),
     sa.Column('category_id', sa.Integer(), nullable=False),
     sa.Column('status', sa.Enum('available', 'booked', 'allocated', 'ready_for_pickup', 'picked_up', 'returned', 'overdue', name='assetstatus'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_in_dry_cleaning', sa.Boolean(), nullable=False),
     sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ondelete='RESTRICT'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_assets_asset_code'), 'assets', ['asset_code'], unique=True)
     op.create_index(op.f('ix_assets_id'), 'assets', ['id'], unique=False)
-    op.create_table('bookings',
-    sa.Column('id', sa.Integer(), nullable=False),
-    sa.Column('user_id', sa.Integer(), nullable=False),
-    sa.Column('rental_plan_id', sa.Integer(), nullable=False),
-    sa.Column('category_id', sa.Integer(), nullable=True),
-    sa.Column('status', sa.Enum('pending', 'booked', 'allocated', 'ready_for_pickup', 'picked_up', 'returned', 'overdue', 'cancelled', name='bookingstatus'), nullable=False),
-    sa.Column('pickup_date', sa.Date(), nullable=False),
-    sa.Column('due_date', sa.Date(), nullable=False),
-    sa.Column('deposit_amount', sa.Numeric(precision=10, scale=2), nullable=False),
-    sa.Column('rent_amount', sa.Numeric(precision=10, scale=2), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
-    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
-    sa.ForeignKeyConstraint(['rental_plan_id'], ['rental_plans.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_bookings_id'), 'bookings', ['id'], unique=False)
     op.create_table('refresh_tokens',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('token', sa.String(length=500), nullable=False),
@@ -99,6 +84,27 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_refresh_tokens_token'), 'refresh_tokens', ['token'], unique=True)
+    op.create_table('bookings',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('rental_plan_id', sa.Integer(), nullable=False),
+    sa.Column('category_id', sa.Integer(), nullable=True),
+    sa.Column('requested_asset_id', sa.Integer(), nullable=True),
+    sa.Column('aadhaar_number', sa.String(length=12), nullable=True),
+    sa.Column('pan_number', sa.String(length=10), nullable=True),
+    sa.Column('status', sa.Enum('pending', 'booked', 'allocated', 'ready_for_pickup', 'picked_up', 'returned', 'overdue', 'cancelled', name='bookingstatus'), nullable=False),
+    sa.Column('pickup_date', sa.Date(), nullable=False),
+    sa.Column('due_date', sa.Date(), nullable=False),
+    sa.Column('deposit_amount', sa.Numeric(precision=10, scale=2), nullable=False),
+    sa.Column('rent_amount', sa.Numeric(precision=10, scale=2), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
+    sa.ForeignKeyConstraint(['rental_plan_id'], ['rental_plans.id'], ),
+    sa.ForeignKeyConstraint(['requested_asset_id'], ['assets.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_bookings_id'), 'bookings', ['id'], unique=False)
     op.create_table('allocations',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('booking_id', sa.Integer(), nullable=False),
@@ -158,10 +164,10 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_allocations_id'), table_name='allocations')
     op.drop_index(op.f('ix_allocations_booking_id'), table_name='allocations')
     op.drop_table('allocations')
-    op.drop_index(op.f('ix_refresh_tokens_token'), table_name='refresh_tokens')
-    op.drop_table('refresh_tokens')
     op.drop_index(op.f('ix_bookings_id'), table_name='bookings')
     op.drop_table('bookings')
+    op.drop_index(op.f('ix_refresh_tokens_token'), table_name='refresh_tokens')
+    op.drop_table('refresh_tokens')
     op.drop_index(op.f('ix_assets_id'), table_name='assets')
     op.drop_index(op.f('ix_assets_asset_code'), table_name='assets')
     op.drop_table('assets')
