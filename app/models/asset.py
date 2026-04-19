@@ -22,10 +22,12 @@ class Asset(Base):
     asset_code = Column(String, nullable=False, unique=True, index=True) 
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
+    image_url = Column(String, nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="RESTRICT"), nullable=False)
     status = Column(Enum(AssetStatus), nullable=False, default=AssetStatus.available)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)  # added
+    is_in_dry_cleaning = Column(Boolean, default=False, nullable=False)
 
     # Relationships
     category = relationship("Category", back_populates="assets")

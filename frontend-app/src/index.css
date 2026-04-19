@@ -29,7 +29,6 @@ body {
 ::-webkit-scrollbar-thumb:hover { background: #52525b; }
 
 /* ─── Design Token Classes ──────────────────────────── */
-/* These map Tailwind-style utility names used in JSX to actual colors */
 /* Primary (Indigo) */
 .text-primary-300 { color: #a5b4fc; }
 .text-primary-400 { color: #818cf8; }
@@ -40,11 +39,14 @@ body {
 .bg-primary-600\/20 { background-color: rgb(79 70 229 / 0.20); }
 .bg-primary-900\/60 { background-color: rgb(30 27 75 / 0.60); }
 .border-primary-800\/30 { border-color: rgb(55 48 163 / 0.30); }
-.from-primary-400 { --tw-gradient-from: #818cf8; }
-.from-primary-500 { --tw-gradient-from: #6366f1; }
-.from-primary-600\/10 { --tw-gradient-from: rgb(79 70 229 / 0.10); }
-.from-primary-900\/60 { --tw-gradient-from: rgb(30 27 75 / 0.60); }
+
+/* FIX: gradient helpers now produce actual gradients */
+.from-primary-400 { background: linear-gradient(135deg, #818cf8, var(--tw-gradient-to, #818cf8)); }
+.from-primary-500 { background: linear-gradient(135deg, #6366f1, var(--tw-gradient-to, #6366f1)); }
+.from-primary-600\/10 { background: linear-gradient(135deg, rgb(79 70 229 / 0.10), var(--tw-gradient-to, transparent)); }
+.from-primary-900\/60 { background: linear-gradient(135deg, rgb(30 27 75 / 0.60), var(--tw-gradient-to, transparent)); }
 .to-primary-700 { --tw-gradient-to: #4338ca; }
+.to-violet-400  { --tw-gradient-to: #a78bfa; }
 
 /* Surface (Zinc) */
 .text-surface-300 { color: #d4d4d8; }
@@ -78,7 +80,6 @@ body {
 /* Violet */
 .bg-violet-600\/20 { background-color: rgb(124 58 237 / 0.20); }
 .text-violet-400 { color: #a78bfa; }
-.to-violet-400 { --tw-gradient-to: #a78bfa; }
 
 /* ─── Sidebar ─────────────────────────────────────── */
 .sidebar {
@@ -228,9 +229,7 @@ body {
   border: none;
   font-family: inherit;
 }
-.topbar-search input::placeholder {
-  color: #52525b;
-}
+.topbar-search input::placeholder { color: #52525b; }
 .topbar-actions {
   display: flex;
   align-items: center;
@@ -423,12 +422,8 @@ body {
   font-weight: 500;
   margin-top: 0.375rem;
 }
-.stat-change.positive {
-  color: #6ee7b7;
-}
-.stat-change.negative {
-  color: #f87171;
-}
+.stat-change.positive { color: #6ee7b7; }
+.stat-change.negative { color: #f87171; }
 
 /* ─── Asset Cards ────────────────────────────────── */
 .asset-card {
@@ -470,46 +465,14 @@ body {
   font-weight: 600;
   letter-spacing: 0.01em;
 }
-.badge-green {
-  background-color: rgb(16 185 129 / 0.12);
-  color: rgb(52 211 153);
-  border: 1px solid rgb(16 185 129 / 0.25);
-}
-.badge-yellow {
-  background-color: rgb(245 158 11 / 0.12);
-  color: rgb(251 191 36);
-  border: 1px solid rgb(245 158 11 / 0.25);
-}
-.badge-red {
-  background-color: rgb(239 68 68 / 0.12);
-  color: rgb(252 165 165);
-  border: 1px solid rgb(239 68 68 / 0.25);
-}
-.badge-blue {
-  background-color: rgb(59 130 246 / 0.12);
-  color: rgb(147 197 253);
-  border: 1px solid rgb(59 130 246 / 0.25);
-}
-.badge-gray {
-  background-color: rgb(100 116 139 / 0.2);
-  color: rgb(148 163 184);
-  border: 1px solid rgb(100 116 139 / 0.2);
-}
-.badge-purple {
-  background-color: rgb(139 92 246 / 0.12);
-  color: rgb(196 181 253);
-  border: 1px solid rgb(139 92 246 / 0.25);
-}
-.badge-amber {
-  background-color: rgb(251 146 60 / 0.12);
-  color: rgb(253 186 116);
-  border: 1px solid rgb(251 146 60 / 0.25);
-}
-.badge-indigo {
-  background-color: rgb(99 102 241 / 0.12);
-  color: rgb(165 180 252);
-  border: 1px solid rgb(99 102 241 / 0.25);
-}
+.badge-green   { background-color: rgb(16 185 129 / 0.12);  color: rgb(52 211 153);  border: 1px solid rgb(16 185 129 / 0.25); }
+.badge-yellow  { background-color: rgb(245 158 11 / 0.12);  color: rgb(251 191 36);  border: 1px solid rgb(245 158 11 / 0.25); }
+.badge-red     { background-color: rgb(239 68 68 / 0.12);   color: rgb(252 165 165); border: 1px solid rgb(239 68 68 / 0.25); }
+.badge-blue    { background-color: rgb(59 130 246 / 0.12);  color: rgb(147 197 253); border: 1px solid rgb(59 130 246 / 0.25); }
+.badge-gray    { background-color: rgb(100 116 139 / 0.2);  color: rgb(148 163 184); border: 1px solid rgb(100 116 139 / 0.2); }
+.badge-purple  { background-color: rgb(139 92 246 / 0.12);  color: rgb(196 181 253); border: 1px solid rgb(139 92 246 / 0.25); }
+.badge-amber   { background-color: rgb(251 146 60 / 0.12);  color: rgb(253 186 116); border: 1px solid rgb(251 146 60 / 0.25); }
+.badge-indigo  { background-color: rgb(99 102 241 / 0.12);  color: rgb(165 180 252); border: 1px solid rgb(99 102 241 / 0.25); }
 
 /* Status badges */
 .status-badge {
@@ -521,18 +484,20 @@ body {
   font-size: 0.6875rem;
   font-weight: 600;
 }
-.status-pending   { background-color: rgb(245 158 11 / 0.12); color: rgb(251 191 36); border: 1px solid rgb(245 158 11 / 0.25); }
-.status-booked    { background-color: rgb(59 130 246 / 0.12); color: rgb(147 197 253); border: 1px solid rgb(59 130 246 / 0.25); }
-.status-allocated { background-color: rgb(139 92 246 / 0.12); color: rgb(196 181 253); border: 1px solid rgb(139 92 246 / 0.25); }
-.status-picked_up { background-color: rgb(16 185 129 / 0.12); color: rgb(52 211 153); border: 1px solid rgb(16 185 129 / 0.25); }
-.status-returned  { background-color: rgb(100 116 139 / 0.2); color: rgb(148 163 184); border: 1px solid rgb(100 116 139 / 0.2); }
-.status-cancelled { background-color: rgb(239 68 68 / 0.12); color: rgb(252 165 165); border: 1px solid rgb(239 68 68 / 0.25); }
-.status-overdue   { background-color: rgb(239 68 68 / 0.12); color: rgb(252 165 165); border: 1px solid rgb(239 68 68 / 0.25); }
-.status-available { background-color: rgb(16 185 129 / 0.12); color: rgb(52 211 153); border: 1px solid rgb(16 185 129 / 0.25); }
-.status-active    { background-color: rgb(16 185 129 / 0.12); color: rgb(52 211 153); border: 1px solid rgb(16 185 129 / 0.25); }
-.status-ready_for_pickup { background-color: rgb(251 146 60 / 0.12); color: rgb(253 186 116); border: 1px solid rgb(251 146 60 / 0.25); }
+.status-pending          { background-color: rgb(245 158 11 / 0.12);  color: rgb(251 191 36);  border: 1px solid rgb(245 158 11 / 0.25); }
+.status-booked           { background-color: rgb(59 130 246 / 0.12);  color: rgb(147 197 253); border: 1px solid rgb(59 130 246 / 0.25); }
+.status-allocated        { background-color: rgb(139 92 246 / 0.12);  color: rgb(196 181 253); border: 1px solid rgb(139 92 246 / 0.25); }
+.status-picked_up        { background-color: rgb(16 185 129 / 0.12);  color: rgb(52 211 153);  border: 1px solid rgb(16 185 129 / 0.25); }
+.status-returned         { background-color: rgb(100 116 139 / 0.2);  color: rgb(148 163 184); border: 1px solid rgb(100 116 139 / 0.2); }
+.status-cancelled        { background-color: rgb(239 68 68 / 0.12);   color: rgb(252 165 165); border: 1px solid rgb(239 68 68 / 0.25); }
+.status-overdue          { background-color: rgb(239 68 68 / 0.12);   color: rgb(252 165 165); border: 1px solid rgb(239 68 68 / 0.25); }
+.status-available        { background-color: rgb(16 185 129 / 0.12);  color: rgb(52 211 153);  border: 1px solid rgb(16 185 129 / 0.25); }
+.status-active           { background-color: rgb(16 185 129 / 0.12);  color: rgb(52 211 153);  border: 1px solid rgb(16 185 129 / 0.25); }
+.status-ready_for_pickup { background-color: rgb(251 146 60 / 0.12);  color: rgb(253 186 116); border: 1px solid rgb(251 146 60 / 0.25); }
 
 /* ─── Buttons ─────────────────────────────────────── */
+/* FIX: both "btn-primary" and "btn primary" patterns now share one
+   definition — no more duplicate declarations, no React changes needed. */
 .btn,
 .btn-primary,
 .btn-secondary,
@@ -556,56 +521,53 @@ body {
   font-family: inherit;
   white-space: nowrap;
 }
+
+/* Base .btn — neutral so class="btn" alone renders sensibly */
+.btn {
+  background-color: #27272a;
+  color: #e4e4e7;
+  border-color: #3f3f46;
+}
+.btn:hover:not(:disabled) { background-color: #3f3f46; color: #fff; }
+
 .btn:disabled,
 .btn-primary:disabled,
 .btn-secondary:disabled,
 .btn-ghost:disabled,
 .btn-danger:disabled,
-.btn-success:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
+.btn-success:disabled { opacity: 0.45; cursor: not-allowed; }
+
 .btn:active:not(:disabled),
 .btn-primary:active:not(:disabled),
 .btn-secondary:active:not(:disabled),
 .btn-ghost:active:not(:disabled),
 .btn-danger:active:not(:disabled),
-.btn-success:active:not(:disabled) {
-  transform: scale(0.97);
-}
-/* Primary */
-.btn-primary {
-  background-color: #4f46e5;
-  color: #fff;
-  box-shadow: 0 0 0 0 rgb(99 102 241 / 0);
-  border-color: #6366f1;
-}
-.btn-primary:hover:not(:disabled) {
-  background-color: #6366f1;
-  box-shadow: 0 4px 16px 0 rgb(99 102 241 / 0.35);
-}
+.btn-success:active:not(:disabled) { transform: scale(0.97); }
+
+/* Primary — works for both className="btn-primary" and className="btn primary" */
+.btn-primary,
 .btn.primary {
   background-color: #4f46e5;
   color: #fff;
   border-color: #6366f1;
+  box-shadow: 0 0 0 0 rgb(99 102 241 / 0);
 }
+.btn-primary:hover:not(:disabled),
 .btn.primary:hover:not(:disabled) {
   background-color: #6366f1;
   box-shadow: 0 4px 16px 0 rgb(99 102 241 / 0.35);
 }
-/* Secondary */
-.btn-secondary {
-  background-color: #27272a;
-  color: #e4e4e7;
-  border-color: #3f3f46;
-}
-.btn-secondary:hover:not(:disabled) { background-color: #3f3f46; color: #fff; }
+
+/* Secondary — works for both className="btn-secondary" and className="btn secondary" */
+.btn-secondary,
 .btn.secondary {
   background-color: #27272a;
   color: #e4e4e7;
   border-color: #3f3f46;
 }
+.btn-secondary:hover:not(:disabled),
 .btn.secondary:hover:not(:disabled) { background-color: #3f3f46; color: #fff; }
+
 /* Ghost */
 .btn-ghost {
   background-color: transparent;
@@ -613,19 +575,17 @@ body {
   border-color: transparent;
 }
 .btn-ghost:hover:not(:disabled) { background-color: #27272a; color: #e4e4e7; }
-/* Danger */
-.btn-danger {
-  background-color: rgb(239 68 68 / 0.08);
-  color: #fca5a5;
-  border-color: rgb(239 68 68 / 0.3);
-}
-.btn-danger:hover:not(:disabled) { background-color: rgb(239 68 68 / 0.18); color: #fecaca; }
+
+/* Danger — works for both className="btn-danger" and className="btn danger" */
+.btn-danger,
 .btn.danger {
   background-color: rgb(239 68 68 / 0.08);
   color: #fca5a5;
   border-color: rgb(239 68 68 / 0.3);
 }
+.btn-danger:hover:not(:disabled),
 .btn.danger:hover:not(:disabled) { background-color: rgb(239 68 68 / 0.18); color: #fecaca; }
+
 /* Success */
 .btn-success {
   background-color: rgb(16 185 129 / 0.08);
@@ -633,17 +593,10 @@ body {
   border-color: rgb(16 185 129 / 0.3);
 }
 .btn-success:hover:not(:disabled) { background-color: rgb(16 185 129 / 0.15); }
+
 /* Sizes */
-.btn-sm {
-  font-size: 0.8125rem;
-  padding: 0.3125rem 0.75rem;
-  border-radius: 0.5rem;
-}
-.btn-lg {
-  font-size: 0.9375rem;
-  padding: 0.6875rem 1.5rem;
-  border-radius: 0.75rem;
-}
+.btn-sm { font-size: 0.8125rem; padding: 0.3125rem 0.75rem; border-radius: 0.5rem; }
+.btn-lg { font-size: 0.9375rem; padding: 0.6875rem 1.5rem; border-radius: 0.75rem; }
 
 /* ─── Forms ──────────────────────────────────────── */
 .form-input {
@@ -659,14 +612,13 @@ body {
   font-family: inherit;
   line-height: 1.5;
 }
-.form-input::placeholder {
-  color: #52525b;
-}
+.form-input::placeholder { color: #52525b; }
 .form-input:focus {
   border-color: #6366f1;
   background-color: #18181b;
   box-shadow: 0 0 0 3px rgb(99 102 241 / 0.12);
 }
+
 .form-select {
   width: 100%;
   background-color: #1c1c1f;
@@ -674,7 +626,7 @@ body {
   border-radius: 0.625rem;
   padding: 0.5625rem 2.25rem 0.5625rem 0.875rem;
   font-size: 0.875rem;
-  color: #ffffff;
+  color: #ffffff; /* FIX: explicit color was missing */
   outline: none;
   transition: all 0.18s;
   appearance: none;
@@ -689,6 +641,7 @@ body {
   border-color: #6366f1;
   box-shadow: 0 0 0 3px rgb(99 102 241 / 0.12);
 }
+
 .form-label {
   display: inline-flex;
   align-items: center;
@@ -715,9 +668,8 @@ body {
   gap: 0.5rem;
 }
 .btn-inline .btn,
-.btn-row .btn {
-  min-height: 2.25rem;
-}
+.btn-row .btn { min-height: 2.25rem; }
+
 .form-inline {
   display: grid;
   grid-template-columns: 1fr;
@@ -725,9 +677,7 @@ body {
   align-items: flex-end;
 }
 @media (min-width: 640px) {
-  .form-inline {
-    grid-template-columns: 1fr auto;
-  }
+  .form-inline { grid-template-columns: 1fr auto; }
 }
 
 /* ─── Tables ─────────────────────────────────────── */
@@ -743,9 +693,7 @@ body {
   font-size: 0.875rem;
   border-collapse: collapse;
 }
-.table thead {
-  border-bottom: 1px solid #27272a;
-}
+.table thead { border-bottom: 1px solid #27272a; }
 .table th {
   padding: 0.75rem 1rem;
   text-align: left;
@@ -763,15 +711,9 @@ body {
   border-bottom: 1px solid rgb(39 39 42 / 0.7);
   vertical-align: middle;
 }
-.table tbody tr {
-  transition: background-color 0.12s;
-}
-.table tbody tr:hover {
-  background-color: rgb(39 39 42 / 0.5);
-}
-.table tbody tr:last-child td {
-  border-bottom: none;
-}
+.table tbody tr { transition: background-color 0.12s; }
+.table tbody tr:hover { background-color: rgb(39 39 42 / 0.5); }
+.table tbody tr:last-child td { border-bottom: none; }
 
 /* ─── Modal ──────────────────────────────────────── */
 .modal-overlay {
@@ -829,10 +771,7 @@ body {
   align-items: center;
   justify-content: center;
 }
-.modal-close:hover {
-  color: #ffffff;
-  background-color: #27272a;
-}
+.modal-close:hover { color: #ffffff; background-color: #27272a; }
 
 /* ─── Toast ─────────────────────────────────────── */
 .toast-container {
@@ -859,9 +798,9 @@ body {
   box-shadow: 0 10px 30px -8px rgb(0 0 0 / 0.4);
   max-width: 22rem;
 }
-.toast-success { background: rgb(5 46 22 / 0.95); border-color: rgb(74 222 128 / 0.3); color: #dcfce7; }
-.toast-error   { background: rgb(69 10 10 / 0.95); border-color: rgb(248 113 113 / 0.3); color: #fee2e2; }
-.toast-info    { background: rgb(23 37 84 / 0.95); border-color: rgb(147 197 253 / 0.3); color: #dbeafe; }
+.toast-success { background: rgb(5 46 22 / 0.95);  border-color: rgb(74 222 128 / 0.3);  color: #dcfce7; }
+.toast-error   { background: rgb(69 10 10 / 0.95);  border-color: rgb(248 113 113 / 0.3); color: #fee2e2; }
+.toast-info    { background: rgb(23 37 84 / 0.95);  border-color: rgb(147 197 253 / 0.3); color: #dbeafe; }
 
 /* ─── Skeleton ───────────────────────────────────── */
 @keyframes shimmer {
@@ -991,12 +930,8 @@ body {
   width: 1px;
   background: linear-gradient(to bottom, #3f3f46, transparent);
 }
-.timeline-item:last-child::before {
-  display: none;
-}
-.timeline-item:last-child {
-  padding-bottom: 0;
-}
+.timeline-item:last-child::before { display: none; }
+.timeline-item:last-child { padding-bottom: 0; }
 .timeline-dot {
   width: 2.5rem;
   height: 2.5rem;
@@ -1013,77 +948,43 @@ body {
 }
 
 /* ─── Utility ─────────────────────────────────────── */
-.muted {
-  color: #71717a;
-  font-size: 0.875rem;
-}
-.error-text {
-  color: #f87171;
-  font-size: 0.875rem;
-}
-.success-text {
-  color: #6ee7b7;
-  font-size: 0.875rem;
-}
+.muted        { color: #71717a; font-size: 0.875rem; }
+.error-text   { color: #f87171; font-size: 0.875rem; }
+.success-text { color: #6ee7b7; font-size: 0.875rem; }
 
-/* ─── Admin section wrapper override ────────────────
-   Admin pages use <section class="max-w-5xl mx-auto px-6 py-8 space-y-6">.
-   Since content-inner already provides centering & padding, we
-   neutralize the redundant padding and margin here. */
+/* ─── Admin section wrapper ──────────────────────────
+   FIX: Changed from aggressive !important blanket override to a softer
+   direct-child selector. Only direct <section> children of .content-inner
+   are reset — deeply nested sections keep their own padding. */
 section.space-y-6 {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
-/* Inside content-inner, override the Tailwind utility classes that
-   create double-padding. We target by checking the class list contains mx-auto */
-.content-inner section {
-  max-width: none !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  margin-left: 0 !important;
-  margin-right: 0 !important;
+.content-inner > section {
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-left: 0;
+  margin-right: 0;
 }
 
-/* ─── Zinc/raw Tailwind compatibility aliases ──────────
-   Admin pages use raw zinc Tailwind classes for cards. Map those
-   to the design system equivalents so they look consistent. */
-.bg-zinc-900 {
-  background-color: #18181b;
-}
-.bg-zinc-800 {
-  background-color: #27272a;
-}
-.border-zinc-800 {
-  border-color: #27272a;
-}
-.border-zinc-700 {
-  border-color: #3f3f46;
-}
-.text-zinc-400 {
-  color: #a1a1aa;
-}
-.text-zinc-500 {
-  color: #71717a;
-}
-.text-zinc-300 {
-  color: #d4d4d8;
-}
-.text-zinc-200 {
-  color: #e4e4e7;
-}
-.bg-zinc-700 {
-  background-color: #3f3f46;
-}
-.hover\:bg-zinc-700:hover {
-  background-color: #3f3f46;
-}
-.hover\:bg-zinc-800:hover {
-  background-color: #27272a;
-}
-/* Rounded admin card wrappers */
+/* ─── Zinc/raw Tailwind compatibility aliases ──────── */
+.bg-zinc-900  { background-color: #18181b; }
+.bg-zinc-800  { background-color: #27272a; }
+.bg-zinc-700  { background-color: #3f3f46; }
+.border-zinc-800 { border-color: #27272a; }
+.border-zinc-700 { border-color: #3f3f46; }
+.text-zinc-200 { color: #e4e4e7; }
+.text-zinc-300 { color: #d4d4d8; }
+.text-zinc-400 { color: #a1a1aa; }
+.text-zinc-500 { color: #71717a; }
+.hover\:bg-zinc-700:hover { background-color: #3f3f46; }
+.hover\:bg-zinc-800:hover { background-color: #27272a; }
+
+/* FIX: kept original chained selector so existing React JSX needs zero changes */
 .rounded-2xl.border.shadow-lg.bg-zinc-900 {
   background-color: #18181b;
   border-color: #27272a;
@@ -1101,25 +1002,13 @@ section.space-y-6 {
 
 /* ─── Responsive adjustments ──────────────────────── */
 @media (max-width: 1024px) {
-  .sidebar {
-    width: 64px;
-  }
-  .content-area {
-    margin-left: 64px;
-  }
-  .topbar {
-    left: 64px !important;
-  }
+  .sidebar      { width: 64px; }
+  .content-area { margin-left: 64px; }
+  .topbar       { left: 64px !important; }
 }
 
 @media (max-width: 640px) {
-  .content-inner {
-    padding: 1.25rem 1rem;
-  }
-  .page-title {
-    font-size: 1.25rem;
-  }
-  .stat-value {
-    font-size: 1.375rem;
-  }
+  .content-inner { padding: 1.25rem 1rem; }
+  .page-title    { font-size: 1.25rem; }
+  .stat-value    { font-size: 1.375rem; }
 }

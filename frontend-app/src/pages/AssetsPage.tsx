@@ -6,23 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Filter, Package2, Tag, AlertCircle } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
-import { getAssetImage } from '../imageStore'
 import { AssetBookingModal } from '../components/AssetBookingModal'
 import type { Allocation, Asset, Booking, User } from '../types'
 
-const assetImages: Record<string, string> = {
-  default0: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80',
-  default1: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
-  default2: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-  default3: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-  default4: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
-  default5: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=600&q=80',
-}
-const fallbackImage = assetImages['default0']
-
-function getAssetFallback(index: number): string {
-  return assetImages[`default${index % 6}`] ?? fallbackImage
-}
+const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
 
 function AssetCardSkeleton() {
   return (
@@ -40,7 +27,6 @@ function AssetCardSkeleton() {
 
 interface AssetCardProps {
   asset: Asset
-  imageIndex: number
   onBook: () => void
   showCode?: boolean
   allocatedUser?: User
@@ -50,15 +36,15 @@ interface AssetCardProps {
   togglingActive?: boolean
 }
 
-function AssetCard({ asset, imageIndex, onBook, showCode, allocatedUser, booking, categoryName, onToggleActive, togglingActive }: AssetCardProps) {
-  const customImage = getAssetImage(asset.asset_code)
-  const img = customImage ?? getAssetFallback(imageIndex)
+function AssetCard({ asset, onBook, showCode, allocatedUser, booking, categoryName, onToggleActive, togglingActive }: AssetCardProps) {
+  const img = asset.image_url && asset.image_url.trim() ? asset.image_url : fallbackImage
 
   const isAvailable = asset.status === 'available'
   const isAllocated = asset.status === 'allocated'
 
   const statusBadge = () => {
     if (!asset.is_active) return <span className="badge badge-red">Deactivated</span>
+    if (asset.is_in_dry_cleaning) return <span className="badge badge-amber">Dry Cleaning</span>
     if (isAvailable) return <span className="badge badge-green">Available</span>
     if (isAllocated) return <span className="badge badge-purple">Allocated</span>
     return <span className="badge badge-gray capitalize">{asset.status}</span>
@@ -407,11 +393,10 @@ export function AssetsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               <AnimatePresence>
-                {displayAssets.map((asset, i) => (
+                {displayAssets.map((asset) => (
                   <AssetCard
                     key={asset.id}
                     asset={asset}
-                    imageIndex={i}
                     onBook={() => setSelectedAssetForBooking(asset)}
                     categoryName={categoryNameById[asset.category_id]}
                   />
@@ -549,7 +534,7 @@ export function AssetsPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {adminDisplayedAssets.map((asset, i) => {
+                      {adminDisplayedAssets.map((asset) => {
                         const allocation = latestAllocationByAssetId.get(asset.id)
                         const booking = allocation ? bookingById.get(allocation.booking_id) : undefined
                         const allocatedUser = booking ? userById.get(booking.user_id) : undefined
@@ -559,7 +544,6 @@ export function AssetsPage() {
                           <AssetCard
                             key={asset.id}
                             asset={asset}
-                            imageIndex={i}
                             onBook={() => {}}
                             showCode
                             allocatedUser={isAllocated ? allocatedUser : undefined}

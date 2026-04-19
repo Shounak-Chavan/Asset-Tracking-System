@@ -8,6 +8,7 @@ import type {
   LoginResponse,
   Payment,
   PaymentBreakdown,
+  BlockedDateRanges,
   RegisterPayload,
   RentalPlan,
   ReturnRecord,
@@ -136,7 +137,15 @@ export const api = {
   updateAsset: (
     token: string,
     assetId: number,
-    payload: { name?: string; description?: string; category_id?: number; status?: string; is_active?: boolean },
+    payload: {
+      name?: string
+      description?: string
+      image_url?: string | null
+      category_id?: number
+      status?: string
+      is_active?: boolean
+      is_in_dry_cleaning?: boolean
+    },
   ) => request<Asset>(`/assets/${assetId}`, { method: 'PATCH', token, body: payload }),
   deleteAsset: (token: string, assetId: number) =>
     request<void>(`/assets/${assetId}`, { method: 'DELETE', token }),
@@ -188,6 +197,8 @@ export const api = {
       pan_number?: string
     }
   ) => request<Booking>('/bookings/', { method: 'POST', token, body: payload }),
+  getBlockedDatesForAsset: (token: string, assetId: number) =>
+    request<BlockedDateRanges>(`/bookings/assets/${assetId}/blocked-dates`, { token }),
   listBookings: (token: string) => request<Booking[]>('/bookings/', { token }),
   listAdminBookings: (token: string) => request<Booking[]>('/bookings/admin/all', { token }),
   cancelBooking: (token: string, bookingId: number) =>
@@ -228,11 +239,18 @@ export const api = {
       token,
     }),
   listAllocations: (token: string) => request<Allocation[]>('/admin/allocations', { token }),
-  processReturn: (token: string, bookingId: number, returned_at: string, damage_amount: number = 0, damage_notes: string | null = null) =>
+  processReturn: (
+    token: string,
+    bookingId: number,
+    returned_at: string,
+    damage_amount: number = 0,
+    damage_notes: string | null = null,
+    send_for_dry_cleaning: boolean = false,
+  ) =>
     request<ReturnRecord>(`/admin/returns/${bookingId}`, {
       method: 'POST',
       token,
-      body: { returned_at, damage_amount, damage_notes },
+      body: { returned_at, damage_amount, damage_notes, send_for_dry_cleaning },
     }),
   getPaymentBreakdown: (token: string, bookingId: number) =>
     request<PaymentBreakdown>(`/payments/breakdown/${bookingId}`, { token }),

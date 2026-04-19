@@ -23,7 +23,8 @@ async def process_return_api(
         admin_id=current_user.id,
         returned_at=data.returned_at,
         damage_amount=data.damage_amount,
-        damage_notes=data.damage_notes
+        damage_notes=data.damage_notes,
+        send_for_dry_cleaning=data.send_for_dry_cleaning,
     )
 
     return return_record

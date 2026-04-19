@@ -305,7 +305,7 @@ export function BookingsPage() {
                           {payRentMutation.isPending ? 'Processing…' : 'Pay Rent'}
                         </button>
                       )}
-                      {(booking.status === 'allocated' || booking.status === 'picked_up' || booking.status === 'overdue') && (
+                      {(booking.status === 'picked_up' || booking.status === 'overdue') && (
                         <button
                           className="btn btn-secondary btn-sm"
                           onClick={() => { setNotice(''); setActionError(''); requestReturnMutation.mutate(booking.id) }}
@@ -396,7 +396,7 @@ export function BookingsPage() {
                                 {payRentMutation.isPending ? 'Processing…' : 'Pay Rent'}
                               </button>
                             )}
-                            {(booking.status === 'allocated' || booking.status === 'picked_up' || booking.status === 'overdue') && (
+                            {(booking.status === 'picked_up' || booking.status === 'overdue') && (
                               <button
                                 className="btn btn-secondary btn-sm"
                                 onClick={() => { setNotice(''); setActionError(''); requestReturnMutation.mutate(booking.id) }}

@@ -13,21 +13,10 @@ import {
   Clock,
 } from 'lucide-react'
 import { api } from '../api'
-import { getAssetImage } from '../imageStore'
-import type { Asset } from '../types'
+import type { Asset, BlockedDateRange } from '../types'
 import { RentCalculator } from './RentCalculator'
 
-const assetImages: Record<number, string> = {
-  0: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80',
-  1: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
-  2: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-  3: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-}
-const fallbackImage = assetImages[0]
-
-function getAssetFallback(assetId: number): string {
-  return assetImages[assetId % 4] ?? fallbackImage
-}
+const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
 
 interface AssetBookingModalProps {
   asset: Asset | null
@@ -66,6 +55,16 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
     enabled: Boolean(token),
   })
 
+  const blockedDatesQuery = useQuery({
+    queryKey: ['blockedDates', token, asset?.id],
+    queryFn: async () => {
+      if (!token || !asset) return [] as BlockedDateRange[]
+      const response = await api.getBlockedDatesForAsset(token, asset.id)
+      return response.blocked_ranges
+    },
+    enabled: Boolean(token && asset),
+  })
+
   const createBookingMutation = useMutation({
     mutationFn: async () => {
       if (!token || !asset || !selectedPlanId || !pickupDate || !aadhaarNumber || !panNumber) {
@@ -78,6 +77,27 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
 
       if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber)) {
         throw new Error('PAN format must be like ABCDE1234F')
+      }
+
+      if (selectedPlanId && pickupDate) {
+        const selectedPlan = plansQuery.data?.find((plan) => plan.id === selectedPlanId)
+        if (!selectedPlan) {
+          throw new Error('Please select a valid rental plan')
+        }
+
+        const pickup = new Date(pickupDate)
+        const due = new Date(pickup)
+        due.setDate(due.getDate() + selectedPlan.duration_days)
+
+        const overlaps = (blockedDatesQuery.data ?? []).some((range) => {
+          const blockedStart = new Date(range.from_date)
+          const blockedEnd = new Date(range.to_date)
+          return blockedStart <= due && blockedEnd >= pickup
+        })
+
+        if (overlaps) {
+          throw new Error('Selected dates are blocked for this asset. Please choose another date range.')
+        }
       }
 
       return api.createBooking(token, {
@@ -109,14 +129,27 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
 
   if (!asset) return null
 
-  const previewImage = getAssetImage(asset.asset_code) ?? getAssetFallback(asset.id)
+  const previewImage = asset.image_url && asset.image_url.trim() ? asset.image_url : fallbackImage
 
   const selectedPlan = plansQuery.data?.find((p) => p.id === selectedPlanId)
+  const hasDateOverlap = Boolean(
+    selectedPlan &&
+      pickupDate &&
+      (blockedDatesQuery.data ?? []).some((range) => {
+        const selectedFrom = new Date(pickupDate)
+        const selectedTo = new Date(selectedFrom)
+        selectedTo.setDate(selectedTo.getDate() + selectedPlan.duration_days)
+        const blockedFrom = new Date(range.from_date)
+        const blockedTo = new Date(range.to_date)
+        return blockedFrom <= selectedTo && blockedTo >= selectedFrom
+      }),
+  )
   const isFormValid = Boolean(
     selectedPlanId &&
       pickupDate &&
       /^\d{12}$/.test(aadhaarNumber) &&
-      /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber),
+      /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber) &&
+      !hasDateOverlap,
   )
   const today = new Date().toISOString().split('T')[0]
   const isPending = createBookingMutation.isPending
@@ -255,7 +288,26 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
                     min={today}
                     disabled={isPending}
                   />
+                  {hasDateOverlap && (
+                    <p className="text-xs text-rose-400 mt-1">
+                      Selected dates overlap with an existing booking for this asset.
+                    </p>
+                  )}
                 </div>
+
+                {/* Blocked date ranges */}
+                {(blockedDatesQuery.data?.length ?? 0) > 0 && (
+                  <div className="form-group">
+                    <label className="form-label">Blocked Date Ranges</label>
+                    <div className="bg-surface-800/40 rounded-xl px-3 py-2.5 text-xs text-surface-300 flex flex-col gap-1.5">
+                      {blockedDatesQuery.data?.map((range) => (
+                        <span key={range.booking_id}>
+                          {range.from_date} to {range.to_date}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Document Verification */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -318,7 +370,7 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
                   <div className="flex flex-col gap-2">
                     <div className="flex items-start gap-2 text-xs text-surface-400">
                       <Clock className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                      <span>Deposit is paid upfront and refunded after return (minus fines/damage)</span>
+                      <span>Deposit is paid upfront and is non-refundable.</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs text-surface-400">
                       <CreditCard className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />

@@ -18,6 +18,7 @@ const returnSchema = z.object({
   returned_at: z.string().min(1),
   damage_amount: z.number().min(0),
   damage_notes: z.string().optional(),
+  send_for_dry_cleaning: z.boolean().optional(),
 })
 
 type ReturnForm = z.infer<typeof returnSchema>
@@ -54,7 +55,7 @@ export function AdminOperationsPage() {
 
   const returnForm = useForm<ReturnForm>({
     resolver: zodResolver(returnSchema),
-    defaultValues: { damage_amount: 0, damage_notes: '' },
+    defaultValues: { damage_amount: 0, damage_notes: '', send_for_dry_cleaning: false },
   })
 
   // ── Queries ────────────────────────────────────────────────────────────────
@@ -177,10 +178,17 @@ export function AdminOperationsPage() {
   const returnMutation = useMutation({
     mutationFn: async (values: ReturnForm) => {
       if (!token) throw new Error('Missing token')
-      return api.processReturn(token, values.booking_id, values.returned_at, values.damage_amount, values.damage_notes ?? null)
+      return api.processReturn(
+        token,
+        values.booking_id,
+        values.returned_at,
+        values.damage_amount,
+        values.damage_notes ?? null,
+        Boolean(values.send_for_dry_cleaning),
+      )
     },
     onSuccess: async () => {
-      setReturnNotice('Return processed — asset moved back to available inventory.')
+      setReturnNotice('Return processed successfully.')
       returnForm.reset()
       setSelectedReturnBookingId(null)
       await queryClient.invalidateQueries({ queryKey: ['adminBookings', token] })
@@ -189,6 +197,26 @@ export function AdminOperationsPage() {
       setTimeout(() => setReturnNotice(''), 4000)
     },
   })
+
+  const completeDryCleaningMutation = useMutation({
+    mutationFn: async (assetId: number) => {
+      if (!token) throw new Error('Missing token')
+      return api.updateAsset(token, assetId, {
+        is_in_dry_cleaning: false,
+        status: 'available',
+      })
+    },
+    onSuccess: async () => {
+      setReturnNotice('Dry cleaning completed. Asset is available again.')
+      await queryClient.invalidateQueries({ queryKey: ['assets', token] })
+      setTimeout(() => setReturnNotice(''), 4000)
+    },
+  })
+
+  const dryCleaningAssets = useMemo(
+    () => (assetsQuery.data ?? []).filter((asset) => asset.is_in_dry_cleaning),
+    [assetsQuery.data],
+  )
 
   const isLoading = bookingsQuery.isLoading || assetsQuery.isLoading
   const isError = bookingsQuery.isError || assetsQuery.isError
@@ -721,7 +749,7 @@ export function AdminOperationsPage() {
           <div>
             <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7' }}>Accept & Process Returns</h2>
             <p style={{ fontSize: '0.8125rem', color: '#71717a' }}>
-              Accept user return requests, record damage, and refund deposits.
+              Accept user return requests, record damage, and complete return closure.
             </p>
           </div>
         </div>
@@ -749,12 +777,20 @@ export function AdminOperationsPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {returnableBookings.map((booking) => (
-              <div
-                key={booking.id}
-                className="rounded-xl overflow-hidden"
-                style={{ border: '1px solid #27272a' }}
-              >
+            {returnableBookings.map((booking) => {
+              const allocatedAsset = booking.allocated_asset_id ? assetById.get(booking.allocated_asset_id) : undefined
+              const isClothAsset = Boolean(
+                allocatedAsset &&
+                categoryMap[allocatedAsset.category_id] &&
+                categoryMap[allocatedAsset.category_id].trim().toLowerCase() === 'cloth',
+              )
+
+              return (
+                <div
+                  key={booking.id}
+                  className="rounded-xl overflow-hidden"
+                  style={{ border: '1px solid #27272a' }}
+                >
                 {/* Booking row */}
                 <div className="flex items-center justify-between gap-4 px-4 py-3.5" style={{ background: '#1c1c1f' }}>
                   <div className="flex items-center gap-3">
@@ -786,6 +822,7 @@ export function AdminOperationsPage() {
                           returnForm.setValue('returned_at', today)
                           returnForm.setValue('damage_amount', 0)
                           returnForm.setValue('damage_notes', '')
+                          returnForm.setValue('send_for_dry_cleaning', false)
                         }}
                       >
                         Process Return
@@ -850,6 +887,15 @@ export function AdminOperationsPage() {
                             {...returnForm.register('damage_notes')}
                           />
                         </div>
+                        {isClothAsset && (
+                          <label className="flex items-center gap-2 text-sm text-surface-300">
+                            <input
+                              type="checkbox"
+                              {...returnForm.register('send_for_dry_cleaning')}
+                            />
+                            Send this cloth asset for dry cleaning
+                          </label>
+                        )}
                         <div className="flex items-center gap-3">
                           <button
                             className="btn btn-primary"
@@ -870,12 +916,61 @@ export function AdminOperationsPage() {
                   )}
                 </AnimatePresence>
               </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* ── SECTION 3: Dry Cleaning Queue ─────────────────────────────── */}
+      <div className="card">
+        <div className="flex items-center gap-3 mb-5">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%)' }}
+          >
+            <Package2 className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7' }}>Dry Cleaning Queue</h2>
+            <p style={{ fontSize: '0.8125rem', color: '#71717a' }}>
+              Cloth assets in cleaning are unavailable for booking until completed.
+            </p>
+          </div>
+        </div>
+
+        {dryCleaningAssets.length === 0 ? (
+          <div className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: '#1c1c1f', border: '1px solid #27272a' }}>
+            <Package2 className="w-4 h-4 flex-shrink-0" style={{ color: '#52525b' }} />
+            <span style={{ fontSize: '0.875rem', color: '#71717a' }}>No assets are currently in dry cleaning.</span>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {dryCleaningAssets.map((asset) => (
+              <div
+                key={asset.id}
+                className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+                style={{ border: '1px solid #27272a', background: '#1c1c1f' }}
+              >
+                <div>
+                  <p style={{ fontSize: '0.9rem', color: '#e4e4e7', fontWeight: 600 }}>{asset.name}</p>
+                  <p style={{ fontSize: '0.78rem', color: '#71717a' }}>{asset.asset_code}</p>
+                </div>
+                <button
+                  className="btn btn-primary btn-sm"
+                  type="button"
+                  disabled={completeDryCleaningMutation.isPending}
+                  onClick={() => completeDryCleaningMutation.mutate(asset.id)}
+                >
+                  Mark Dry Cleaning Complete
+                </button>
+              </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* ── SECTION 3: All Bookings Overview ─────────────────────────────── */}
+      {/* ── SECTION 4: All Bookings Overview ─────────────────────────────── */}
       <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         <div className="flex items-center gap-3 px-5 py-4" style={{ borderBottom: '1px solid #27272a' }}>
           <div

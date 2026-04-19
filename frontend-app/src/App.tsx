@@ -11,6 +11,9 @@ const RegisterPage = lazy(() => import('./pages/RegisterPage.tsx').then(m => ({ 
 const AssetsPage = lazy(() => import('./pages/AssetsPage.tsx').then(m => ({ default: m.AssetsPage })))
 const BookingsPage = lazy(() => import('./pages/BookingsPage.tsx').then(m => ({ default: m.BookingsPage })))
 const ProfilePage = lazy(() => import('./pages/ProfilePage.tsx').then(m => ({ default: m.ProfilePage })))
+const TermsPage = lazy(() => import('./pages/TermsPage.tsx').then(m => ({ default: m.TermsPage })))
+const AboutPage = lazy(() => import('./pages/AboutPage.tsx').then(m => ({ default: m.AboutPage })))
+const ContactPage = lazy(() => import('./pages/ContactPage.tsx').then(m => ({ default: m.ContactPage })))
 
 // Lazy load admin pages
 const AdminAssetsPage = lazy(() => import('./pages/admin/Assets.tsx').then(m => ({ default: m.AdminAssetsPage })))
@@ -82,6 +85,9 @@ function AppRoutes() {
               </ProtectedRoute>
             }
           />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route
             path="/admin"
             element={

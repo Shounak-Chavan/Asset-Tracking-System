@@ -64,3 +64,14 @@ class BookingResponse(BaseModel):
 
 class BookingListResponse(BaseModel):
     bookings : List[BookingResponse]
+
+
+class BlockedDateRange(BaseModel):
+    booking_id: int
+    from_date: date
+    to_date: date
+
+
+class BlockedDateRangesResponse(BaseModel):
+    asset_id: int
+    blocked_ranges: List[BlockedDateRange]

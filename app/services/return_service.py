@@ -7,6 +7,7 @@ from fastapi import HTTPException
 from app.models.bookings import Booking, BookingStatus
 from app.models.rental_plan import RentalPlan
 from app.models.asset import Asset, AssetStatus
+from app.models.category import Category
 from app.models.allocations import Allocation
 from app.models.returns import Return
 from app.models.payment import Payment, PaymentType, PaymentStatus
@@ -18,7 +19,8 @@ async def process_return(
     admin_id: int,
     returned_at: date,
     damage_amount: Decimal = Decimal("0"),
-    damage_notes: str | None = None
+    damage_notes: str | None = None,
+    send_for_dry_cleaning: bool = False,
 ):
     # 1. Get booking
     booking = await db.get(Booking, booking_id)
@@ -54,10 +56,8 @@ async def process_return(
     if damage_amount <= Decimal("0") and normalized_damage_notes:
         damage_amount = Decimal(plan.damage_fee)
 
-    # 7. Calculate total deductions from deposit
-    total_deductions = fine_amount + damage_amount
-    refund_amount = max(Decimal("0"), booking.deposit_amount - total_deductions)
-    
+    # 7. Deposit is non-refundable as per updated business rule.
+
     # 8. Get allocation -> asset
     result = await db.execute(
         select(Allocation).where(Allocation.booking_id == booking_id)
@@ -69,6 +69,12 @@ async def process_return(
     if not asset:
         raise HTTPException(404, "Allocated asset not found")
 
+    category = await db.get(Category, asset.category_id)
+    is_cloth_asset = bool(category and category.name.strip().lower() == "cloth")
+
+    if send_for_dry_cleaning and not is_cloth_asset:
+        raise HTTPException(400, "Dry cleaning is allowed only for cloth assets")
+
     # 9. Create return record
     return_record = Return(
         booking_id=booking_id,
@@ -77,7 +83,7 @@ async def process_return(
         fine_amount=fine_amount,
         damage_amount=damage_amount,
         damage_notes=normalized_damage_notes or None,
-        deposit_refunded=(refund_amount > Decimal("0")),
+        deposit_refunded=False,
         processed_by=admin_id
     )
     db.add(return_record)
@@ -85,6 +91,7 @@ async def process_return(
     # 10. Update states
     booking.status = BookingStatus.returned
     asset.status = AssetStatus.available
+    asset.is_in_dry_cleaning = bool(send_for_dry_cleaning and is_cloth_asset)
 
     # 11. Create payment records for deductions and refund
     if fine_amount > Decimal("0"):
@@ -103,14 +110,6 @@ async def process_return(
             status=PaymentStatus.paid
         ))
     
-    if refund_amount > Decimal("0"):
-        db.add(Payment(
-            booking_id=booking_id,
-            type=PaymentType.deposit_refund,
-            amount=refund_amount,
-            status=PaymentStatus.paid
-        ))
-
     # 12. Commit
     await db.commit()
     await db.refresh(return_record)
