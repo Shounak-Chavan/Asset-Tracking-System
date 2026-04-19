@@ -4,7 +4,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db.session import get_db
 from app.core.dependencies import get_current_user
 from app.core.rbac import require_roles
-from app.schemas.booking import BookingResponse, BookingCreate
+from app.schemas.booking import (
+    BookingResponse,
+    BookingCreate,
+    BlockedDateRangesResponse,
+)
 from app.services import booking_service
 from app.models.user import UserRole
 
@@ -56,3 +60,13 @@ async def request_return(
     db: AsyncSession = Depends(get_db)
 ):
     return await booking_service.request_return(db, current_user, booking_id)
+
+
+@router.get("/assets/{asset_id}/blocked-dates", response_model=BlockedDateRangesResponse)
+async def get_blocked_dates_for_asset(
+    asset_id: int,
+    current_user=Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    blocked_ranges = await booking_service.get_blocked_date_ranges_for_asset(db, asset_id)
+    return {"asset_id": asset_id, "blocked_ranges": blocked_ranges}

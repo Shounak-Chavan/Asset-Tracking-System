@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   X,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Package2,
   CreditCard,
   CheckCircle2,
@@ -13,16 +15,10 @@ import {
   Clock,
 } from 'lucide-react'
 import { api } from '../api'
-import type { Asset } from '../types'
+import type { Asset, BlockedDateRange } from '../types'
 import { RentCalculator } from './RentCalculator'
 
-const assetImages: Record<number, string> = {
-  0: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80',
-  1: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
-  2: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-  3: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-}
-const fallbackImage = assetImages[0]
+const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
 
 interface AssetBookingModalProps {
   asset: Asset | null
@@ -36,6 +32,51 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback
 }
 
+function toDateOnly(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+}
+
+function fromISODate(value: string): Date {
+  const [y, m, d] = value.split('-').map(Number)
+  return new Date(y, (m ?? 1) - 1, d ?? 1)
+}
+
+function toISODate(value: Date): string {
+  const y = value.getFullYear()
+  const m = String(value.getMonth() + 1).padStart(2, '0')
+  const d = String(value.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+function addDays(value: Date, days: number): Date {
+  const result = new Date(value)
+  result.setDate(result.getDate() + days)
+  return result
+}
+
+function overlapsAnyBlockedRange(
+  start: Date,
+  durationDays: number,
+  blockedRanges: BlockedDateRange[],
+): boolean {
+  const normalizedStart = toDateOnly(start)
+  const normalizedEnd = toDateOnly(addDays(normalizedStart, durationDays))
+
+  return blockedRanges.some((range) => {
+    const blockedStart = toDateOnly(fromISODate(range.from_date))
+    const blockedEnd = toDateOnly(fromISODate(range.to_date))
+    return blockedStart <= normalizedEnd && blockedEnd >= normalizedStart
+  })
+}
+
+function getMonthDays(viewMonth: Date): Date[] {
+  const first = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1)
+  const firstGridDay = new Date(first)
+  firstGridDay.setDate(first.getDate() - first.getDay())
+
+  return Array.from({ length: 42 }, (_, i) => addDays(firstGridDay, i))
+}
+
 export function AssetBookingModal({ asset, categoryId, onClose, token, onBookingSuccess }: AssetBookingModalProps) {
   const queryClient = useQueryClient()
   const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
@@ -44,6 +85,7 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
   const [panNumber, setPanNumber] = useState('')
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
+  const [calendarMonth, setCalendarMonth] = useState(() => toDateOnly(new Date()))
 
   const plansQuery = useQuery({
     queryKey: ['plans', token],
@@ -61,6 +103,16 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
     enabled: Boolean(token),
   })
 
+  const blockedDatesQuery = useQuery({
+    queryKey: ['blockedDates', token, asset?.id],
+    queryFn: async () => {
+      if (!token || !asset) return [] as BlockedDateRange[]
+      const response = await api.getBlockedDatesForAsset(token, asset.id)
+      return response.blocked_ranges
+    },
+    enabled: Boolean(token && asset),
+  })
+
   const createBookingMutation = useMutation({
     mutationFn: async () => {
       if (!token || !asset || !selectedPlanId || !pickupDate || !aadhaarNumber || !panNumber) {
@@ -73,6 +125,23 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
 
       if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber)) {
         throw new Error('PAN format must be like ABCDE1234F')
+      }
+
+      if (selectedPlanId && pickupDate) {
+        const selectedPlan = plansQuery.data?.find((plan) => plan.id === selectedPlanId)
+        if (!selectedPlan) {
+          throw new Error('Please select a valid rental plan')
+        }
+
+        const overlaps = overlapsAnyBlockedRange(
+          fromISODate(pickupDate),
+          selectedPlan.duration_days,
+          blockedDatesQuery.data ?? [],
+        )
+
+        if (overlaps) {
+          throw new Error('Selected dates are blocked for this asset. Please choose another date range.')
+        }
       }
 
       return api.createBooking(token, {
@@ -104,16 +173,52 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
 
   if (!asset) return null
 
+  const previewImage = asset.image_url && asset.image_url.trim() ? asset.image_url : fallbackImage
+
   const selectedPlan = plansQuery.data?.find((p) => p.id === selectedPlanId)
+  const hasDateOverlap = Boolean(
+    selectedPlan &&
+      pickupDate &&
+      overlapsAnyBlockedRange(
+        fromISODate(pickupDate),
+        selectedPlan.duration_days,
+        blockedDatesQuery.data ?? [],
+      ),
+  )
   const isFormValid = Boolean(
     selectedPlanId &&
       pickupDate &&
       /^\d{12}$/.test(aadhaarNumber) &&
-      /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber),
+      /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber) &&
+      !hasDateOverlap,
   )
-  const today = new Date().toISOString().split('T')[0]
+  const todayDate = toDateOnly(new Date())
   const isPending = createBookingMutation.isPending
   const isBooked = Boolean(notice)
+  const monthDays = getMonthDays(calendarMonth)
+  const monthLabel = calendarMonth.toLocaleString('en-IN', { month: 'long', year: 'numeric' })
+
+  function handleCalendarSelect(day: Date) {
+    if (!selectedPlan) {
+      setError('Select a rental plan first to choose a valid date range')
+      return
+    }
+
+    const isInPast = toDateOnly(day) < todayDate
+    const isBlocked = overlapsAnyBlockedRange(
+      day,
+      selectedPlan.duration_days,
+      blockedDatesQuery.data ?? [],
+    )
+
+    if (isInPast || isBlocked) {
+      setError('Selected date range is blocked for this asset. Please pick another date.')
+      return
+    }
+
+    setError('')
+    setPickupDate(toISODate(day))
+  }
 
   return (
     <AnimatePresence>
@@ -152,9 +257,10 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
             {/* Asset Preview */}
             <div className="relative rounded-2xl overflow-hidden h-40">
               <img
-                src={fallbackImage}
+                src={previewImage}
                 alt={asset.name}
                 className="w-full h-full object-cover"
+                onError={(e) => { e.currentTarget.src = fallbackImage }}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent" />
               <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
@@ -241,13 +347,90 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
                   </label>
                   <input
                     className="form-input"
-                    type="date"
+                    type="text"
                     value={pickupDate}
-                    onChange={(e) => setPickupDate(e.target.value)}
-                    min={today}
-                    disabled={isPending}
+                    readOnly
+                    placeholder="Select date from calendar below"
                   />
+                  {hasDateOverlap && (
+                    <p className="text-xs text-rose-400 mt-1">
+                      Selected dates overlap with an existing booking for this asset.
+                    </p>
+                  )}
+
+                  <div className="rounded-xl border border-surface-700 p-3 bg-surface-900/40">
+                    <div className="flex items-center justify-between mb-3">
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
+                        disabled={isPending}
+                      >
+                        <ChevronLeft className="w-3.5 h-3.5" />
+                      </button>
+                      <p className="text-sm text-surface-200 font-medium">{monthLabel}</p>
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
+                        disabled={isPending}
+                      >
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1 mb-1">
+                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label) => (
+                        <span key={label} className="text-[10px] text-surface-500 text-center py-1">{label}</span>
+                      ))}
+                    </div>
+
+                    <div className="grid grid-cols-7 gap-1">
+                      {monthDays.map((day) => {
+                        const isCurrentMonth = day.getMonth() === calendarMonth.getMonth()
+                        const isSelected = pickupDate === toISODate(day)
+                        const isInPast = toDateOnly(day) < todayDate
+                        const isBlocked = Boolean(
+                          selectedPlan && overlapsAnyBlockedRange(day, selectedPlan.duration_days, blockedDatesQuery.data ?? []),
+                        )
+                        const disabled = isPending || !isCurrentMonth || isInPast || !selectedPlan || isBlocked
+
+                        return (
+                          <button
+                            key={`${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`}
+                            type="button"
+                            onClick={() => handleCalendarSelect(day)}
+                            disabled={disabled}
+                            className="h-8 rounded-md text-xs transition-colors"
+                            style={{
+                              background: isSelected ? 'rgb(99 102 241 / 0.28)' : isBlocked ? 'rgb(244 63 94 / 0.16)' : 'transparent',
+                              color: disabled ? '#52525b' : '#e4e4e7',
+                              border: isSelected ? '1px solid rgb(99 102 241 / 0.8)' : isBlocked ? '1px solid rgb(244 63 94 / 0.35)' : '1px solid transparent',
+                              cursor: disabled ? 'not-allowed' : 'pointer',
+                              textDecoration: isBlocked ? 'line-through' : 'none',
+                            }}
+                          >
+                            {day.getDate()}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Blocked date ranges */}
+                {(blockedDatesQuery.data?.length ?? 0) > 0 && (
+                  <div className="form-group">
+                    <label className="form-label">Blocked Date Ranges</label>
+                    <div className="bg-surface-800/40 rounded-xl px-3 py-2.5 text-xs text-surface-300 flex flex-col gap-1.5">
+                      {blockedDatesQuery.data?.map((range) => (
+                        <span key={range.booking_id}>
+                          {range.from_date} to {range.to_date}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Document Verification */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -310,7 +493,7 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
                   <div className="flex flex-col gap-2">
                     <div className="flex items-start gap-2 text-xs text-surface-400">
                       <Clock className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                      <span>Deposit is paid upfront and refunded after return (minus fines/damage)</span>
+                      <span>Deposit is paid upfront and is non-refundable.</span>
                     </div>
                     <div className="flex items-start gap-2 text-xs text-surface-400">
                       <CreditCard className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />

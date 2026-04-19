@@ -9,6 +9,9 @@ import {
   FolderKanban,
   CreditCard,
   Wrench,
+  FileText,
+  Info,
+  Phone,
   Bell,
   Search,
   LogOut,
@@ -35,6 +38,9 @@ const mainNav: NavItemDef[] = [
   { to: '/assets', label: 'Assets', icon: <Package2 />, authRequired: true },
   { to: '/bookings', label: 'My Bookings', icon: <CalendarCheck2 />, authRequired: true },
   { to: '/profile', label: 'Profile', icon: <User />, authRequired: true },
+  { to: '/terms', label: 'Terms', icon: <FileText />, authRequired: false },
+  { to: '/about', label: 'About Us', icon: <Info />, authRequired: false },
+  { to: '/contact', label: 'Contact Us', icon: <Phone />, authRequired: false },
 ]
 
 const adminNav: NavItemDef[] = [
@@ -112,6 +118,9 @@ export function AppLayout() {
     if (path === '/assets') return 'Assets'
     if (path === '/bookings') return 'My Bookings'
     if (path === '/profile') return 'Profile'
+    if (path === '/terms') return 'Terms and Conditions'
+    if (path === '/about') return 'About Us'
+    if (path === '/contact') return 'Contact Us'
     if (path.startsWith('/admin/assets')) return 'Asset Manager'
     if (path.startsWith('/admin/categories')) return 'Categories'
     if (path.startsWith('/admin/plans')) return 'Rental Plans'

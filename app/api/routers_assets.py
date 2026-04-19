@@ -45,6 +45,7 @@ async def create_asset(
             asset_code=asset_code,
             name=data.name,
             description=data.description,
+            image_url=data.image_url,
             category_id=data.category_id,
             status=AssetStatus.available
         )
@@ -69,11 +70,11 @@ async def get_all_assets(
 ):
     query = select(Asset).join(Category, Asset.category_id == Category.id)
 
-    # Admin sees all, user sees only active + available
+    # Admin sees all; user visibility is not globally locked by booking/allocation status.
     if current_user.role != UserRole.admin:
         query = query.where(
-            Asset.status == AssetStatus.available,
-            Asset.is_active == True
+            Asset.is_active == True,
+            Asset.is_in_dry_cleaning == False
         )
 
     if name is not None:
@@ -130,6 +131,8 @@ async def update_asset(
         asset.name = data.name
     if data.description is not None:
         asset.description = data.description
+    if data.image_url is not None:
+        asset.image_url = data.image_url
     if data.category_id is not None:
         cat = await db.execute(select(Category).where(Category.id == data.category_id))
         if not cat.scalars().first():
@@ -137,6 +140,10 @@ async def update_asset(
         asset.category_id = data.category_id
     if data.status is not None:
         asset.status = data.status
+    if data.is_active is not None:
+        asset.is_active = data.is_active
+    if data.is_in_dry_cleaning is not None:
+        asset.is_in_dry_cleaning = data.is_in_dry_cleaning
 
     db.add(asset)
     await db.commit()

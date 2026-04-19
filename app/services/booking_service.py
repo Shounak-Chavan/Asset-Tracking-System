@@ -8,6 +8,34 @@ from app.models.bookings import Booking, BookingStatus
 from app.models.rental_plan import RentalPlan
 from app.models.asset import Asset
 from app.models.allocations import Allocation
+from app.models.payment import Payment, PaymentType, PaymentStatus
+
+
+ACTIVE_BOOKING_STATUSES = {
+    BookingStatus.pending,
+    BookingStatus.booked,
+    BookingStatus.allocated,
+    BookingStatus.ready_for_pickup,
+    BookingStatus.picked_up,
+    BookingStatus.overdue,
+}
+
+
+async def _has_overlapping_booking(
+    db: AsyncSession,
+    asset_id: int,
+    pickup_date: date,
+    due_date: date,
+) -> bool:
+    result = await db.execute(
+        select(Booking).where(
+            Booking.requested_asset_id == asset_id,
+            Booking.status.in_(ACTIVE_BOOKING_STATUSES),
+            Booking.pickup_date <= due_date,
+            Booking.due_date >= pickup_date,
+        )
+    )
+    return result.scalar_one_or_none() is not None
 
 
 async def create_booking(db: AsyncSession, user, data):
@@ -34,6 +62,20 @@ async def create_booking(db: AsyncSession, user, data):
 
     # 4. Calculate dates
     due_date = data.pickup_date + timedelta(days=plan.duration_days)
+
+    # 4.1 Block overlapping bookings for the same requested asset.
+    if data.requested_asset_id is not None:
+        is_overlapping = await _has_overlapping_booking(
+            db,
+            data.requested_asset_id,
+            data.pickup_date,
+            due_date,
+        )
+        if is_overlapping:
+            raise HTTPException(
+                status_code=409,
+                detail="Selected dates are not available for this asset",
+            )
 
     # 5. Calculate money
     rent_amount = plan.daily_rate * plan.duration_days
@@ -158,7 +200,46 @@ async def request_return(db: AsyncSession, user, booking_id: int):
     if not allocation:
         raise HTTPException(status_code=400, detail="No allocated asset found for this booking")
 
+    # Return request is allowed only after rent payment has been completed.
+    rent_payment_result = await db.execute(
+        select(Payment).where(
+            Payment.booking_id == booking_id,
+            Payment.type == PaymentType.rent,
+            Payment.status == PaymentStatus.paid,
+        )
+    )
+    if rent_payment_result.scalar_one_or_none() is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Return request is allowed only after rent payment is completed",
+        )
+
     booking.status = BookingStatus.ready_for_pickup
     await db.commit()
     await db.refresh(booking, attribute_names=["rental_plan"])
     return booking
+
+
+async def get_blocked_date_ranges_for_asset(db: AsyncSession, asset_id: int):
+    asset = await db.get(Asset, asset_id)
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    result = await db.execute(
+        select(Booking)
+        .where(
+            Booking.requested_asset_id == asset_id,
+            Booking.status.in_(ACTIVE_BOOKING_STATUSES),
+        )
+        .order_by(Booking.pickup_date.asc())
+    )
+    bookings = result.scalars().all()
+
+    return [
+        {
+            "booking_id": booking.id,
+            "from_date": booking.pickup_date,
+            "to_date": booking.due_date,
+        }
+        for booking in bookings
+    ]

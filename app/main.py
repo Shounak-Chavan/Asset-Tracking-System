@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers_auth import router as auth_router
@@ -10,10 +11,18 @@ from app.api.routers_booking import router as booking_router
 from app.api.routers_allocation import router as allocation_router
 from app.api.routers_return import router as return_router
 from app.api.routers_payment import router as payment_router
+from app.db.seed import seed
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await seed()
+    yield
 
 app = FastAPI(
     title="Asset-Tracking-System",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan,
 )
 
 # CORS

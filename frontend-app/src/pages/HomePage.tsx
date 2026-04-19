@@ -7,15 +7,9 @@ import {
 import { useAuth } from '../auth-context'
 import { api } from '../api'
 import { useNavigate } from 'react-router-dom'
-import { getAssetImage } from '../imageStore'
 import type { Booking, Asset } from '../types'
 
-const fallbackImages = [
-  'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-]
+const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
 
 function getGreeting(): string {
   const hour = new Date().getHours()
@@ -306,8 +300,7 @@ export function HomePage() {
               </div>
             )
             : featuredAssets.map((asset, i) => {
-              const customImg = getAssetImage(asset.asset_code)
-              const img = customImg ?? fallbackImages[i % fallbackImages.length]
+              const img = asset.image_url && asset.image_url.trim() ? asset.image_url : fallbackImage
               return (
                 <motion.article
                   key={asset.id}

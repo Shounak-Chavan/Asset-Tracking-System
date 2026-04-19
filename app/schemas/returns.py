@@ -9,6 +9,7 @@ class ReturnCreate(BaseModel):
     returned_at: date
     damage_amount: Decimal = Field(default=Decimal('0'), ge=Decimal('0'))
     damage_notes: str | None = None
+    send_for_dry_cleaning: bool = False
 
 # RESPONSE SCHEMA
 

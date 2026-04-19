@@ -9,7 +9,6 @@ import {
 } from 'lucide-react'
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
-import { saveAssetImageForCodes } from '../../imageStore'
 
 const schema = z.object({
   name: z.string().min(2, 'Asset name must be at least 2 characters'),
@@ -54,18 +53,13 @@ export function AdminAssetsPage() {
   const createMutation = useMutation({
     mutationFn: async (payload: FormValues) => {
       if (!token) throw new Error('No auth token')
-      const created = await api.createAsset(token, {
+      return api.createAsset(token, {
         name: payload.name,
         description: payload.description,
+        image_url: imagePreview,
         category_id: payload.category_id,
         quantity: payload.quantity,
       })
-      // Save uploaded image for all created asset codes
-      if (imageFile) {
-        const codes = created.map((a) => a.asset_code)
-        await saveAssetImageForCodes(codes, imageFile)
-      }
-      return created
     },
     onSuccess: async (created) => {
       setNotice(`✓ Created ${created.length} asset(s) successfully`)

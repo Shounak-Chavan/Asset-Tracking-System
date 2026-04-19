@@ -48,15 +48,18 @@ export interface Asset {
   name: string
   asset_code: string
   description: string | null
+  image_url: string | null
   category_id: number
   status: string
   created_at: string
   is_active: boolean
+  is_in_dry_cleaning: boolean
 }
 
 export interface AssetCreatePayload {
   name: string
   description: string
+  image_url?: string | null
   category_id: number
   quantity: number
 }
@@ -119,6 +122,17 @@ export interface ReturnRecord {
   created_at: string
 }
 
+export interface BlockedDateRange {
+  booking_id: number
+  from_date: string
+  to_date: string
+}
+
+export interface BlockedDateRanges {
+  asset_id: number
+  blocked_ranges: BlockedDateRange[]
+}
+
 export interface UserUpdatePayload {
   full_name?: string
   phone?: string
@@ -162,10 +176,13 @@ export interface UserHistoryUser {
   full_name: string
   email: string
   role: Role
+  phone: string | null
 }
 
 export interface UserHistoryResponse {
   user: UserHistoryUser
+  aadhaar_number: string | null
+  pan_number: string | null
   summary: UserHistorySummary
   bookings: Booking[]
   payments: Payment[]

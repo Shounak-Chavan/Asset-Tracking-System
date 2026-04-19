@@ -117,13 +117,19 @@ async def get_user_history(
 
     active_bookings = sum(1 for booking in bookings if booking.status in active_statuses)
 
+    latest_aadhaar_number = next((booking.aadhaar_number for booking in bookings if booking.aadhaar_number), None)
+    latest_pan_number = next((booking.pan_number for booking in bookings if booking.pan_number), None)
+
     return {
         "user": {
             "id": user.id,
             "full_name": user.full_name,
             "email": user.email,
             "role": user.role,
+            "phone": user.phone,
         },
+        "aadhaar_number": latest_aadhaar_number,
+        "pan_number": latest_pan_number,
         "summary": {
             "total_bookings": len(bookings),
             "active_bookings": active_bookings,

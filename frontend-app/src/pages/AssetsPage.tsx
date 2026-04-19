@@ -6,23 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Filter, Package2, Tag, AlertCircle } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
-import { getAssetImage } from '../imageStore'
 import { AssetBookingModal } from '../components/AssetBookingModal'
 import type { Allocation, Asset, Booking, User } from '../types'
 
-const assetImages: Record<string, string> = {
-  default0: 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80',
-  default1: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
-  default2: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-  default3: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=600&q=80',
-  default4: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
-  default5: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=600&q=80',
-}
-const fallbackImage = assetImages['default0']
-
-function getAssetFallback(index: number): string {
-  return assetImages[`default${index % 6}`] ?? fallbackImage
-}
+const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
 
 function AssetCardSkeleton() {
   return (
@@ -40,24 +27,24 @@ function AssetCardSkeleton() {
 
 interface AssetCardProps {
   asset: Asset
-  imageIndex: number
   onBook: () => void
   showCode?: boolean
   allocatedUser?: User
   booking?: Booking
   categoryName?: string
-  onDeactivate?: () => void
-  deactivating?: boolean
+  onToggleActive?: () => void
+  togglingActive?: boolean
 }
 
-function AssetCard({ asset, imageIndex, onBook, showCode, allocatedUser, booking, categoryName, onDeactivate, deactivating }: AssetCardProps) {
-  const customImage = getAssetImage(asset.asset_code)
-  const img = customImage ?? getAssetFallback(imageIndex)
+function AssetCard({ asset, onBook, showCode, allocatedUser, booking, categoryName, onToggleActive, togglingActive }: AssetCardProps) {
+  const img = asset.image_url && asset.image_url.trim() ? asset.image_url : fallbackImage
 
   const isAvailable = asset.status === 'available'
   const isAllocated = asset.status === 'allocated'
 
   const statusBadge = () => {
+    if (!asset.is_active) return <span className="badge badge-red">Deactivated</span>
+    if (asset.is_in_dry_cleaning) return <span className="badge badge-amber">Dry Cleaning</span>
     if (isAvailable) return <span className="badge badge-green">Available</span>
     if (isAllocated) return <span className="badge badge-purple">Allocated</span>
     return <span className="badge badge-gray capitalize">{asset.status}</span>
@@ -121,14 +108,14 @@ function AssetCard({ asset, imageIndex, onBook, showCode, allocatedUser, booking
           </button>
         )}
 
-        {onDeactivate && (
+        {onToggleActive && (
           <button
-            className="btn-danger btn w-full btn-sm"
+            className={`${asset.is_active ? 'btn-danger' : 'btn-primary'} btn w-full btn-sm`}
             type="button"
-            onClick={onDeactivate}
-            disabled={deactivating}
+            onClick={onToggleActive}
+            disabled={togglingActive}
           >
-            {deactivating ? 'Updating...' : 'Deactivate'}
+            {togglingActive ? 'Updating...' : asset.is_active ? 'Deactivate' : 'Reactivate'}
           </button>
         )}
       </div>
@@ -200,10 +187,10 @@ export function AssetsPage() {
     enabled: Boolean(token) && !isUserMode,
   })
 
-  const deactivateMutation = useMutation({
-    mutationFn: async (assetId: number) => {
+  const activeMutation = useMutation({
+    mutationFn: async ({ assetId, is_active }: { assetId: number; is_active: boolean }) => {
       if (!token) throw new Error('Missing token')
-      return api.deleteAsset(token, assetId)
+      return api.updateAsset(token, assetId, { is_active })
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['assets'] })
@@ -406,11 +393,10 @@ export function AssetsPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               <AnimatePresence>
-                {displayAssets.map((asset, i) => (
+                {displayAssets.map((asset) => (
                   <AssetCard
                     key={asset.id}
                     asset={asset}
-                    imageIndex={i}
                     onBook={() => setSelectedAssetForBooking(asset)}
                     categoryName={categoryNameById[asset.category_id]}
                   />
@@ -548,7 +534,7 @@ export function AssetsPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                      {adminDisplayedAssets.map((asset, i) => {
+                      {adminDisplayedAssets.map((asset) => {
                         const allocation = latestAllocationByAssetId.get(asset.id)
                         const booking = allocation ? bookingById.get(allocation.booking_id) : undefined
                         const allocatedUser = booking ? userById.get(booking.user_id) : undefined
@@ -558,22 +544,22 @@ export function AssetsPage() {
                           <AssetCard
                             key={asset.id}
                             asset={asset}
-                            imageIndex={i}
                             onBook={() => {}}
                             showCode
                             allocatedUser={isAllocated ? allocatedUser : undefined}
                             booking={isAllocated ? booking : undefined}
                             categoryName={categoryNameById[asset.category_id]}
-                            onDeactivate={
+                            onToggleActive={
                               !isAllocated
                                 ? () => {
-                                    if (window.confirm(`Deactivate ${asset.name} (${asset.asset_code})?`)) {
-                                      deactivateMutation.mutate(asset.id)
+                                    const action = asset.is_active ? 'Deactivate' : 'Reactivate'
+                                    if (window.confirm(`${action} ${asset.name} (${asset.asset_code})?`)) {
+                                      activeMutation.mutate({ assetId: asset.id, is_active: !asset.is_active })
                                     }
                                   }
                                 : undefined
                             }
-                            deactivating={deactivateMutation.isPending}
+                            togglingActive={activeMutation.isPending}
                           />
                         )
                       })}
@@ -584,10 +570,10 @@ export function AssetsPage() {
             )
           )}
 
-          {deactivateMutation.error && (
+          {activeMutation.error && (
             <p className="error-text flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
-              {deactivateMutation.error.message}
+              {activeMutation.error.message}
             </p>
           )}
         </>

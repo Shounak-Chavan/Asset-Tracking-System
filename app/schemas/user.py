@@ -33,6 +33,7 @@ class UserHistoryUser(BaseModel):
     full_name: str
     email: EmailStr
     role: UserRole
+    phone: str | None = None
 
 
 class UserHistorySummary(BaseModel):
@@ -85,6 +86,8 @@ class UserPaymentHistoryItem(BaseModel):
 
 class UserHistoryResponse(BaseModel):
     user: UserHistoryUser
+    aadhaar_number: str | None = None
+    pan_number: str | None = None
     summary: UserHistorySummary
     bookings: list[UserBookingHistoryItem]
     payments: list[UserPaymentHistoryItem]
