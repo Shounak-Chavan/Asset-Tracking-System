@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from app.models.allocations import Allocation
 from app.models.bookings import Booking,BookingStatus
-from app.models.asset import Asset, AssetStatus
+from app.models.asset import Asset
 
 async def allocate_asset(
         db: AsyncSession,
@@ -36,9 +36,9 @@ async def allocate_asset(
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     
-    # 5. Validate asset status
-    if asset.status != AssetStatus.available:
-        raise HTTPException(status_code=400, detail="Asset is not available for allocation")
+    # 5. Validate asset state
+    if not asset.is_active:
+        raise HTTPException(status_code=400, detail="Asset is inactive and cannot be allocated")
     if asset.is_in_dry_cleaning:
         raise HTTPException(status_code=400, detail="Asset is in dry cleaning and cannot be allocated")
     
@@ -50,8 +50,7 @@ async def allocate_asset(
     )
     db.add(allocation)
 
-    # 7. Update asset status to allocated
-    asset.status = AssetStatus.allocated
+    # 7. Update booking status.
     booking.status = BookingStatus.allocated
 
     await db.commit()

@@ -70,10 +70,9 @@ async def get_all_assets(
 ):
     query = select(Asset).join(Category, Asset.category_id == Category.id)
 
-    # Admin sees all, user sees only active + available
+    # Admin sees all; user visibility is not globally locked by booking/allocation status.
     if current_user.role != UserRole.admin:
         query = query.where(
-            Asset.status == AssetStatus.available,
             Asset.is_active == True,
             Asset.is_in_dry_cleaning == False
         )
