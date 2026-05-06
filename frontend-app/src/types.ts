@@ -184,6 +184,20 @@ export interface UserHistoryResponse {
   aadhaar_number: string | null
   pan_number: string | null
   summary: UserHistorySummary
-  bookings: Booking[]
+  bookings: UserBookingHistoryItem[]
   payments: Payment[]
+}
+
+export interface UserBookingHistoryItem {
+  id: number
+  rental_plan_id: number
+  rental_plan?: { name: string } | null
+  category_id: number | null
+  requested_asset_id: number | null
+  status: BookingStatus
+  pickup_date: string
+  due_date: string
+  deposit_amount: number
+  rent_amount: number
+  created_at: string
 }

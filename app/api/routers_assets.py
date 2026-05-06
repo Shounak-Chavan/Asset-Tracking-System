@@ -4,7 +4,7 @@ from sqlalchemy.future import select
 from sqlalchemy import func
 import re
 from app.utils.asset_utils import generate_asset_code
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_user_optional
 from app.core.rbac import require_roles
 from app.db.session import get_db
 from app.models.asset import Asset, AssetStatus
@@ -59,19 +59,20 @@ async def create_asset(
     return created_assets
 
 
-# GET /assets/ - filtered list
+# GET /assets/ - filtered list (PUBLIC - no auth required)
 @router.get("/", response_model=list[AssetResponse])
 async def get_all_assets(
     name: str | None = None,
     category_name: str | None = None,
     status: AssetStatus | None = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
     query = select(Asset).join(Category, Asset.category_id == Category.id)
 
-    # Admin sees all; user visibility is not globally locked by booking/allocation status.
-    if current_user.role != UserRole.admin:
+    # Public users see only active, available assets
+    # Admin (if logged in) sees all
+    if current_user is None or current_user.role != UserRole.admin:
         query = query.where(
             Asset.is_active == True,
             Asset.is_in_dry_cleaning == False
@@ -84,7 +85,7 @@ async def get_all_assets(
         query = query.where(Category.name.ilike(f"%{category_name}%"))
 
     if status is not None:
-        if current_user.role == UserRole.admin:
+        if current_user and current_user.role == UserRole.admin:
             query = query.where(Asset.status == status)
         # users can't filter by status — they always see available only
 
@@ -92,17 +93,17 @@ async def get_all_assets(
     return result.scalars().all()
 
 
-# GET /assets/{asset_id} - get single asset
+# GET /assets/{asset_id} - get single asset (PUBLIC)
 @router.get("/{asset_id}", response_model=AssetResponse)
 async def get_asset(
     asset_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
     query = select(Asset).where(Asset.id == asset_id)
 
     # users can only see active assets
-    if current_user.role != UserRole.admin:
+    if current_user is None or current_user.role != UserRole.admin:
         query = query.where(Asset.is_active == True)
 
     result = await db.execute(query)
@@ -151,19 +152,36 @@ async def update_asset(
     return asset
 
 
-# DELETE /assets/{asset_id} - admin soft deletes
+# DELETE /assets/{asset_id} - admin hard deletes
 @router.delete("/{asset_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_asset(
     asset_id: int,
     current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
+    from app.models.allocations import Allocation
+    from app.models.bookings import Booking
+
     result = await db.execute(select(Asset).where(Asset.id == asset_id))
     asset = result.scalars().first()
 
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
 
-    asset.is_active = False
-    db.add(asset)
+    # Null out bookings that reference this asset as requested_asset
+    bookings_result = await db.execute(
+        select(Booking).where(Booking.requested_asset_id == asset_id)
+    )
+    for booking in bookings_result.scalars().all():
+        booking.requested_asset_id = None
+
+    # Delete allocations that reference this asset
+    allocs_result = await db.execute(
+        select(Allocation).where(Allocation.asset_id == asset_id)
+    )
+    for alloc in allocs_result.scalars().all():
+        await db.delete(alloc)
+
+    await db.flush()
+    await db.delete(asset)
     await db.commit()

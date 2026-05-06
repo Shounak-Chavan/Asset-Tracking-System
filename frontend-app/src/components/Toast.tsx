@@ -1,4 +1,4 @@
-import { createContext, useState, useCallback, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CheckCircle, XCircle, Info, X } from 'lucide-react'
 
@@ -16,16 +16,22 @@ interface ToastContextValue {
 
 const ToastContext = createContext<ToastContextValue | undefined>(undefined)
 
-const icons: Record<ToastType, ReactNode> = {
-  success: <CheckCircle className="w-4 h-4 text-emerald-400" />,
-  error: <XCircle className="w-4 h-4 text-rose-400" />,
-  info: <Info className="w-4 h-4 text-blue-400" />,
+export function useToast(): ToastContextValue {
+  const ctx = useContext(ToastContext)
+  if (!ctx) throw new Error('useToast must be used inside ToastProvider')
+  return ctx
 }
 
-const toastClass: Record<ToastType, string> = {
-  success: 'toast-success',
-  error: 'toast-error',
-  info: 'toast-info',
+const icons: Record<ToastType, ReactNode> = {
+  success: <CheckCircle className="w-4 h-4 text-green-600" />,
+  error: <XCircle className="w-4 h-4 text-red-500" />,
+  info: <Info className="w-4 h-4 text-blue-500" />,
+}
+
+const toastStyles: Record<ToastType, string> = {
+  success: 'flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-lg max-w-sm bg-green-50 border-green-200 text-green-800',
+  error: 'flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-lg max-w-sm bg-red-50 border-red-200 text-red-800',
+  info: 'flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium shadow-lg max-w-sm bg-blue-50 border-blue-200 text-blue-800',
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
@@ -51,7 +57,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 60, scale: 0.95 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className={`toast ${toastClass[t.type]}`}
+              className={toastStyles[t.type]}
             >
               {icons[t.type]}
               <span>{t.message}</span>

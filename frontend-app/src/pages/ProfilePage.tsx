@@ -1,322 +1,472 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { AnimatePresence, motion } from 'framer-motion'
-import { z } from 'zod'
-import { User, Mail, Phone, Lock, Shield, CheckCircle2, AlertCircle } from 'lucide-react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import {
+  User, Lock, Eye, EyeOff, Save, Shield,
+  Calendar, Camera,
+} from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
+import { Alert } from '../components/ui/Alert'
 
-const profileSchema = z.object({
-  full_name: z.string().min(2),
-  phone: z.string().optional(),
-})
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getInitials(name: string | undefined) {
+  if (!name) return 'U'
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+}
 
-const passwordSchema = z
-  .object({
-    current_password: z.string().min(6),
-    new_password: z.string().min(6),
-    confirm_password: z.string().min(6),
-  })
-  .refine((data) => data.new_password === data.confirm_password, {
-    path: ['confirm_password'],
-    message: 'Passwords do not match',
-  })
+function getPasswordStrength(pw: string): { score: number; label: string; color: string } {
+  if (!pw) return { score: 0, label: '', color: '#e5e7eb' }
+  let score = 0
+  if (pw.length >= 8) score++
+  if (/[A-Z]/.test(pw)) score++
+  if (/[0-9]/.test(pw)) score++
+  if (/[^A-Za-z0-9]/.test(pw)) score++
+  const map = [
+    { label: '', color: '#e5e7eb' },
+    { label: 'Weak', color: '#ef4444' },
+    { label: 'Fair', color: '#f59e0b' },
+    { label: 'Strong', color: '#22c55e' },
+    { label: 'Very strong', color: '#16a34a' },
+  ]
+  return { score, ...map[score] }
+}
 
-type ProfileForm = z.infer<typeof profileSchema>
-type PasswordForm = z.infer<typeof passwordSchema>
+// ── Shared input style helpers ────────────────────────────────────────────────
+const inputBase: React.CSSProperties = {
+  width: '100%', boxSizing: 'border-box',
+  padding: '12px 16px', fontSize: '15px', color: '#111827',
+  border: '1.5px solid #e5e7eb', borderRadius: '10px',
+  outline: 'none', background: '#fff',
+  transition: 'border-color 0.15s, box-shadow 0.15s',
+}
+function focusInput(e: React.FocusEvent<HTMLInputElement>) {
+  e.currentTarget.style.borderColor = '#3b82f6'
+  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)'
+}
+function blurInput(e: React.FocusEvent<HTMLInputElement>) {
+  e.currentTarget.style.borderColor = '#e5e7eb'
+  e.currentTarget.style.boxShadow = 'none'
+}
 
+function FieldLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <label style={{
+      display: 'block', marginBottom: '6px',
+      fontSize: '12px', fontWeight: 600, color: '#6b7280',
+      textTransform: 'uppercase', letterSpacing: '0.05em',
+    }}>
+      {children}
+    </label>
+  )
+}
+
+// ── Password field with show/hide toggle ──────────────────────────────────────
+function PasswordInput({
+  value, onChange, placeholder, disabled, borderColor,
+}: {
+  value: string
+  onChange: (v: string) => void
+  placeholder?: string
+  disabled?: boolean
+  borderColor?: string
+}) {
+  const [show, setShow] = useState(false)
+  return (
+    <div style={{ position: 'relative' }}>
+      <input
+        type={show ? 'text' : 'password'}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder ?? '••••••••'}
+        disabled={disabled}
+        style={{ ...inputBase, paddingRight: '44px', borderColor: borderColor ?? '#e5e7eb' }}
+        onFocus={focusInput}
+        onBlur={blurInput}
+      />
+      <button
+        type="button"
+        onClick={() => setShow(s => !s)}
+        style={{
+          position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+          background: 'none', border: 'none', cursor: 'pointer',
+          color: '#9ca3af', display: 'flex', alignItems: 'center',
+        }}
+      >
+        {show ? <EyeOff size={16} /> : <Eye size={16} />}
+      </button>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export function ProfilePage() {
-  const { token, user } = useAuth()
-  const queryClient = useQueryClient()
-  const [message, setMessage] = useState('')
-  const [isPasswordOpen, setIsPasswordOpen] = useState(false)
+  const { token, user, refreshToken } = useAuth()
 
-  const profileForm = useForm<ProfileForm>({
-    resolver: zodResolver(profileSchema),
-    values: {
-      full_name: user?.full_name ?? '',
-      phone: user?.phone ?? '',
-    },
+  // Profile form
+  const [fullName, setFullName] = useState(user?.full_name ?? '')
+  const [phone, setPhone] = useState(user?.phone ?? '')
+  const [profileMsg, setProfileMsg] = useState('')
+  const [profileError, setProfileError] = useState('')
+
+  // Password form
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [pwMsg, setPwMsg] = useState('')
+  const [pwError, setPwError] = useState('')
+
+  // Bookings for sidebar stats
+  const bookingsQuery = useQuery({
+    queryKey: ['bookings', token],
+    queryFn: () => api.listBookings(token!),
+    enabled: Boolean(token),
   })
+  const bookings = bookingsQuery.data ?? []
+  const totalBookings = bookings.length
+  const completedBookings = bookings.filter(b => b.status === 'returned').length
+  const activeBookings = bookings.filter(b => ['picked_up', 'overdue'].includes(b.status)).length
 
-  const passwordForm = useForm<PasswordForm>({
-    resolver: zodResolver(passwordSchema),
-  })
-
-  const updateProfileMutation = useMutation({
-    mutationFn: async (payload: ProfileForm) => {
-      if (!token) throw new Error('Missing token')
-      return api.updateMe(token, payload)
-    },
+  const profileMutation = useMutation({
+    mutationFn: () => api.updateMe(token!, { full_name: fullName, phone: phone || undefined }),
     onSuccess: async () => {
-      setMessage('Profile updated successfully')
-      await queryClient.invalidateQueries({ queryKey: ['me'] })
+      await refreshToken()
+      setProfileMsg('Profile updated!')
+      setProfileError('')
+      setTimeout(() => setProfileMsg(''), 3000)
     },
+    onError: (err: Error) => setProfileError(err.message),
   })
 
-  const changePasswordMutation = useMutation({
-    mutationFn: async (payload: PasswordForm) => {
-      if (!token) throw new Error('Missing token')
-      return api.changePassword(token, {
-        current_password: payload.current_password,
-        new_password: payload.new_password,
-      })
-    },
+  const passwordMutation = useMutation({
+    mutationFn: () => api.changePassword(token!, { current_password: currentPassword, new_password: newPassword }),
     onSuccess: () => {
-      setMessage('Password changed successfully')
-      setIsPasswordOpen(false)
-      passwordForm.reset()
+      setPwMsg('Password changed successfully!')
+      setPwError('')
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setTimeout(() => setPwMsg(''), 3000)
     },
+    onError: (err: Error) => setPwError(err.message),
   })
 
-  const initials = (user?.full_name ?? 'U')
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase()
+  const passwordsMatch = newPassword === confirmPassword
+  const passwordError = Boolean(newPassword && confirmPassword && !passwordsMatch)
+  const pwFormValid = Boolean(currentPassword && newPassword && confirmPassword && passwordsMatch)
+  const pwStrength = getPasswordStrength(newPassword)
+
+  const pwBtnDisabled = passwordMutation.isPending || !pwFormValid
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Page Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">
-            {user?.role === 'admin' ? 'Admin Profile' : 'My Profile'}
-          </h1>
-          <p className="page-subtitle">Manage your account details and security settings</p>
-        </div>
-      </div>
+    <>
+      {/* Responsive style injected once */}
+      <style>{`
+        .profile-grid { display: grid; grid-template-columns: 280px 1fr; gap: 24px; align-items: start; }
+        .profile-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 768px) {
+          .profile-grid { grid-template-columns: 1fr !important; }
+          .profile-info-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
-      {/* Profile Banner */}
-      <div className="card">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
-          {/* Avatar */}
-          <div
-            className="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-black text-white flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)' }}
-          >
-            {initials}
+      <div style={{ background: '#f1f5f9', minHeight: 'calc(100vh - 4rem)', padding: '32px 24px' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+
+          {/* ── Page header ── */}
+          <div style={{ marginBottom: '28px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#111827', margin: 0 }}>My Profile</h1>
+            <p style={{ fontSize: '14px', color: '#6b7280', margin: '4px 0 0 0' }}>Manage your account details and security</p>
           </div>
 
-          {/* User Info */}
-          <div className="flex flex-col gap-1 text-center sm:text-left flex-1">
-            <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#ffffff' }}>
-              {user?.full_name ?? 'User'}
-            </h2>
-            <div className="flex items-center gap-1.5 justify-center sm:justify-start" style={{ color: '#71717a', fontSize: '0.875rem' }}>
-              <Mail style={{ width: '0.875rem', height: '0.875rem' }} />
-              {user?.email ?? '—'}
-            </div>
-            {user?.phone && (
-              <div className="flex items-center gap-1.5 justify-center sm:justify-start" style={{ color: '#71717a', fontSize: '0.875rem' }}>
-                <Phone style={{ width: '0.875rem', height: '0.875rem' }} />
-                {user.phone}
-              </div>
-            )}
-            <div className="mt-1 flex justify-center sm:justify-start">
-              <span className={`badge ${user?.role === 'admin' ? 'badge-purple' : 'badge-blue'}`}>
-                {user?.role === 'admin' ? <Shield style={{ width: '0.75rem', height: '0.75rem' }} /> : <User style={{ width: '0.75rem', height: '0.75rem' }} />}
-                {user?.role === 'admin' ? 'Administrator' : 'User'}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+          <div className="profile-grid">
 
-      {/* Success message */}
-      <AnimatePresence>
-        {message && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="flex items-center gap-2.5 rounded-xl px-4 py-3"
-            style={{ background: 'rgb(16 185 129 / 0.08)', border: '1px solid rgb(16 185 129 / 0.2)' }}
-          >
-            <CheckCircle2 style={{ width: '1rem', height: '1rem', color: '#34d399', flexShrink: 0 }} />
-            <span style={{ fontSize: '0.875rem', color: '#6ee7b7' }}>{message}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Grid of cards */}
-      <div className="flex flex-col gap-5">
-        {/* Profile Information */}
-        <div className="card">
-          <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7', marginBottom: '1.25rem' }}>
-            Profile Information
-          </h2>
-          <form
-            className="flex flex-col gap-4"
-            onSubmit={profileForm.handleSubmit((values) => {
-              setMessage('')
-              updateProfileMutation.mutate(values)
-            })}
-          >
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="Your full name"
-                  {...profileForm.register('full_name')}
-                />
-                {profileForm.formState.errors.full_name && (
-                  <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                    <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
-                    {profileForm.formState.errors.full_name.message}
-                  </p>
-                )}
+            {/* ══ LEFT SIDEBAR ══ */}
+            <div style={{
+              background: '#fff', borderRadius: '16px', padding: '32px 24px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.07)', textAlign: 'center',
+            }}>
+              {/* Avatar */}
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div style={{
+                  width: 96, height: 96, borderRadius: '50%',
+                  background: '#2563eb', color: '#fff',
+                  fontSize: '36px', fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '4px solid #fff',
+                  boxShadow: '0 0 0 3px #dbeafe',
+                  margin: '0 auto',
+                }}>
+                  {getInitials(user?.full_name)}
+                </div>
+                {/* Camera overlay */}
+                <div style={{
+                  position: 'absolute', bottom: 2, right: 2,
+                  width: 28, height: 28, borderRadius: '50%',
+                  background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.15)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer',
+                }}>
+                  <Camera size={13} color="#2563eb" />
+                </div>
               </div>
-              <div className="form-group">
-                <label className="form-label">Phone Number</label>
-                <input
-                  className="form-input"
-                  type="text"
-                  placeholder="+91 98765 43210"
-                  {...profileForm.register('phone')}
-                />
-                {profileForm.formState.errors.phone && (
-                  <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                    <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
-                    {profileForm.formState.errors.phone.message}
-                  </p>
-                )}
-              </div>
-            </div>
-            <div className="flex items-center gap-3 mt-1">
-              <button className="btn btn-primary" type="submit" disabled={updateProfileMutation.isPending}>
-                {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
-              </button>
-              {updateProfileMutation.error && (
-                <p className="error-text text-xs">{updateProfileMutation.error.message}</p>
-              )}
-            </div>
-          </form>
-        </div>
 
-        {/* Password & Security */}
-        <div className="card">
-          <div className="flex items-center justify-between gap-4 mb-5">
-            <div>
-              <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7' }}>
-                Password & Security
-              </h2>
-              <p style={{ fontSize: '0.8125rem', color: '#71717a', marginTop: '0.25rem' }}>
-                Keep your account secure with a strong password
+              {/* Name + email + role */}
+              <p style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: '16px 0 4px 0' }}>
+                {user?.full_name || 'User'}
               </p>
-            </div>
-            {!isPasswordOpen && (
-              <button
-                className="btn btn-secondary"
-                type="button"
-                onClick={() => {
-                  setMessage('')
-                  setIsPasswordOpen(true)
-                }}
-              >
-                <Lock style={{ width: '0.875rem', height: '0.875rem' }} />
-                Change Password
-              </button>
-            )}
-          </div>
+              <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>{user?.email}</p>
+              <span style={{
+                display: 'inline-block', marginTop: '10px',
+                background: '#eff6ff', color: '#2563eb',
+                borderRadius: '20px', padding: '4px 14px',
+                fontSize: '12px', fontWeight: 500,
+              }}>
+                {user?.role === 'admin' ? 'Admin' : 'Member'}
+              </span>
 
-          <AnimatePresence>
-            {isPasswordOpen && (
-              <motion.form
-                className="flex flex-col gap-4"
-                onSubmit={passwordForm.handleSubmit((values) => {
-                  setMessage('')
-                  changePasswordMutation.mutate(values)
-                })}
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.22 }}
-                style={{ overflow: 'hidden' }}
-              >
-                <div className="form-group">
-                  <label className="form-label">Current Password</label>
-                  <input
-                    className="form-input"
-                    type="password"
-                    placeholder="••••••••"
-                    {...passwordForm.register('current_password')}
-                  />
-                  {passwordForm.formState.errors.current_password && (
-                    <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                      <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
-                      {passwordForm.formState.errors.current_password.message}
-                    </p>
-                  )}
+              {/* Stats row */}
+              <div style={{
+                display: 'flex', borderTop: '1px solid #f1f5f9',
+                marginTop: '24px', paddingTop: '20px',
+              }}>
+                {[
+                  { value: totalBookings, label: 'Bookings' },
+                  { value: completedBookings, label: 'Completed' },
+                  { value: activeBookings, label: 'Active' },
+                ].map((stat, i, arr) => (
+                  <div key={stat.label} style={{
+                    flex: 1,
+                    borderRight: i < arr.length - 1 ? '1px solid #f1f5f9' : 'none',
+                    padding: '0 8px',
+                  }}>
+                    <p style={{ fontSize: '22px', fontWeight: 700, color: '#111827', margin: 0 }}>{stat.value}</p>
+                    <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Member since */}
+              <div style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: '6px', marginTop: '20px',
+                fontSize: '12px', color: '#9ca3af',
+              }}>
+                <Calendar size={13} />
+                Member since May 2026
+              </div>
+            </div>
+
+            {/* ══ RIGHT COLUMN ══ */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+              {/* ── Personal Information Card ── */}
+              <div style={{
+                background: '#fff', borderRadius: '16px', padding: '28px 32px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              }}>
+                {/* Card header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: 36, height: 36, borderRadius: '50%',
+                      background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <User size={16} color="#2563eb" />
+                    </div>
+                    <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                      Personal information
+                    </h2>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-group">
-                    <label className="form-label">New Password</label>
+
+                {profileMsg && <Alert variant="success" message={profileMsg} onDismiss={() => setProfileMsg('')} />}
+                {profileError && <Alert variant="error" message={profileError} onDismiss={() => setProfileError('')} />}
+
+                {/* 2-col grid for name + email */}
+                <div className="profile-info-grid" style={{ marginBottom: '16px' }}>
+                  {/* Full Name */}
+                  <div>
+                    <FieldLabel>Full Name</FieldLabel>
                     <input
-                      className="form-input"
-                      type="password"
-                      placeholder="Min. 6 characters"
-                      {...passwordForm.register('new_password')}
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={profileMutation.isPending}
+                      style={inputBase}
+                      onFocus={focusInput}
+                      onBlur={blurInput}
                     />
-                    {passwordForm.formState.errors.new_password && (
-                      <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                        <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
-                        {passwordForm.formState.errors.new_password.message}
+                  </div>
+
+                  {/* Email — readonly */}
+                  <div>
+                    <FieldLabel>Email</FieldLabel>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="email"
+                        value={user?.email ?? ''}
+                        disabled
+                        readOnly
+                        style={{ ...inputBase, background: '#f9fafb', color: '#9ca3af', paddingRight: '40px' }}
+                      />
+                      <Lock size={14} color="#d1d5db" style={{ position: 'absolute', right: '14px', top: '50%', transform: 'translateY(-50%)' }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Phone — full width with +91 prefix */}
+                <div style={{ marginBottom: '20px' }}>
+                  <FieldLabel>Phone</FieldLabel>
+                  <div style={{ display: 'flex', border: '1.5px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
+                    <div style={{
+                      padding: '12px 14px', background: '#f9fafb',
+                      borderRight: '1px solid #e5e7eb',
+                      fontSize: '15px', color: '#6b7280', fontWeight: 500,
+                      whiteSpace: 'nowrap', userSelect: 'none',
+                    }}>
+                      +91
+                    </div>
+                    <input
+                      type="tel"
+                      placeholder="98765 43210"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      disabled={profileMutation.isPending}
+                      style={{
+                        flex: 1, padding: '12px 16px', fontSize: '15px',
+                        color: '#111827', border: 'none', outline: 'none',
+                        background: '#fff',
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Save button */}
+                <button
+                  onClick={() => profileMutation.mutate()}
+                  disabled={profileMutation.isPending}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                    marginLeft: 'auto',
+                    padding: '12px 28px', borderRadius: '10px',
+                    background: '#2563eb', color: '#fff', border: 'none',
+                    fontSize: '14px', fontWeight: 500,
+                    cursor: profileMutation.isPending ? 'not-allowed' : 'pointer',
+                    opacity: profileMutation.isPending ? 0.7 : 1,
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => { if (!profileMutation.isPending) { e.currentTarget.style.background = '#1d4ed8'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(37,99,235,0.3)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' }}
+                >
+                  <Save size={16} />
+                  {profileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+
+              {/* ── Change Password Card ── */}
+              <div style={{
+                background: '#fff', borderRadius: '16px', padding: '28px 32px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+              }}>
+                {/* Card header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: '50%',
+                    background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <Lock size={16} color="#d97706" />
+                  </div>
+                  <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                    Change password
+                  </h2>
+                </div>
+
+                {pwMsg && <Alert variant="success" message={pwMsg} onDismiss={() => setPwMsg('')} />}
+                {pwError && <Alert variant="error" message={pwError} onDismiss={() => setPwError('')} />}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {/* Current password */}
+                  <div>
+                    <FieldLabel>Current Password</FieldLabel>
+                    <PasswordInput
+                      value={currentPassword}
+                      onChange={setCurrentPassword}
+                      disabled={passwordMutation.isPending}
+                    />
+                  </div>
+
+                  {/* New password + strength */}
+                  <div>
+                    <FieldLabel>New Password</FieldLabel>
+                    <PasswordInput
+                      value={newPassword}
+                      onChange={setNewPassword}
+                      placeholder="Min. 8 characters"
+                      disabled={passwordMutation.isPending}
+                    />
+                    {newPassword && (
+                      <div style={{ marginTop: '8px' }}>
+                        {/* Strength bar */}
+                        <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
+                          {[1, 2, 3, 4].map((seg) => (
+                            <div key={seg} style={{
+                              flex: 1, height: '4px', borderRadius: '4px',
+                              background: seg <= pwStrength.score ? pwStrength.color : '#e5e7eb',
+                              transition: 'background 0.2s',
+                            }} />
+                          ))}
+                        </div>
+                        <p style={{ fontSize: '12px', color: pwStrength.color, margin: 0, fontWeight: 500 }}>
+                          {pwStrength.label}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Confirm password */}
+                  <div>
+                    <FieldLabel>Confirm New Password</FieldLabel>
+                    <PasswordInput
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      placeholder="Re-enter new password"
+                      disabled={passwordMutation.isPending}
+                      borderColor={passwordError ? '#ef4444' : undefined}
+                    />
+                    {passwordError && (
+                      <p style={{ fontSize: '12px', color: '#ef4444', margin: '4px 0 0 0' }}>
+                        Passwords do not match
                       </p>
                     )}
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Confirm Password</label>
-                    <input
-                      className="form-input"
-                      type="password"
-                      placeholder="Repeat new password"
-                      {...passwordForm.register('confirm_password')}
-                    />
-                    {passwordForm.formState.errors.confirm_password && (
-                      <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                        <AlertCircle style={{ width: '0.75rem', height: '0.75rem' }} />
-                        {passwordForm.formState.errors.confirm_password.message}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap mt-1">
-                  <button className="btn btn-primary" type="submit" disabled={changePasswordMutation.isPending}>
-                    {changePasswordMutation.isPending ? 'Updating...' : 'Update Password'}
-                  </button>
+
+                  {/* Update button */}
                   <button
-                    className="btn btn-ghost"
-                    type="button"
-                    onClick={() => {
-                      setIsPasswordOpen(false)
-                      passwordForm.reset()
+                    onClick={() => passwordMutation.mutate()}
+                    disabled={pwBtnDisabled}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      marginLeft: 'auto',
+                      padding: '12px 28px', borderRadius: '10px',
+                      background: pwBtnDisabled ? '#e5e7eb' : '#7c3aed',
+                      color: pwBtnDisabled ? '#9ca3af' : '#fff',
+                      border: 'none', fontSize: '14px', fontWeight: 500,
+                      cursor: pwBtnDisabled ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
                     }}
-                    disabled={changePasswordMutation.isPending}
+                    onMouseEnter={(e) => { if (!pwBtnDisabled) { e.currentTarget.style.background = '#6d28d9'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.3)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+                    onMouseLeave={(e) => { if (!pwBtnDisabled) { e.currentTarget.style.background = '#7c3aed'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' } }}
                   >
-                    Cancel
+                    <Shield size={16} />
+                    {passwordMutation.isPending ? 'Updating...' : 'Update Password'}
                   </button>
-                  {changePasswordMutation.error && (
-                    <p className="error-text text-xs">{changePasswordMutation.error.message}</p>
-                  )}
                 </div>
-              </motion.form>
-            )}
-          </AnimatePresence>
+              </div>
 
-          {!isPasswordOpen && (
-            <div className="flex items-center gap-2" style={{ color: '#52525b', fontSize: '0.875rem' }}>
-              <Lock style={{ width: '0.875rem', height: '0.875rem' }} />
-              Password last updated: —
-            </div>
-          )}
+            </div>{/* end right column */}
+          </div>{/* end grid */}
         </div>
       </div>
-    </div>
+    </>
   )
 }

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from sqlalchemy.orm import selectinload
 
 from app.core.dependencies import get_current_user
 from app.db.session import get_db
@@ -74,6 +75,7 @@ async def get_user_history(
     bookings_result = await db.execute(
         select(Booking)
         .where(Booking.user_id == user_id)
+        .options(selectinload(Booking.rental_plan))
         .order_by(Booking.created_at.desc())
     )
     bookings = bookings_result.scalars().all()

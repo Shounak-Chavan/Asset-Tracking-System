@@ -1,420 +1,368 @@
-import { useQuery } from '@tanstack/react-query'
-import { motion } from 'framer-motion'
-import {
-  Package2, CalendarCheck2, CheckCircle2, TrendingUp, Clock,
-  ArrowRight, Zap, Shield, BarChart3, IndianRupee, Sparkles,
-} from 'lucide-react'
-import { useAuth } from '../auth-context'
-import { api } from '../api'
+import { useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { Booking, Asset } from '../types'
+import { Search, Calendar, PackageCheck, Store, Clock, ShieldCheck, Settings, Package, BookOpen, Shield } from 'lucide-react'
+import { useAuth } from '../auth-context'
 
-const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
-
-function getGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 17) return 'Good afternoon'
-  return 'Good evening'
+// ── Scroll-fade hook ──────────────────────────────────────────────────────────
+function useFadeIn() {
+  const ref = useRef<HTMLElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.style.opacity = '1'
+          el.style.transform = 'translateY(0)'
+          observer.disconnect()
+        }
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+  return ref
 }
 
-interface StatCardProps {
-  label: string
-  value: number | string
-  icon: React.ReactNode
-  iconBg: string
-  change?: string
-  positive?: boolean
-  delay?: number
-}
-
-function StatCard({ label, value, icon, iconBg, change, positive, delay = 0 }: StatCardProps) {
-  return (
-    <motion.div
-      className="stat-card"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay }}
-    >
-      <div className={`stat-icon ${iconBg}`}>{icon}</div>
-      <div>
-        <p className="stat-label">{label}</p>
-        <p className="stat-value">{value}</p>
-        {change && (
-          <p className={`stat-change ${positive ? 'positive' : 'negative'}`}>
-            <TrendingUp className="inline w-3 h-3 mr-1" />
-            {change}
-          </p>
-        )}
-      </div>
-    </motion.div>
-  )
-}
-
-function SkeletonStatCard() {
-  return (
-    <div className="stat-card">
-      <div className="skeleton w-11 h-11 rounded-xl" />
-      <div className="flex-1">
-        <div className="skeleton h-3 w-20 mb-2 rounded" />
-        <div className="skeleton h-7 w-12 rounded" />
-      </div>
-    </div>
-  )
-}
-
-function SkeletonAssetCard() {
-  return (
-    <div className="asset-card">
-      <div className="skeleton w-full" style={{ height: '11rem' }} />
-      <div className="p-4 flex flex-col gap-2">
-        <div className="skeleton h-4 w-3/4 rounded" />
-        <div className="skeleton h-3 w-1/2 rounded" />
-        <div className="skeleton h-8 w-full rounded-xl mt-2" />
-      </div>
-    </div>
-  )
-}
-
-const statusConfig: Record<string, { label: string; cls: string }> = {
-  pending:   { label: 'Pending',   cls: 'badge badge-yellow' },
-  booked:    { label: 'Booked',    cls: 'badge badge-blue' },
-  allocated: { label: 'Allocated', cls: 'badge badge-purple' },
-  picked_up: { label: 'Picked Up', cls: 'badge badge-green' },
-  returned:  { label: 'Returned',  cls: 'badge badge-gray' },
-  cancelled: { label: 'Cancelled', cls: 'badge badge-red' },
-  overdue:   { label: 'Overdue',   cls: 'badge badge-red' },
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: '2-digit' })
+const fadeInit: React.CSSProperties = {
+  opacity: 0,
+  transform: 'translateY(20px)',
+  transition: 'opacity 0.5s ease, transform 0.5s ease',
 }
 
 export function HomePage() {
-  const { token, user } = useAuth()
   const navigate = useNavigate()
-  const isAdmin = user?.role === 'admin'
+  const { token } = useAuth()
 
-  const bookingsQuery = useQuery({
-    queryKey: ['bookings', token],
-    queryFn: () => (token ? api.listBookings(token) : Promise.resolve([])),
-    enabled: Boolean(token),
-  })
+  const heroRef = useRef<HTMLElement>(null)
+  const howRef = useFadeIn()
+  const featRef = useFadeIn()
+  const testRef = useFadeIn()
+  const ctaRef = useFadeIn()
+  const statsRef = useRef<HTMLDivElement>(null)
 
-  const adminBookingsQuery = useQuery({
-    queryKey: ['adminBookings', token],
-    queryFn: () => (token ? api.listAdminBookings(token) : Promise.resolve([])),
-    enabled: Boolean(token) && isAdmin,
-  })
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el) return
+    requestAnimationFrame(() => {
+      el.style.opacity = '1'
+      el.style.transform = 'translateY(0)'
+    })
+  }, [])
 
-  const assetsQuery = useQuery({
-    queryKey: ['assetsHome', token],
-    queryFn: () => (token ? api.listAssets(token) : Promise.resolve([])),
-    enabled: Boolean(token),
-  })
+  const features = [
+    { icon: <Store size={22} color="#2563eb" />, iconBg: '#eff6ff', title: 'Asset Catalog', desc: 'Browse and book from a curated catalog of shared assets across categories.' },
+    { icon: <Clock size={22} color="#d97706" />, iconBg: '#fef3c7', title: 'Flexible Plans', desc: 'Choose from multiple rental durations with transparent pricing and deposit terms.' },
+    { icon: <ShieldCheck size={22} color="#16a34a" />, iconBg: '#dcfce7', title: 'Secure Tracking', desc: 'Every booking, payment, and return is tracked end-to-end with full audit history.' },
+    { icon: <Settings size={22} color="#9333ea" />, iconBg: '#f3e8ff', title: 'Admin Operations', desc: 'Admins can allocate assets, process returns, and manage the full lifecycle.' },
+  ]
 
-  const bookings: Booking[] = isAdmin
-    ? (adminBookingsQuery.data ?? [])
-    : (bookingsQuery.data ?? [])
+  const steps = [
+    { num: '01', icon: <Search size={22} color="#2563eb" />, title: 'Browse the Catalog', desc: 'Find available assets by category, search, or filter to match your needs.' },
+    { num: '02', icon: <Calendar size={22} color="#2563eb" />, title: 'Book & Pay Deposit', desc: 'Choose your rental plan, pickup date, and secure your booking with a deposit.' },
+    { num: '03', icon: <PackageCheck size={22} color="#2563eb" />, title: 'Pick Up & Return', desc: 'Admin allocates your asset. Return it when done — simple and accountable.' },
+  ]
 
-  const assets: Asset[] = assetsQuery.data ?? []
+  const testimonials = [
+    { initials: 'HW', color: '#2563eb', name: 'Hoshang W.', role: 'Operations Lead', quote: 'AssetFlow completely changed how we manage shared equipment. No more confusion about who has what.' },
+    { initials: 'RK', color: '#16a34a', name: 'Rahul K.', role: 'Facility Manager', quote: "The deposit and tracking system gives us full accountability. We've reduced losses by 80%." },
+    { initials: 'PS', color: '#9333ea', name: 'Priya S.', role: 'Team Lead', quote: 'Booking an asset takes 30 seconds. The whole team adopted it immediately.' },
+  ]
 
-  const totalAssets = assets.length
-  const availableAssets = assets.filter((a) => a.status === 'available').length
-  const allocatedAssets = assets.filter((a) => a.status === 'allocated').length
-  const activeBookings = bookings.filter(
-    (b) => b.status !== 'cancelled' && b.status !== 'returned'
-  ).length
-
-  const totalRevenue = bookings.reduce((sum, b) => {
-    if (b.status !== 'cancelled') return sum + (b.deposit_amount ?? 0) + (b.rent_amount ?? 0)
-    return sum
-  }, 0)
-
-  const recentBookings = [...bookings]
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-    .slice(0, 6)
-
-  // Featured available assets - deduplicated by name
-  const seen = new Set<string>()
-  const featuredAssets = assets.filter((a) => {
-    if (a.status !== 'available') return false
-    const key = a.name.toLowerCase()
-    if (seen.has(key)) return false
-    seen.add(key)
-    return true
-  }).slice(0, 4)
-
-  const statsLoading = bookingsQuery.isLoading || assetsQuery.isLoading || adminBookingsQuery.isLoading
-  const firstName = user?.full_name?.split(' ')[0] ?? 'there'
-
-  // ── Guest landing ────────────────────────────────────────────────────────
-  if (!token) {
-    return (
-      <div className="flex flex-col gap-10">
-        {/* Hero */}
-        <motion.div
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary-900/60 via-surface-900 to-surface-950 border border-primary-800/30 p-10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-primary-600/10 via-transparent to-transparent" />
-          <div className="relative z-10 max-w-2xl">
-            <span className="badge badge-purple mb-4 inline-flex">
-              <Zap className="w-3 h-3" /> Production Ready SaaS
-            </span>
-            <h1 className="text-4xl font-bold text-white mb-4 leading-tight">
-              Control your full asset<br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-400 to-violet-400">
-                lifecycle in one place
-              </span>
-            </h1>
-            <p className="text-surface-300 mb-8 text-lg leading-relaxed">
-              Real-time booking, allocation, early returns, fines, damage handling, and payment tracking — all connected to a live FastAPI backend.
-            </p>
-            <div className="flex gap-3 flex-wrap">
-              <button className="btn-primary btn btn-lg" onClick={() => navigate('/login')}>
-                Get Started <ArrowRight className="w-4 h-4" />
-              </button>
-              <button className="btn-secondary btn btn-lg" onClick={() => navigate('/register')}>
-                Create Account
-              </button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Feature Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {[
-            { icon: <Package2 className="w-5 h-5 text-primary-400" />, bg: 'bg-primary-500/10', title: 'Book & Pay', desc: 'Browse by category, create bookings, pay deposits and rent in real-time.' },
-            { icon: <Shield className="w-5 h-5 text-emerald-400" />, bg: 'bg-emerald-500/10', title: 'Admin Controls', desc: 'Smart allocation, early/mid returns with automatic availability resets.' },
-            { icon: <BarChart3 className="w-5 h-5 text-amber-400" />, bg: 'bg-amber-500/10', title: 'Financial Tracking', desc: 'Late fines, damage deductions, deposit refunds with full breakdown.' },
-          ].map((f, i) => (
-            <motion.div
-              key={f.title}
-              className="card"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 * i, duration: 0.4 }}
-            >
-              <div className={`w-10 h-10 rounded-xl ${f.bg} flex items-center justify-center mb-4`}>
-                {f.icon}
-              </div>
-              <h3 className="text-white font-semibold mb-2">{f.title}</h3>
-              <p className="text-surface-400 text-sm leading-relaxed">{f.desc}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    )
-  }
-
-  // ── Authenticated dashboard ──────────────────────────────────────────────
   return (
-    <div className="flex flex-col gap-8">
-      {/* Welcome Banner */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
+    <div style={{ background: '#ffffff', width: '100%' }}>
+      <style>{`
+        html { scroll-behavior: smooth; }
+        .home-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+        .section-label { font-size: 11px; letter-spacing: 0.1em; color: #2563eb; font-weight: 700; text-align: center; text-transform: uppercase; }
+        @keyframes meshDrift {
+          0%,100% { background-position: 0% 0%, 100% 0%, 50% 100%, 100% 50%, 0% 50%; }
+          33%      { background-position: 5% 10%, 95% 5%, 55% 95%, 95% 55%, 5% 45%; }
+          66%      { background-position: -5% 5%, 105% -5%, 45% 105%, 105% 45%, -5% 55%; }
+        }
+        .hero-mesh {
+          background: linear-gradient(180deg, #eef2ff 0%, #ffffff 60%);
+        }
+        .hero-gradient-text {
+          background: linear-gradient(135deg, #1a3a6b 0%, #00c9a7 100%);
+          -webkit-background-clip: text;
+          background-clip: text;
+          color: transparent;
+        }
+        .btn-hero-primary {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: #1a3a6b; color: #fff; border: none;
+          border-radius: 100px; padding: 14px 32px;
+          font-size: 15px; font-weight: 600; cursor: pointer;
+          box-shadow: 0 4px 20px rgba(26,58,107,0.25);
+          transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+        }
+        .btn-hero-primary:hover { background: #16325e; box-shadow: 0 8px 28px rgba(26,58,107,0.35); transform: translateY(-2px); }
+        .btn-hero-outline {
+          display: inline-flex; align-items: center; gap: 8px;
+          background: white; color: #374151; border: 1.5px solid #e5e7eb;
+          border-radius: 100px; padding: 14px 28px;
+          font-size: 15px; font-weight: 500; cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+          transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+        }
+        .btn-hero-outline:hover { border-color: #1a3a6b; color: #1a3a6b; box-shadow: 0 4px 16px rgba(26,58,107,0.12); }
+        @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
+        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        @keyframes bounce-down { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
+        .bounce-arrow { animation: bounce-down 1.5s ease-in-out infinite; }
+        .step-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .feature-card { border-radius: 16px; padding: 28px 24px; border: 1px solid #f1f5f9; transition: all 0.2s ease; cursor: default; }
+        .feature-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); border-color: #e0e7ff; }
+        .testimonial-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; }
+        @media (max-width: 768px) {
+          .hero-headline { font-size: 36px !important; letter-spacing: -1px !important; }
+          .steps-grid { grid-template-columns: 1fr !important; }
+          .features-grid { grid-template-columns: 1fr !important; }
+          .testimonials-grid { grid-template-columns: 1fr !important; }
+          .stats-bar { flex-direction: column !important; gap: 24px !important; }
+          .stats-divider { display: none !important; }
+          .social-proof-row { flex-direction: column !important; gap: 12px !important; }
+          .cta-banner { margin: 0 0 60px 0 !important; border-radius: 16px !important; }
+        }
+      `}</style>
+
+      {/* ── SECTION 1: Hero ── */}
+      <section
+        ref={heroRef}
+        style={{
+          ...fadeInit,
+          width: '100%',
+          minHeight: '100vh',
+          position: 'relative',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          background: 'linear-gradient(180deg, #eef2ff 0%, #ffffff 60%)',
+          borderBottom: '1px solid rgba(26,58,107,0.08)',
+          willChange: 'auto',
+        }}
       >
-        {/* Greeting row */}
-        <div
-          className="relative overflow-hidden rounded-2xl p-6 mb-4"
-          style={{
-            background: 'linear-gradient(135deg, rgb(99 102 241 / 0.12) 0%, rgb(67 56 202 / 0.06) 50%, transparent 100%)',
-            border: '1px solid rgb(99 102 241 / 0.18)',
-          }}
-        >
-          <div className="absolute inset-0 opacity-30" style={{ background: 'radial-gradient(ellipse at top right, rgb(99 102 241 / 0.2) 0%, transparent 60%)' }} />
-          <div className="relative flex items-center justify-between gap-4 flex-wrap">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Sparkles className="w-4 h-4" style={{ color: '#818cf8' }} />
-                <span style={{ fontSize: '0.8125rem', color: '#818cf8', fontWeight: '600', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  {getGreeting()}
-                </span>
+        {/* Hero content */}
+        <div style={{
+          position: 'relative', zIndex: 1,
+          flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
+          maxWidth: '780px', margin: '0 auto', padding: '100px 24px 60px', textAlign: 'center',
+        }}>
+          {/* Badge pill */}
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            background: 'white', border: '1px solid #e5e7eb',
+            borderRadius: '100px', padding: '7px 16px 7px 12px',
+            fontSize: '13px', fontWeight: 500,
+            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            margin: '0 auto',
+          }}>
+            <div className="pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: '#00c9a7', flexShrink: 0 }} />
+            <span style={{ color: '#16a34a', fontWeight: 700 }}>Now live</span>
+            <span style={{ color: '#374151' }}> — Asset Rental Management Platform</span>
+          </div>
+
+          {/* Hero logo mark — removed, navbar logo is sufficient */}
+
+          {/* Headline */}
+          <h1 className="hero-headline" style={{
+            fontSize: '58px', fontWeight: 800, color: '#0f172a',
+            lineHeight: 1.05, letterSpacing: '-2px',
+            marginTop: '24px', marginBottom: 0,
+          }}>
+            Manage shared assets
+            <br />
+            <span className="hero-gradient-text">with full accountability</span>
+          </h1>
+
+          {/* Subheadline */}
+          <p style={{ fontSize: '18px', color: '#64748b', lineHeight: 1.7, marginTop: '20px', maxWidth: '540px', marginInline: 'auto' }}>
+            AssetFlow streamlines the entire rental lifecycle — from booking and allocation to payment and return — in one transparent platform.
+          </p>
+
+          {/* CTA buttons */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginTop: '36px' }}>
+            {token ? (
+              <button className="btn-hero-primary" onClick={() => navigate('/assets')}>
+                Browse Catalog
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            ) : (
+              <>
+                <button className="btn-hero-primary" onClick={() => navigate('/register')}>
+                  Get Started
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+                <button className="btn-hero-outline" onClick={() => navigate('/login')}>
+                  Sign In
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Social proof */}
+          <div className="social-proof-row" style={{ display: 'flex', gap: '20px', justifyContent: 'center', alignItems: 'center', marginTop: '40px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                {[{ bg: '#2563eb', label: 'HW' }, { bg: '#16a34a', label: 'RK' }, { bg: '#9333ea', label: 'PS' }].map((a, i) => (
+                  <div key={i} style={{
+                    width: 32, height: 32, borderRadius: '50%',
+                    background: a.bg, color: '#fff', fontSize: '11px', fontWeight: 700,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 0 0 2px white',
+                    marginLeft: i === 0 ? 0 : -10, zIndex: 3 - i, position: 'relative',
+                  }}>{a.label}</div>
+                ))}
               </div>
-              <h1 style={{ fontSize: '1.625rem', fontWeight: '800', color: '#ffffff', letterSpacing: '-0.03em' }}>
-                {firstName} 👋
-              </h1>
-              <p style={{ color: '#71717a', fontSize: '0.875rem', marginTop: '0.25rem' }}>
-                Here's what's happening with your assets today.
-              </p>
+              <span style={{ fontSize: '14px', color: '#64748b' }}>Trusted by 50+ teams</span>
             </div>
-            <button
-              className="btn btn-primary"
-              onClick={() => navigate('/assets')}
-              style={{ flexShrink: 0 }}
-            >
-              <Package2 className="w-4 h-4" /> Browse Assets
-            </button>
+            <div style={{ width: 1, height: 20, background: '#e5e7eb' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ color: '#f59e0b', fontSize: '15px', letterSpacing: '1px' }}>★★★★★</span>
+              <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>4.9 / 5.0</span>
+              <span style={{ fontSize: '13px', color: '#9ca3af' }}>(48 reviews)</span>
+            </div>
           </div>
-        </div>
-      </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statsLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <SkeletonStatCard key={i} />)
-        ) : (
-          <>
-            <StatCard label="Total Assets" value={totalAssets} icon={<Package2 className="w-5 h-5 text-primary-400" />} iconBg="bg-primary-500/15" change="+12% this month" positive delay={0} />
-            <StatCard label="Active Bookings" value={activeBookings} icon={<CalendarCheck2 className="w-5 h-5 text-emerald-400" />} iconBg="bg-emerald-500/15" delay={0.08} />
-            <StatCard label="Available" value={availableAssets} icon={<CheckCircle2 className="w-5 h-5 text-blue-400" />} iconBg="bg-blue-500/15" delay={0.16} />
-            <StatCard
-              label={isAdmin ? 'Total Revenue' : 'Allocated'}
-              value={isAdmin ? `₹${totalRevenue.toLocaleString()}` : allocatedAssets}
-              icon={<IndianRupee className="w-5 h-5 text-amber-400" />}
-              iconBg="bg-amber-500/15"
-              change={isAdmin ? '+8% this week' : undefined}
-              positive={isAdmin}
-              delay={0.24}
-            />
-          </>
-        )}
-      </div>
-
-      {/* Featured Assets */}
-      <div>
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">Featured Assets</h2>
-            <p className="section-subtitle">Available items ready to book instantly</p>
-          </div>
-          <button className="btn-ghost btn btn-sm" onClick={() => navigate('/assets')}>
-            View all <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {assetsQuery.isLoading
-            ? Array.from({ length: 4 }).map((_, i) => <SkeletonAssetCard key={i} />)
-            : featuredAssets.length === 0
-            ? (
-              <div className="col-span-4 empty-state py-14">
-                <div className="empty-state-icon"><Package2 className="w-8 h-8" /></div>
-                <p className="empty-state-title">No available assets</p>
-                <p className="empty-state-desc">Assets will appear here once added by admin.</p>
-              </div>
-            )
-            : featuredAssets.map((asset, i) => {
-              const img = asset.image_url && asset.image_url.trim() ? asset.image_url : fallbackImage
-              return (
-                <motion.article
-                  key={asset.id}
-                  className="asset-card card-hover"
-                  initial={{ opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 * i, duration: 0.35 }}
-                  whileHover={{ y: -4 }}
-                >
-                  <div className="relative overflow-hidden" style={{ height: '11rem' }}>
-                    <img
-                      src={img}
-                      alt={asset.name}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <span className="badge badge-green" style={{ fontSize: '0.65rem' }}>Available</span>
-                    </div>
-                  </div>
-                  <div className="asset-body">
-                    <div>
-                      <h3 className="font-semibold text-white leading-tight" style={{ fontSize: '0.9rem', marginBottom: '0.25rem' }}>{asset.name}</h3>
-                      <p className="text-xs text-surface-400 line-clamp-2">
-                        {asset.description || 'No description available.'}
-                      </p>
-                    </div>
-                    <button
-                      className="btn btn-primary w-full"
-                      style={{ marginTop: 'auto', fontSize: '0.8125rem' }}
-                      onClick={() => navigate('/assets')}
-                    >
-                      Book Now
-                    </button>
-                  </div>
-                </motion.article>
-              )
-            })
-          }
-        </div>
-      </div>
-
-      {/* Recent Bookings */}
-      <div>
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">{isAdmin ? 'All Recent Bookings' : 'My Recent Bookings'}</h2>
-            <p className="section-subtitle">Latest booking activity</p>
-          </div>
-          <button className="btn-ghost btn btn-sm" onClick={() => navigate('/bookings')}>
-            View all <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="table-wrap">
-          {bookingsQuery.isLoading ? (
-            <div className="p-6 flex flex-col gap-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex gap-4 items-center">
-                  <div className="skeleton h-4 w-8 rounded" />
-                  <div className="skeleton h-4 flex-1 rounded" />
-                  <div className="skeleton h-6 w-20 rounded-full" />
-                  <div className="skeleton h-4 w-16 rounded" />
+          {/* Stats bar — static */}
+          <div ref={statsRef} className="stats-bar" style={{
+            display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '20px', padding: '24px 48px',
+            marginTop: '48px',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+          }}>
+            {[
+              { value: '500+', label: 'Assets Managed', icon: <Package size={16} color="#1a3a6b" />, iconBg: '#e8eef7' },
+              { value: '1,200+', label: 'Bookings Processed', icon: <BookOpen size={16} color="#00c9a7" />, iconBg: '#e0faf5' },
+              { value: '99.9%', label: 'Uptime Guaranteed', icon: <Shield size={16} color="#1a3a6b" />, iconBg: '#e8eef7' },
+            ].map((s, i) => (
+              <>
+                <div key={i} style={{ textAlign: 'center' }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: s.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>{s.icon}</div>
+                  <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1, letterSpacing: '-1px' }}>{s.value}</div>
+                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{s.label}</div>
                 </div>
-              ))}
-            </div>
-          ) : recentBookings.length === 0 ? (
-            <div className="empty-state py-12">
-              <div className="empty-state-icon"><Clock className="w-7 h-7" /></div>
-              <p className="empty-state-title">No bookings yet</p>
-              <p className="empty-state-desc">Go to Assets to create your first booking.</p>
-              <button className="btn btn-primary btn-sm mt-4" onClick={() => navigate('/assets')}>
-                Browse Assets
+                {i < 2 && <div className="stats-divider" key={`div-${i}`} style={{ width: 1, height: 40, background: '#e5e7eb' }} />}
+              </>
+            ))}
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, paddingBottom: 32 }}>
+          <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94a3b8' }}>Scroll to explore</span>
+          <div className="bounce-arrow">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 5l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M4 9l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 2: How It Works ── */}
+      <section ref={howRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#f8fafc', padding: '80px 0' }}>
+        <div className="home-wrap">
+          <p className="section-label">HOW IT WORKS</p>
+          <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>
+            Rent in 3 simple steps
+          </h2>
+          <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', marginTop: '48px' }}>
+            {steps.map((s) => (
+              <div key={s.num} className="step-card">
+                <div style={{ fontSize: '48px', fontWeight: 800, color: '#dbeafe', lineHeight: 1 }}>{s.num}</div>
+                <div style={{ width: 48, height: 48, background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '8px' }}>
+                  {s.icon}
+                </div>
+                <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#0f172a', marginTop: '16px', marginBottom: 0 }}>{s.title}</h3>
+                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginTop: '8px' }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 3: Features ── */}
+      <section ref={featRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#fff', padding: '80px 0' }}>
+        <div className="home-wrap">
+          <p className="section-label">FEATURES</p>
+          <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>
+            Everything you need
+          </h2>
+          <p style={{ fontSize: '16px', color: '#64748b', textAlign: 'center', maxWidth: '500px', margin: '12px auto 0' }}>
+            A complete system for teams that share physical assets and need transparent, accountable operations.
+          </p>
+          <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '48px' }}>
+            {features.map((f) => (
+              <div key={f.title} className="feature-card">
+                <div style={{ width: 48, height: 48, borderRadius: '12px', background: f.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {f.icon}
+                </div>
+                <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginTop: '16px', marginBottom: 0 }}>{f.title}</h3>
+                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginTop: '8px' }}>{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 4: Testimonials ── */}
+      <section ref={testRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#0f172a', padding: '80px 0' }}>
+        <div className="home-wrap">
+          <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 0 }}>
+            Why teams choose AssetFlow
+          </h2>
+          <div className="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '48px' }}>
+            {testimonials.map((t) => (
+              <div key={t.name} className="testimonial-card">
+                <div style={{ color: '#fbbf24', fontSize: '14px' }}>★★★★★</div>
+                <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, marginTop: '12px', fontStyle: 'italic' }}>"{t.quote}"</p>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '20px' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: t.color, color: '#fff', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {t.initials}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>{t.name}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{t.role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── SECTION 5: CTA Banner ── */}
+      {!token && (
+        <section ref={ctaRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, padding: '60px 24px 80px' }}>
+          <div className="cta-banner" style={{
+            background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%)',
+            padding: '80px 40px', textAlign: 'center', borderRadius: '24px',
+            position: 'relative', overflow: 'hidden',
+          }}>
+            <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', top: -80, right: -80, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', bottom: -60, left: -60, pointerEvents: 'none' }} />
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.7)', fontWeight: 700, margin: 0 }}>GET STARTED TODAY</p>
+              <h2 style={{ fontSize: '40px', fontWeight: 800, color: '#fff', marginTop: '12px', marginBottom: 0 }}>Ready to get started?</h2>
+              <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.8)', marginTop: '12px' }}>Create an account and start booking assets in minutes.</p>
+              <button
+                onClick={() => navigate('/register')}
+                style={{ marginTop: '28px', background: '#fff', color: '#2563eb', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s ease' }}
+                onMouseEnter={e => (e.currentTarget.style.background = '#f0f9ff')}
+                onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+              >
+                Create Free Account →
               </button>
             </div>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Plan</th>
-                  <th>Status</th>
-                  <th>Pickup</th>
-                  <th>Due</th>
-                  <th>Deposit</th>
-                  <th>Rent</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentBookings.map((booking) => {
-                  const cfg = statusConfig[booking.status] ?? { label: booking.status, cls: 'badge badge-gray' }
-                  return (
-                    <tr key={booking.id}>
-                      <td style={{ fontFamily: 'monospace', fontSize: '0.8125rem', color: '#71717a' }}>#{booking.id}</td>
-                      <td className="font-medium">{booking.rental_plan?.name ?? `Plan #${booking.rental_plan_id}`}</td>
-                      <td><span className={cfg.cls}>{cfg.label}</span></td>
-                      <td style={{ color: '#a1a1aa' }}>{formatDate(booking.pickup_date)}</td>
-                      <td style={{ color: '#a1a1aa' }}>{formatDate(booking.due_date)}</td>
-                      <td style={{ color: '#ffffff', fontWeight: '600' }}>₹{booking.deposit_amount}</td>
-                      <td style={{ color: '#ffffff', fontWeight: '600' }}>₹{booking.rent_amount}</td>
-                      <td>
-                        <button className="btn-ghost btn btn-sm" onClick={() => navigate('/bookings')}>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
-      </div>
+          </div>
+        </section>
+      )}
     </div>
   )
 }

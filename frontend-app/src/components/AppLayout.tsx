@@ -1,326 +1,266 @@
-import { useState, useRef, useEffect } from 'react'
-import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  LayoutDashboard,
-  Package2,
-  CalendarCheck2,
-  Users,
-  FolderKanban,
-  CreditCard,
-  Wrench,
-  FileText,
-  Info,
-  Phone,
-  Bell,
-  Search,
-  LogOut,
-  User,
-  ChevronLeft,
-  Menu,
-  Settings,
-  Shield,
-  ChevronDown,
-} from 'lucide-react'
-import { useAuth } from '../auth-context'
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, LogOut } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "../auth-context";
+import { Button } from "./ui/Button";
+import { cn } from "../lib/cn";
 
-interface NavItemDef {
-  to: string
-  label: string
-  icon: React.ReactNode
-  adminOnly?: boolean
-  authRequired?: boolean
-  badge?: string
-}
-
-const mainNav: NavItemDef[] = [
-  { to: '/', label: 'Dashboard', icon: <LayoutDashboard />, authRequired: false },
-  { to: '/assets', label: 'Assets', icon: <Package2 />, authRequired: true },
-  { to: '/bookings', label: 'My Bookings', icon: <CalendarCheck2 />, authRequired: true },
-  { to: '/profile', label: 'Profile', icon: <User />, authRequired: true },
-  { to: '/terms', label: 'Terms', icon: <FileText />, authRequired: false },
-  { to: '/about', label: 'About Us', icon: <Info />, authRequired: false },
-  { to: '/contact', label: 'Contact Us', icon: <Phone />, authRequired: false },
-]
-
-const adminNav: NavItemDef[] = [
-  { to: '/admin/assets', label: 'Asset Manager', icon: <Package2 />, adminOnly: true },
-  { to: '/admin/categories', label: 'Categories', icon: <FolderKanban />, adminOnly: true },
-  { to: '/admin/plans', label: 'Rental Plans', icon: <CreditCard />, adminOnly: true },
-  { to: '/admin/users', label: 'Users', icon: <Users />, adminOnly: true },
-  { to: '/admin/ops', label: 'Operations', icon: <Wrench />, adminOnly: true },
-]
-
-function SidebarNavItem({ item, collapsed }: { item: NavItemDef; collapsed: boolean }) {
-  return (
-    <NavLink
-      to={item.to}
-      end={item.to === '/'}
-      className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-      title={collapsed ? item.label : undefined}
-    >
-      {item.icon}
-      <AnimatePresence>
-        {!collapsed && (
-          <motion.span
-            className="nav-item-label"
-            initial={{ opacity: 0, width: 0 }}
-            animate={{ opacity: 1, width: 'auto' }}
-            exit={{ opacity: 0, width: 0 }}
-            transition={{ duration: 0.15 }}
-          >
-            {item.label}
-          </motion.span>
-        )}
-      </AnimatePresence>
-      {!collapsed && item.badge && (
-        <span className="nav-badge">{item.badge}</span>
-      )}
-    </NavLink>
-  )
+function getInitials(name: string | undefined) {
+  if (!name) return 'U'
+  return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
 export function AppLayout() {
-  const { user, token, logout, loading } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const { user, token, logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const isAdmin = user?.role === 'admin'
-  const userInitials = user?.full_name
-    ? user.full_name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
-    : '?'
-
-  async function handleLogout() {
-    setDropdownOpen(false)
-    await logout()
-    navigate('/login')
-  }
-
-  // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
-  // Get current page title
-  const getPageTitle = () => {
-    const path = location.pathname
-    if (path === '/') return 'Dashboard'
-    if (path === '/assets') return 'Assets'
-    if (path === '/bookings') return 'My Bookings'
-    if (path === '/profile') return 'Profile'
-    if (path === '/terms') return 'Terms and Conditions'
-    if (path === '/about') return 'About Us'
-    if (path === '/contact') return 'Contact Us'
-    if (path.startsWith('/admin/assets')) return 'Asset Manager'
-    if (path.startsWith('/admin/categories')) return 'Categories'
-    if (path.startsWith('/admin/plans')) return 'Rental Plans'
-    if (path.startsWith('/admin/users')) return 'Users'
-    if (path.startsWith('/admin/ops')) return 'Operations'
-    return 'AssetFlow'
-  }
+  const publicLinks = [
+    { to: "/", label: "Home" },
+    { to: "/assets", label: "Catalog" },
+    { to: "/about", label: "About Us" },
+    { to: "/contact", label: "Contact" },
+    { to: "/terms", label: "Terms" },
+  ];
+  const authLinks = [{ to: "/bookings", label: "My Bookings" }];
+  const adminLinks = user?.role === 'admin' ? [{ to: "/admin", label: "Admin" }] : [];
+  const navLinks = token ? [...publicLinks, ...authLinks, ...adminLinks] : publicLinks;
 
-  const sidebarWidth = sidebarCollapsed ? 64 : 240
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
 
   return (
-    <div className="page-shell">
-      {/* ── Sidebar ── */}
-      <motion.aside
-        className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}
-        animate={{ width: sidebarWidth }}
-        transition={{ duration: 0.25, ease: 'easeInOut' }}
-      >
-        {/* Logo */}
-        <div className="sidebar-logo">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-black text-sm">A</span>
-          </div>
-          <AnimatePresence>
-            {!sidebarCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.15 }}
-                className="flex items-center gap-1.5 overflow-hidden"
-              >
-                <span className="sidebar-logo-text">AssetFlow</span>
-                <div className="sidebar-logo-dot" />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+    <div className="min-h-screen bg-gray-50/30 flex flex-col font-sans text-gray-900 overflow-x-hidden">
+      <header style={{ background: '#ffffff', borderBottom: '1px solid #f1f5f9', position: 'relative', width: '100%' }}>
+        <div className="page-container">
+          <div className="h-[64px] flex items-center justify-between gap-4">
 
-        {/* Main Nav */}
-        <nav className="sidebar-nav">
-          {!sidebarCollapsed && (
-            <p className="sidebar-section">Main Menu</p>
-          )}
-          {mainNav.map((item) => {
-            if (item.authRequired && !token) return null
-            return <SidebarNavItem key={item.to} item={item} collapsed={sidebarCollapsed} />
-          })}
+            {/* Logo */}
+            <NavLink to="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', flexShrink: 0 }}>
+              <img src="/logo.svg" alt="AssetTrack Logo" style={{ height: 40, width: 'auto', objectFit: 'contain' }} />
+            </NavLink>
 
-          {/* Auth links when logged out */}
-          {!token && (
-            <>
-              {!sidebarCollapsed && <p className="sidebar-section">Account</p>}
-              <SidebarNavItem item={{ to: '/login', label: 'Login', icon: <User /> }} collapsed={sidebarCollapsed} />
-              <SidebarNavItem item={{ to: '/register', label: 'Register', icon: <Settings /> }} collapsed={sidebarCollapsed} />
-            </>
-          )}
+            {/* Desktop nav */}
+            <nav className="hidden md:flex items-center gap-8 shrink-0">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.to === "/"}
+                  className={({ isActive }) =>
+                    cn("flex items-center text-sm transition-colors pb-[2px]",
+                      isActive
+                        ? "font-semibold border-b-2"
+                        : "text-gray-600 font-medium"
+                    )
+                  }
+                  style={({ isActive }) => isActive
+                    ? { color: '#1a3a6b', borderBottomColor: '#00c9a7' }
+                    : undefined
+                  }
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = '#1a3a6b' }}
+                  onMouseLeave={(e) => {
+                    const el = e.currentTarget as HTMLElement
+                    if (!el.classList.contains('border-b-2')) el.style.color = ''
+                  }}
+                >
+                  {link.label}
+                </NavLink>
+              ))}
+            </nav>
 
-          {/* Admin Section */}
-          {isAdmin && (
-            <>
-              {!sidebarCollapsed && (
-                <div className="flex items-center gap-2 px-3 py-2 mt-4">
-                  <Shield className="w-3.5 h-3.5 text-primary-500" />
-                  <p className="text-xs font-semibold text-surface-500 uppercase tracking-widest">
-                    Admin
-                  </p>
+            {/* Desktop actions */}
+            <div className="hidden md:flex items-center gap-3 shrink-0">
+              {token ? (
+                <>
+                  <button
+                    onClick={() => navigate("/profile")}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '8px',
+                      background: '#f8fafc', border: '1.5px solid #e5e7eb',
+                      borderRadius: '100px', padding: '5px 14px 5px 6px',
+                      cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e5e7eb' }}
+                  >
+                    <div style={{
+                      width: 34, height: 34, borderRadius: '50%',
+                      background: '#1a3a6b', color: '#fff',
+                      fontSize: '13px', fontWeight: 600,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                    }}>
+                      {getInitials(user?.full_name)}
+                    </div>
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }} className="hidden lg:inline">
+                      {user?.full_name?.split(' ')[0]}
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: '#fff', border: '1.5px solid #fca5a5',
+                      borderRadius: '8px', padding: '7px 16px',
+                      fontSize: '13px', fontWeight: 500, color: '#ef4444',
+                      cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#fca5a5' }}
+                  >
+                    <LogOut size={14} />
+                    Sign out
+                  </button>
+                </>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <button
+                    onClick={() => navigate("/login")}
+                    style={{
+                      background: 'transparent', border: '1.5px solid #d1d5db',
+                      color: '#374151', borderRadius: '8px', padding: '8px 20px',
+                      fontSize: '14px', fontWeight: 500, cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#1a3a6b'; e.currentTarget.style.color = '#1a3a6b'; e.currentTarget.style.background = '#f0f4ff' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#d1d5db'; e.currentTarget.style.color = '#374151'; e.currentTarget.style.background = 'transparent' }}
+                  >
+                    Sign in
+                  </button>
+                  <button
+                    onClick={() => navigate("/register")}
+                    style={{
+                      background: '#00c9a7', border: '1.5px solid #00c9a7',
+                      color: '#fff', borderRadius: '8px', padding: '8px 20px',
+                      fontSize: '14px', fontWeight: 500, cursor: 'pointer',
+                      transition: 'all 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#00b396'; e.currentTarget.style.borderColor = '#00b396'; e.currentTarget.style.boxShadow = '0 3px 10px rgba(0,201,167,0.3)' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#00c9a7'; e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.boxShadow = 'none' }}
+                  >
+                    Get started
+                  </button>
                 </div>
               )}
-              {sidebarCollapsed && <div className="my-2 border-t border-surface-800" />}
-              {adminNav.map((item) => (
-                <SidebarNavItem key={item.to} item={item} collapsed={sidebarCollapsed} />
-              ))}
-            </>
-          )}
-        </nav>
+            </div>
 
-        {/* Sidebar Footer */}
-        <div className="sidebar-footer">
-          <button
-            onClick={() => setSidebarCollapsed((prev) => !prev)}
-            className="nav-item w-full"
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <motion.div
-              animate={{ rotate: sidebarCollapsed ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
+            <button
+              className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 shrink-0 ml-auto"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
             >
-              <ChevronLeft className="w-4 h-4" />
-            </motion.div>
-            {!sidebarCollapsed && <span className="text-xs">Collapse</span>}
-          </button>
-        </div>
-      </motion.aside>
-
-      {/* ── Top Navbar ── */}
-      <div
-        className="topbar"
-        style={{ left: sidebarWidth, transition: 'left 0.25s ease' }}
-      >
-        {/* Mobile toggle */}
-        <button className="topbar-icon-btn lg:hidden" onClick={() => setSidebarCollapsed((p) => !p)}>
-          <Menu className="w-5 h-5" />
-        </button>
-
-        {/* Page title */}
-        <span className="text-sm font-semibold text-white hidden sm:block">{getPageTitle()}</span>
-
-        {/* Search */}
-        <div className="topbar-search hidden md:flex">
-          <Search className="w-4 h-4 text-surface-500 flex-shrink-0" />
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search assets, bookings..."
-          />
+              {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            </button>
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="topbar-actions">
-          {/* Notification bell */}
-          <button className="topbar-icon-btn">
-            <Bell className="w-5 h-5" />
-            <span className="notif-dot" />
-          </button>
-
-          {/* Avatar dropdown */}
-          {token ? (
-            <div className="relative" ref={dropdownRef}>
-              <button
-                className="flex items-center gap-2 px-2 py-1.5 rounded-xl hover:bg-surface-800 transition-all"
-                onClick={() => setDropdownOpen((p) => !p)}
-              >
-                <div className="avatar-btn">{userInitials}</div>
-                {!sidebarCollapsed && (
-                  <div className="hidden sm:flex flex-col items-start">
-                    <span className="text-xs font-semibold text-white leading-none">
-                      {user?.full_name?.split(' ')[0] ?? 'User'}
-                    </span>
-                    <span className="text-[10px] text-surface-500 mt-0.5 capitalize">{user?.role}</span>
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="md:hidden border-t border-gray-200 bg-white overflow-hidden"
+            >
+              <div className="px-4 py-5 flex flex-col gap-2">
+                {navLinks.map((link) => (
+                  <NavLink
+                    key={link.to}
+                    to={link.to}
+                    end={link.to === "/"}
+                    className={({ isActive }) =>
+                      cn("text-sm font-semibold px-4 py-2.5 rounded-lg",
+                        isActive ? "bg-teal-50 text-[#1a3a6b]" : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                      )
+                    }
+                  >
+                    {link.label}
+                  </NavLink>
+                ))}
+                <div className="border-t border-gray-100 my-2" />
+                {token ? (
+                  <div className="flex flex-col gap-2">
+                    <Button variant="secondary" className="w-full" onClick={() => navigate("/profile")}>My Profile</Button>
+                    <Button variant="outline" className="w-full text-red-600 hover:border-red-200" onClick={handleLogout}>Sign out</Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Button variant="outline" className="w-full" onClick={() => navigate("/login")}>Sign in</Button>
+                    <Button className="w-full" onClick={() => navigate("/register")} style={{ background: '#00c9a7', borderColor: '#00c9a7' }}>Get started</Button>
                   </div>
                 )}
-                <ChevronDown className="w-3.5 h-3.5 text-surface-500 hidden sm:block" />
-              </button>
-
-              <AnimatePresence>
-                {dropdownOpen && (
-                  <motion.div
-                    className="dropdown"
-                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
-                    transition={{ duration: 0.12 }}
-                  >
-                    <div className="px-4 py-3 border-b border-surface-700">
-                      <p className="text-sm font-semibold text-white">{user?.full_name}</p>
-                      <p className="text-xs text-surface-500 mt-0.5">{user?.email}</p>
-                    </div>
-                    <button
-                      className="dropdown-item w-full"
-                      onClick={() => { setDropdownOpen(false); navigate('/profile') }}
-                    >
-                      <User className="w-4 h-4" /> My Profile
-                    </button>
-                    <div className="dropdown-divider" />
-                    <button
-                      className="dropdown-item w-full text-rose-400 hover:text-rose-300"
-                      onClick={() => void handleLogout()}
-                      disabled={loading}
-                    >
-                      <LogOut className="w-4 h-4" /> {loading ? 'Signing out...' : 'Sign Out'}
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <button className="btn-primary btn-sm btn" onClick={() => navigate('/login')}>
-              Sign In
-            </button>
+              </div>
+            </motion.div>
           )}
-        </div>
-      </div>
+        </AnimatePresence>
+      </header>
 
-      {/* ── Main Content ── */}
-      <main
-        className="content-area"
-        style={{ marginLeft: sidebarWidth, transition: 'margin-left 0.25s ease' }}
-      >
-        <div className="content-inner">
-          <motion.div
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: 'easeOut' }}
-          >
-            <Outlet />
-          </motion.div>
-        </div>
+      <main className="flex-1 w-full flex flex-col">
+        <Outlet />
       </main>
+
+      <footer style={{ background: '#0f172a', color: 'rgba(255,255,255,0.7)', padding: '48px 24px 24px' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr', gap: '40px' }} className="footer-cols">
+            {/* Col 1 — Brand */}
+            <div>
+              <img
+                src="/logo.svg"
+                alt="AssetTrack"
+                style={{ height: 36, width: 'auto', filter: 'brightness(0) invert(1)' }}
+              />
+              <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.5)', marginTop: '12px' }}>
+                Rent smarter. Manage better.
+              </p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.35)', marginTop: '24px' }}>
+                © 2026 AssetTrack. All rights reserved.
+              </p>
+            </div>
+
+            {/* Col 2 — Product */}
+            <div>
+              <p style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#fff', fontWeight: 600, marginBottom: '16px' }}>Product</p>
+              <NavLink to="/assets" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>Catalog</NavLink>
+              <NavLink to="/bookings" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>My Bookings</NavLink>
+              <a href="#how-it-works" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>How it works</a>
+            </div>
+
+            {/* Col 3 — Company */}
+            <div>
+              <p style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#fff', fontWeight: 600, marginBottom: '16px' }}>Company</p>
+              <NavLink to="/about" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>About Us</NavLink>
+              <NavLink to="/contact" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>Contact</NavLink>
+              <NavLink to="/terms" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>Terms</NavLink>
+            </div>
+
+            {/* Col 4 — Account */}
+            <div>
+              <p style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#fff', fontWeight: 600, marginBottom: '16px' }}>Account</p>
+              <NavLink to="/login" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>Sign In</NavLink>
+              <NavLink to="/register" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>Create Account</NavLink>
+              <NavLink to="/profile" style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', textDecoration: 'none', display: 'block', marginBottom: '10px' }} onMouseEnter={e => (e.currentTarget.style.color = '#fff')} onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.6)')}>My Profile</NavLink>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>© 2026 AssetTrack. All rights reserved.</span>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Made with ♥ in India</span>
+          </div>
+        </div>
+
+        <style>{`
+          @media (max-width: 768px) { .footer-cols { grid-template-columns: 1fr 1fr !important; } }
+          @media (max-width: 480px) { .footer-cols { grid-template-columns: 1fr !important; } }
+        `}</style>
+      </footer>
     </div>
-  )
+  );
 }

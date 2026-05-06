@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
-from app.core.dependencies import get_current_user
+from app.core.dependencies import get_current_user, get_current_user_optional
 from app.core.rbac import require_roles
 from app.db.session import get_db
 from app.models.category import Category
@@ -31,21 +31,21 @@ async def create_category(
     await db.refresh(category)
     return category
 
-# GET /categories/ - any logged in user
+# GET /categories/ - PUBLIC (no auth required)
 @router.get("/", response_model=list[CategoryResponse])
 async def list_categories(
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Category))
     categories = result.scalars().all()
     return categories
 
-# GET /categories/{id} - any logged in user
+# GET /categories/{id} - PUBLIC (no auth required)
 @router.get("/{category_id}", response_model=CategoryResponse)
 async def get_category(
     category_id: int,
-    current_user: User = Depends(get_current_user),
+    current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(Category).where(Category.id == category_id))

@@ -1,151 +1,227 @@
-import { zodResolver } from '@hookform/resolvers/zod'
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
-import { useNavigate, Link } from 'react-router-dom'
-import { z } from 'zod'
-import { motion } from 'framer-motion'
-import { LogIn, AlertCircle, Loader2, Zap } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { AlertCircle, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-react'
 import { useAuth } from '../auth-context'
 
-const schema = z.object({
-  email: z.email('Enter a valid email'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-})
-
-type FormValues = z.infer<typeof schema>
-
 export function LoginPage() {
-  const navigate = useNavigate()
   const { login } = useAuth()
-  const [error, setError] = useState<string>('')
+  const navigate = useNavigate()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  })
-
-  const onSubmit = async (values: FormValues) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     setError('')
+    setLoading(true)
     try {
-      await login(values)
-      navigate('/assets')
-    } catch (submitError) {
-      if (submitError instanceof Error) {
-        setError(submitError.message)
-      } else {
-        setError('Login failed. Please try again.')
-      }
+      const me = await login({ email, password })
+      navigate(me.role === 'admin' ? '/admin' : '/')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+    } finally {
+      setLoading(false)
     }
   }
 
+  const inputBase: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box',
+    paddingTop: '13px', paddingBottom: '13px',
+    paddingLeft: '42px', paddingRight: '16px',
+    fontSize: '14px', color: '#111827',
+    border: '1.5px solid #e5e7eb', borderRadius: '10px',
+    outline: 'none', background: '#fff',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
+  }
+  const onFocus = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = '#1a3a6b'
+    e.currentTarget.style.boxShadow = '0 0 0 3px rgba(26,58,107,0.08)'
+  }
+  const onBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.currentTarget.style.borderColor = '#e5e7eb'
+    e.currentTarget.style.boxShadow = 'none'
+  }
+
   return (
-    <div className="auth-shell">
-      <motion.div
-        className="w-full max-w-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-      >
-        {/* Logo */}
-        <div className="flex items-center gap-2 mb-8 justify-center">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center">
-            <span className="text-white font-black text-sm">A</span>
-          </div>
-          <span className="text-xl font-bold text-white">AssetFlow</span>
-        </div>
+    <div style={{
+      minHeight: 'calc(100vh - 64px)',
+      background: '#f8fafc',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '40px 20px',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
 
-        <div className="card">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-9 h-9 rounded-xl bg-primary-600/20 flex items-center justify-center">
-              <LogIn className="w-4 h-4 text-primary-400" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-white">Welcome back</h1>
-              <p className="text-xs text-surface-400">Sign in to your account</p>
-            </div>
-          </div>
+      {/* ── Background blobs ── */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'rgba(37,99,235,0.08)', top: -100, left: -150, filter: 'blur(80px)' }} />
+        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(124,58,237,0.06)', bottom: -80, right: -100, filter: 'blur(60px)' }} />
+        <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(59,130,246,0.05)', top: '40%', left: '60%', filter: 'blur(70px)' }} />
+      </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-            {/* Email */}
-            <div className="form-group">
-              <label className="form-label">Email address</label>
-              <input
-                type="email"
-                className={`form-input ${errors.email ? 'border-rose-500/50' : ''}`}
-                placeholder="you@example.com"
-                {...register('email')}
-                autoComplete="email"
-              />
-              {errors.email && (
-                <p className="error-text text-xs mt-0.5 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.email.message}
-                </p>
-              )}
-            </div>
+      {/* ── Card ── */}
+      <div style={{
+        position: 'relative', zIndex: 1,
+        width: '100%', maxWidth: '440px',
+        background: '#fff',
+        borderRadius: '20px',
+        border: '1px solid #e5e7eb',
+        boxShadow: '0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)',
+        padding: '48px 44px',
+      }}>
 
-            {/* Password */}
-            <div className="form-group">
-              <label className="form-label">Password</label>
-              <input
-                type="password"
-                className={`form-input ${errors.password ? 'border-rose-500/50' : ''}`}
-                placeholder="••••••••"
-                {...register('password')}
-                autoComplete="current-password"
-              />
-              {errors.password && (
-                <p className="error-text text-xs mt-0.5 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {errors.password.message}
-                </p>
-              )}
-            </div>
+        {/* Brand header */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '36px' }}>
+          {/* Logo */}
+          <img src="/logo.svg" alt="AssetTrack" style={{ height: 36, width: 'auto', marginBottom: '8px' }} />
 
-            {/* Error */}
-            {error && (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="flex items-center gap-2 bg-rose-500/10 border border-rose-500/20 rounded-xl px-3 py-2.5"
-              >
-                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                <p className="text-sm text-rose-300">{error}</p>
-              </motion.div>
-            )}
+          {/* Divider */}
+          <div style={{ width: '100%', borderTop: '1px solid #f1f5f9', margin: '20px 0' }} />
 
-            {/* Submit */}
-            <motion.button
-              type="submit"
-              className="btn-primary btn w-full mt-1"
-              disabled={isSubmitting}
-              whileTap={{ scale: 0.97 }}
-            >
-              {isSubmitting ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Signing in...</>
-              ) : (
-                <><LogIn className="w-4 h-4" /> Sign In</>
-              )}
-            </motion.button>
-          </form>
-
-          <div className="divider" />
-
-          <p className="text-center text-sm text-surface-400">
-            Don't have an account?{' '}
-            <Link to="/register" className="text-primary-400 hover:text-primary-300 font-semibold transition-colors">
-              Create one
-            </Link>
+          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#111827', margin: '0 0 6px 0' }}>
+            Welcome back 👋
+          </h1>
+          <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
+            Sign in to continue to your account
           </p>
         </div>
 
-        {/* Demo hint */}
-        <div className="mt-4 flex items-center gap-2 text-xs text-surface-500 justify-center">
-          <Zap className="w-3.5 h-3.5 text-amber-500" />
-          Connected to live FastAPI backend
-        </div>
-      </motion.div>
+        {/* Error */}
+        {error && (
+          <div style={{
+            display: 'flex', alignItems: 'flex-start', gap: '10px',
+            padding: '12px 14px', marginBottom: '20px',
+            background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px',
+          }}>
+            <AlertCircle size={15} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+            <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: 500 }}>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+
+            {/* Email */}
+            <div>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
+                Email address
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={16} color="#9ca3af" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <input
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={loading}
+                  autoComplete="email"
+                  style={inputBase}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                />
+              </div>
+            </div>
+
+            {/* Password */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: 500, color: '#374151' }}>
+                  Password
+                </label>
+                <a
+                  href="#"
+                  style={{ fontSize: '12px', color: '#2563eb', textDecoration: 'none' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+                  onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+                >
+                  Forgot password?
+                </a>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <Lock size={16} color="#9ca3af" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  autoComplete="current-password"
+                  style={{ ...inputBase, paddingRight: '42px' }}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(s => !s)}
+                  style={{
+                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    color: '#9ca3af', display: 'flex', alignItems: 'center', padding: 0,
+                  }}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%', marginTop: '24px',
+              padding: '14px', borderRadius: '10px',
+              background: loading ? '#7fa8d4' : '#1a3a6b',
+              color: '#fff', border: 'none',
+              fontSize: '15px', fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.background = '#16325e'
+                e.currentTarget.style.boxShadow = '0 6px 20px rgba(26,58,107,0.35)'
+                e.currentTarget.style.transform = 'translateY(-1px)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = loading ? '#7fa8d4' : '#1a3a6b'
+              e.currentTarget.style.boxShadow = 'none'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
+            onMouseDown={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(37,99,235,0.2)'
+            }}
+          >
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {loading ? 'Signing in...' : 'Sign in'}
+          </button>
+        </form>
+
+        {/* Bottom link */}
+        <p style={{ fontSize: '14px', color: '#6b7280', textAlign: 'center', marginTop: '24px', marginBottom: 0 }}>
+          Don't have an account?{' '}
+          <Link
+            to="/register"
+            style={{ color: '#00c9a7', fontWeight: 600, textDecoration: 'none' }}
+            onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+            onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+          >
+            Create an account
+          </Link>
+        </p>
+
+      </div>
     </div>
   )
 }

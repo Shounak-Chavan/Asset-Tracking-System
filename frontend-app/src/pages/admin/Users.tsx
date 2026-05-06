@@ -1,506 +1,330 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  Users, X, Shield, User as UserIcon,
-  CheckCircle2, XCircle, History,
-} from 'lucide-react'
-import { api } from '../../api'
-import { useAuth } from '../../auth-context'
-import type { Asset } from '../../types'
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
+import { Clock } from "lucide-react"
+import { api } from "../../api"
+import { useAuth } from "../../auth-context"
+import type { UserHistoryResponse } from "../../types"
+
+function Avatar({ name, isAdmin }: { name: string; isAdmin: boolean }) {
+  const initials = name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
+  return (
+    <div style={{
+      width: '38px', height: '38px', borderRadius: '50%', flexShrink: 0,
+      background: isAdmin ? '#dbeafe' : '#f3f4f6',
+      color: isAdmin ? '#2563eb' : '#6b7280',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: '14px', fontWeight: 600,
+    }}>
+      {initials}
+    </div>
+  )
+}
+
+function Pill({ label, variant }: { label: string; variant: 'admin' | 'user' | 'active' | 'suspended' }) {
+  const styles = {
+    admin:     { bg: '#dbeafe', color: '#2563eb' },
+    user:      { bg: '#f3f4f6', color: '#6b7280' },
+    active:    { bg: '#dcfce7', color: '#16a34a' },
+    suspended: { bg: '#fee2e2', color: '#dc2626' },
+  }
+  const s = styles[variant]
+  return (
+    <span style={{
+      fontSize: '10px', fontWeight: 600, padding: '2px 7px',
+      borderRadius: '999px', background: s.bg, color: s.color,
+    }}>
+      {label}
+    </span>
+  )
+}
+
+function TextBtn({
+  label, onClick, danger, blue,
+}: { label: string; onClick: () => void; danger?: boolean; blue?: boolean }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <button
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0',
+        fontSize: '12px', fontWeight: 500,
+        color: danger ? (hovered ? '#dc2626' : '#dc2626') :
+               blue ? (hovered ? '#2563eb' : '#374151') :
+               (hovered ? '#2563eb' : '#6b7280'),
+        textDecoration: danger && hovered ? 'underline' : 'none',
+        transition: 'color 0.15s',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
 
 export function AdminUsersPage() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
   const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
-  const [selectedAssetByBooking, setSelectedAssetByBooking] = useState<Record<number, number>>({})
 
   const usersQuery = useQuery({
-    queryKey: ['users', token],
-    queryFn: async () => {
-      if (!token) return []
-      return api.listUsers(token)
-    },
+    queryKey: ["users"],
+    queryFn: async () => api.listUsers(token!),
     enabled: Boolean(token),
   })
 
   const roleMutation = useMutation({
-    mutationFn: async (payload: { id: number; role: 'admin' | 'user' }) => {
-      if (!token) throw new Error('Missing token')
-      return api.setUserRole(token, payload.id, payload.role)
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users', token] })
-    },
+    mutationFn: async (payload: { id: number; role: "admin" | "user" }) =>
+      api.setUserRole(token!, payload.id, payload.role),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
   })
 
   const activeMutation = useMutation({
-    mutationFn: async (payload: { id: number; is_active: boolean }) => {
-      if (!token) throw new Error('Missing token')
-      return api.setUserActive(token, payload.id, payload.is_active)
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['users', token] })
-    },
+    mutationFn: async (payload: { id: number; is_active: boolean }) =>
+      api.setUserActive(token!, payload.id, payload.is_active),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["users"] }),
   })
 
   const historyQuery = useQuery({
-    queryKey: ['userHistory', token, selectedUserId],
-    queryFn: async () => {
-      if (!token || !selectedUserId) throw new Error('Missing user selection')
-      return api.getUserHistory(token, selectedUserId)
-    },
+    queryKey: ["userHistory", selectedUserId],
+    queryFn: async () => api.getUserHistory(token!, selectedUserId!),
     enabled: Boolean(token) && selectedUserId !== null,
   })
 
-  const assetsQuery = useQuery({
-    queryKey: ['assets', token],
-    queryFn: async () => {
-      if (!token) return []
-      return api.listAssets(token)
-    },
-    enabled: Boolean(token),
-  })
-
-  const allocateMutation = useMutation({
-    mutationFn: async (payload: { bookingId: number; assetId: number }) => {
-      if (!token) throw new Error('Missing token')
-      return api.allocateAsset(token, payload.bookingId, payload.assetId)
-    },
-    onSuccess: async () => {
-      if (selectedUserId !== null) {
-        await queryClient.invalidateQueries({ queryKey: ['userHistory', token, selectedUserId] })
-      }
-      await queryClient.invalidateQueries({ queryKey: ['adminBookings', token] })
-      await queryClient.invalidateQueries({ queryKey: ['assets', token] })
-    },
-  })
-
-  const rejectMutation = useMutation({
-    mutationFn: async (bookingId: number) => {
-      if (!token) throw new Error('Missing token')
-      return api.rejectBookingByAdmin(token, bookingId)
-    },
-    onSuccess: async () => {
-      if (selectedUserId !== null) {
-        await queryClient.invalidateQueries({ queryKey: ['userHistory', token, selectedUserId] })
-      }
-      await queryClient.invalidateQueries({ queryKey: ['adminBookings', token] })
-    },
-  })
-
-  const availableAssets = (assetsQuery.data ?? []).filter((asset) => asset.status === 'available')
-
-  const getRequestedAsset = (requestedAssetId?: number | null): Asset | null => {
-    if (!requestedAssetId) return null
-    return (assetsQuery.data ?? []).find((asset) => asset.id === requestedAssetId) ?? null
-  }
-
-  const getAlternativeAssets = (booking: { category_id?: number | null; requested_asset_id?: number | null }) => {
-    return availableAssets.filter((asset) => {
-      if (booking.category_id && asset.category_id !== booking.category_id) return false
-      if (booking.requested_asset_id && asset.id === booking.requested_asset_id) return false
-      return true
-    })
-  }
-
-  const users = usersQuery.data ?? []
-  const selectedUser = users.find((u) => u.id === selectedUserId)
+  const users = (usersQuery.data ?? []).filter(u => u.role !== 'admin')
+  const selectedUser = users.find(u => u.id === selectedUserId)
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Users</h1>
-          <p className="page-subtitle">Manage user accounts, roles, and view booking history.</p>
-        </div>
-        <div className="badge badge-blue">
-          <Users className="w-3 h-3" /> {users.length} Users
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Page header */}
+      <div>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', margin: 0 }}>
+          User Control
+        </h1>
+        <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}>
+          Regulate accounts, enforce roles, and track historical interactions.
+        </p>
       </div>
 
-      {/* Error strip */}
-      {(roleMutation.error || activeMutation.error || allocateMutation.error || rejectMutation.error) && (
-        <div className="error-text text-sm rounded-xl px-4 py-3" style={{ background: 'rgb(239 68 68 / 0.08)', border: '1px solid rgb(239 68 68 / 0.2)' }}>
-          {roleMutation.error?.message || activeMutation.error?.message || allocateMutation.error?.message || rejectMutation.error?.message}
-        </div>
-      )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: '20px' }}>
 
-      {/* Users table */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #27272a' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7' }}>All Users</h2>
-          {usersQuery.isLoading && <span style={{ fontSize: '0.8125rem', color: '#71717a' }}>Loading...</span>}
-        </div>
-
-        {usersQuery.isError ? (
-          <div className="px-5 py-6"><p className="error-text text-sm">Failed to load users.</p></div>
-        ) : users.length === 0 && !usersQuery.isLoading ? (
-          <div className="flex flex-col items-center gap-3 py-12 text-center">
-            <Users className="w-10 h-10" style={{ color: '#3f3f46' }} />
-            <p style={{ color: '#71717a', fontSize: '0.875rem' }}>No users found.</p>
+        {/* LEFT — user list */}
+        <div style={{
+          background: '#ffffff', border: '1px solid #e5e7eb',
+          borderRadius: '12px', overflow: 'hidden',
+        }}>
+          {/* Header */}
+          <div style={{
+            padding: '16px 20px', borderBottom: '1px solid #f3f4f6',
+            display: 'flex', alignItems: 'center',
+          }}>
+            <span style={{ fontSize: '15px', fontWeight: 600, color: '#111827' }}>
+              Authorized Accounts
+            </span>
+            <span style={{
+              marginLeft: 'auto', background: '#f3f4f6', color: '#6b7280',
+              fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px',
+            }}>
+              {users.length} USERS
+            </span>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="table w-full" style={{ minWidth: '680px' }}>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                          style={{ background: user.role === 'admin' ? 'linear-gradient(135deg, #6366f1, #4338ca)' : 'linear-gradient(135deg, #0ea5e9, #0284c7)' }}
-                        >
-                          {(user.full_name ?? 'U').slice(0, 1).toUpperCase()}
-                        </div>
-                        <div>
-                          <div style={{ fontWeight: '600', color: '#e4e4e7', fontSize: '0.875rem' }}>{user.full_name}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#71717a' }}>#{user.id}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ color: '#a1a1aa', fontSize: '0.875rem' }}>{user.email}</td>
-                    <td>
-                      <span className={`badge ${user.role === 'admin' ? 'badge-purple' : 'badge-blue'}`} style={{ display: 'inline-flex' }}>
-                        {user.role === 'admin'
-                          ? <><Shield className="w-3 h-3" /> Admin</>
-                          : <><UserIcon className="w-3 h-3" /> User</>
-                        }
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge ${user.is_active ? 'badge-green' : 'badge-red'}`} style={{ display: 'inline-flex' }}>
-                        {user.is_active
-                          ? <><CheckCircle2 className="w-3 h-3" /> Active</>
-                          : <><XCircle className="w-3 h-3" /> Inactive</>
-                        }
-                      </span>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <button
-                          className="btn btn-primary"
-                          style={{ height: '2rem', padding: '0 0.625rem', fontSize: '0.8125rem', gap: '0.25rem' }}
-                          type="button"
-                          onClick={() => setSelectedUserId(user.id === selectedUserId ? null : user.id)}
-                        >
-                          <History className="w-3 h-3" />
-                          History
-                        </button>
-                        <button
-                          className="btn btn-secondary"
-                          style={{ height: '2rem', padding: '0 0.625rem', fontSize: '0.8125rem', gap: '0.25rem' }}
-                          type="button"
-                          disabled={roleMutation.isPending}
-                          onClick={() => roleMutation.mutate({ id: user.id, role: user.role === 'admin' ? 'user' : 'admin' })}
-                        >
-                          <Shield className="w-3 h-3" />
-                          {user.role === 'admin' ? '→ User' : '→ Admin'}
-                        </button>
-                        <button
-                          className={`btn ${user.is_active ? 'btn-danger' : 'btn-primary'}`}
-                          style={{ height: '2rem', padding: '0 0.625rem', fontSize: '0.8125rem', gap: '0.25rem' }}
-                          type="button"
-                          disabled={activeMutation.isPending}
-                          onClick={() => activeMutation.mutate({ id: user.id, is_active: !user.is_active })}
-                        >
-                          {user.is_active ? <XCircle className="w-3 h-3" /> : <CheckCircle2 className="w-3 h-3" />}
-                          {user.is_active ? 'Deactivate' : 'Activate'}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
 
-      {/* User History Panel */}
-      <AnimatePresence>
-        {selectedUserId && selectedUser && (
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            className="card"
-          >
-            {/* Panel header */}
-            <div className="flex items-center justify-between gap-4 mb-5">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg, #6366f1, #4338ca)' }}
-                >
-                  {(selectedUser.full_name ?? 'U').slice(0, 1).toUpperCase()}
+          {/* User rows */}
+          {usersQuery.isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} style={{ padding: '14px 20px', borderBottom: '1px solid #f3f4f6' }}>
+                <div style={{ height: '38px', background: '#f3f4f6', borderRadius: '8px' }} />
+              </div>
+            ))
+          ) : users.map(u => (
+            <div
+              key={u.id}
+              onClick={() => setSelectedUserId(u.id === selectedUserId ? null : u.id)}
+              style={{
+                padding: '14px 20px', borderBottom: '1px solid #f3f4f6',
+                display: 'flex', alignItems: 'center', gap: '12px',
+                cursor: 'pointer',
+                background: selectedUserId === u.id ? '#eff6ff' : 'transparent',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                if (selectedUserId !== u.id) e.currentTarget.style.background = '#f9fafb'
+              }}
+              onMouseLeave={(e) => {
+                if (selectedUserId !== u.id) e.currentTarget.style.background = 'transparent'
+              }}
+            >
+              <Avatar name={u.full_name} isAdmin={u.role === 'admin'} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: '13.5px', fontWeight: 500, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {u.full_name}
+                </p>
+                <p style={{ fontSize: '12px', color: '#9ca3af', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {u.email}
+                </p>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
+                <div style={{ display: 'flex', gap: '4px' }}>
+                  <Pill label={u.role.toUpperCase()} variant={u.role === 'admin' ? 'admin' : 'user'} />
+                  <Pill label={u.is_active ? 'ACTIVE' : 'SUSPENDED'} variant={u.is_active ? 'active' : 'suspended'} />
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }} onClick={(e) => e.stopPropagation()}>
+                  <TextBtn label="History" onClick={() => setSelectedUserId(u.id === selectedUserId ? null : u.id)} />
+                  <TextBtn
+                    label={u.role === 'admin' ? 'Set as User' : 'Set as Admin'}
+                    blue
+                    onClick={() => roleMutation.mutate({ id: u.id, role: u.role === 'admin' ? 'user' : 'admin' })}
+                  />
+                  <TextBtn
+                    label={u.is_active ? 'Suspend' : 'Activate'}
+                    danger={u.is_active}
+                    blue={!u.is_active}
+                    onClick={() => activeMutation.mutate({ id: u.id, is_active: !u.is_active })}
+                  />
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* RIGHT — detail panel */}
+        <div style={{
+          background: '#ffffff', border: '1px solid #e5e7eb',
+          borderRadius: '12px', padding: '24px',
+        }}>
+          {!selectedUser ? (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              justifyContent: 'center', height: '100%', minHeight: '300px',
+              color: '#9ca3af', textAlign: 'center',
+            }}>
+              <Clock size={40} style={{ color: '#d1d5db', marginBottom: '12px' }} />
+              <p style={{ fontSize: '15px', fontWeight: 600, color: '#374151', margin: '0 0 6px' }}>
+                No Selection
+              </p>
+              <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0, maxWidth: '260px' }}>
+                Select a user to view their complete rental activity logs.
+              </p>
+            </div>
+          ) : (
+            <div>
+              {/* User header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+                <div style={{
+                  width: '48px', height: '48px', borderRadius: '50%', flexShrink: 0,
+                  background: selectedUser.role === 'admin' ? '#dbeafe' : '#f3f4f6',
+                  color: selectedUser.role === 'admin' ? '#2563eb' : '#6b7280',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '18px', fontWeight: 700,
+                }}>
+                  {selectedUser.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7' }}>
+                  <p style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: 0 }}>
                     {selectedUser.full_name}
-                  </h2>
-                  <p style={{ fontSize: '0.8125rem', color: '#71717a' }}>{selectedUser.email}</p>
+                  </p>
+                  <p style={{ fontSize: '13px', color: '#6b7280', margin: '2px 0 6px' }}>
+                    {selectedUser.email}
+                  </p>
+                  <Pill label={selectedUser.role.toUpperCase()} variant={selectedUser.role === 'admin' ? 'admin' : 'user'} />
                 </div>
               </div>
-              <button
-                className="btn btn-ghost"
-                type="button"
-                onClick={() => setSelectedUserId(null)}
-                style={{ height: '2rem', padding: '0 0.75rem', fontSize: '0.8125rem', gap: '0.25rem' }}
-              >
-                <X className="w-3.5 h-3.5" /> Close
-              </button>
-            </div>
 
-            {historyQuery.isLoading ? (
-              <div className="flex flex-col gap-3">
-                {[1, 2, 3].map((i) => <div key={i} className="skeleton h-10 rounded-lg" />)}
-              </div>
-            ) : historyQuery.isError ? (
-              <p className="error-text text-sm">Failed to load user history.</p>
-            ) : historyQuery.data ? (
-              <>
-                {/* User Details */}
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mb-5">
-                  {[
-                    { label: 'Mobile Number', value: historyQuery.data.user.phone ?? 'Not provided' },
-                    { label: 'Aadhaar Number', value: historyQuery.data.aadhaar_number ?? 'Not available' },
-                    { label: 'PAN Number', value: historyQuery.data.pan_number ?? 'Not available' },
-                    { label: 'Account Role', value: historyQuery.data.user.role },
-                  ].map(({ label, value }) => (
-                    <div
-                      key={label}
-                      className="rounded-xl p-3.5"
-                      style={{ background: '#27272a', border: '1px solid #3f3f46' }}
-                    >
-                      <p style={{ fontSize: '0.75rem', color: '#71717a', marginBottom: '0.25rem' }}>{label}</p>
-                      <p style={{ fontSize: '1rem', fontWeight: '700', color: '#ffffff' }}>{value}</p>
-                    </div>
+              {/* Rental Activity */}
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px' }}>
+                Rental Activity
+              </p>
+
+              {historyQuery.isLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {[1, 2, 3].map(i => (
+                    <div key={i} style={{ height: '60px', background: '#f3f4f6', borderRadius: '8px' }} />
                   ))}
                 </div>
-
-                {/* Summary Stats */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-5">
-                  {[
-                    { label: 'Total Bookings', value: historyQuery.data.summary.total_bookings },
-                    { label: 'Active Bookings', value: historyQuery.data.summary.active_bookings },
-                    { label: 'Deposit Paid', value: `₹${historyQuery.data.summary.total_deposit_paid.toLocaleString()}` },
-                    { label: 'Rent Paid', value: `₹${historyQuery.data.summary.total_rent_paid.toLocaleString()}` },
-                    { label: 'Fine Paid', value: `₹${historyQuery.data.summary.total_fine_paid.toLocaleString()}` },
-                    { label: 'Deposit Refunded', value: `₹${historyQuery.data.summary.total_deposit_refunded.toLocaleString()}` },
-                  ].map(({ label, value }) => (
-                    <div
-                      key={label}
-                      className="rounded-xl p-3.5"
-                      style={{ background: '#27272a', border: '1px solid #3f3f46' }}
+              ) : historyQuery.isError ? (
+                <div style={{
+                  padding: '16px', background: '#fef2f2', borderRadius: '8px',
+                  border: '1px solid #fecaca',
+                }}>
+                  <p style={{ fontSize: '13px', color: '#dc2626', margin: 0 }}>
+                    Could not load history.{' '}
+                    <button
+                      onClick={() => historyQuery.refetch()}
+                      style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '13px', padding: 0, textDecoration: 'underline' }}
                     >
-                      <p style={{ fontSize: '0.75rem', color: '#71717a', marginBottom: '0.25rem' }}>{label}</p>
-                      <p style={{ fontSize: '1.125rem', fontWeight: '700', color: '#ffffff' }}>{value}</p>
-                    </div>
-                  ))}
+                      Retry
+                    </button>
+                  </p>
                 </div>
-
-                {/* Booking History */}
-                <div className="flex flex-col gap-4">
-                  <h3 style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#e4e4e7' }}>Booking History</h3>
-                  <div className="table-wrap">
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th>Booking ID</th>
-                          <th>Status</th>
-                          <th>Pickup</th>
-                          <th>Due</th>
-                          <th>Deposit</th>
-                          <th>Rent</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {historyQuery.data.bookings.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="muted">No bookings found for this user.</td>
-                          </tr>
-                        ) : (
-                          historyQuery.data.bookings.map((booking) => (
-                            <tr key={booking.id}>
-                              <td><strong>#{booking.id}</strong></td>
-                              <td>
-                                <span className={`status-badge status-${booking.status}`}>{booking.status}</span>
-                              </td>
-                              <td>{new Date(booking.pickup_date).toLocaleDateString()}</td>
-                              <td>{new Date(booking.due_date).toLocaleDateString()}</td>
-                              <td>₹{booking.deposit_amount.toLocaleString()}</td>
-                              <td>₹{booking.rent_amount.toLocaleString()}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  {/* Allocation decisions for pending bookings */}
-                  {historyQuery.data.bookings.some((b) => b.status === 'booked') && (
-                    <>
-                      <h3 style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#e4e4e7' }}>Pending Allocation Decisions</h3>
-                      <div className="table-wrap">
-                        <table className="table">
-                          <thead>
-                            <tr>
-                              <th>Booking</th>
-                              <th>Requested Asset</th>
-                              <th>Allocate Requested</th>
-                              <th>Allocate Alternate</th>
-                              <th>Reject</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {historyQuery.data.bookings
-                              .filter((b) => b.status === 'booked')
-                              .map((booking) => {
-                                const requestedAsset = getRequestedAsset(booking.requested_asset_id)
-                                const requestedAvailable = Boolean(requestedAsset && requestedAsset.status === 'available')
-                                const alternateAssets = getAlternativeAssets(booking)
-                                const selectedAltAssetId = selectedAssetByBooking[booking.id] ?? alternateAssets[0]?.id
-
-                                return (
-                                  <tr key={`decision-${booking.id}`}>
-                                    <td><strong>#{booking.id}</strong></td>
-                                    <td>
-                                      {requestedAsset ? (
-                                        <div>
-                                          <div style={{ fontWeight: '500', color: '#e4e4e7', fontSize: '0.875rem' }}>{requestedAsset.name}</div>
-                                          <div style={{ fontSize: '0.75rem', color: '#71717a' }}>{requestedAsset.asset_code} · {requestedAsset.status}</div>
-                                        </div>
-                                      ) : (
-                                        <span style={{ color: '#71717a', fontSize: '0.875rem' }}>Any in category</span>
-                                      )}
-                                    </td>
-                                    <td>
-                                      <button
-                                        className="btn btn-primary"
-                                        style={{ height: '2rem', padding: '0 0.625rem', fontSize: '0.8125rem' }}
-                                        type="button"
-                                        disabled={!requestedAvailable || allocateMutation.isPending}
-                                        onClick={() => {
-                                          if (!requestedAsset) return
-                                          allocateMutation.mutate({ bookingId: booking.id, assetId: requestedAsset.id })
-                                        }}
-                                      >
-                                        Allocate Requested
-                                      </button>
-                                    </td>
-                                    <td>
-                                      <div className="flex items-center gap-2">
-                                        <select
-                                          className="form-select"
-                                          style={{ height: '2rem', fontSize: '0.8125rem', width: '160px' }}
-                                          value={selectedAltAssetId ?? ''}
-                                          onChange={(e) => {
-                                            const id = Number(e.target.value)
-                                            setSelectedAssetByBooking((prev) => ({ ...prev, [booking.id]: id }))
-                                          }}
-                                          disabled={alternateAssets.length === 0 || allocateMutation.isPending}
-                                        >
-                                          {alternateAssets.length === 0
-                                            ? <option value="">No alternatives</option>
-                                            : alternateAssets.map((asset) => (
-                                              <option key={asset.id} value={asset.id}>
-                                                {asset.name}
-                                              </option>
-                                            ))
-                                          }
-                                        </select>
-                                        <button
-                                          className="btn btn-secondary"
-                                          style={{ height: '2rem', padding: '0 0.625rem', fontSize: '0.8125rem' }}
-                                          type="button"
-                                          disabled={!selectedAltAssetId || allocateMutation.isPending}
-                                          onClick={() => {
-                                            if (!selectedAltAssetId) return
-                                            allocateMutation.mutate({ bookingId: booking.id, assetId: selectedAltAssetId })
-                                          }}
-                                        >
-                                          Allocate
-                                        </button>
-                                      </div>
-                                    </td>
-                                    <td>
-                                      <button
-                                        className="btn btn-danger"
-                                        style={{ height: '2rem', padding: '0 0.625rem', fontSize: '0.8125rem' }}
-                                        type="button"
-                                        disabled={rejectMutation.isPending}
-                                        onClick={() => rejectMutation.mutate(booking.id)}
-                                      >
-                                        Reject
-                                      </button>
-                                    </td>
-                                  </tr>
-                                )
-                              })}
-                          </tbody>
-                        </table>
+              ) : !historyQuery.data?.bookings?.length ? (
+                <div style={{
+                  padding: '24px', background: '#f9fafb', borderRadius: '8px',
+                  textAlign: 'center', border: '1px dashed #e5e7eb',
+                }}>
+                  <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>No booking records found.</p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '360px', overflowY: 'auto' }}>
+                  {(historyQuery.data as UserHistoryResponse).bookings.map((b) => (
+                    <div key={b.id} style={{
+                      padding: '12px 14px', background: '#f9fafb',
+                      borderRadius: '8px', border: '1px solid #f3f4f6',
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', fontFamily: 'monospace' }}>
+                          BK-#{b.id}
+                        </span>
+                        <span style={{
+                          fontSize: '10px', fontWeight: 600, padding: '2px 7px',
+                          borderRadius: '999px', background: '#f3f4f6', color: '#6b7280',
+                          textTransform: 'uppercase',
+                        }}>
+                          {b.status.replace(/_/g, ' ')}
+                        </span>
                       </div>
-                    </>
-                  )}
-
-                  {/* Payment History */}
-                  <h3 style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#e4e4e7' }}>Payment History</h3>
-                  <div className="table-wrap">
-                    <table className="table">
-                      <thead>
-                        <tr>
-                          <th>Payment ID</th>
-                          <th>Booking</th>
-                          <th>Type</th>
-                          <th>Status</th>
-                          <th>Amount</th>
-                          <th>Date</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {historyQuery.data.payments.length === 0 ? (
-                          <tr>
-                            <td colSpan={6} className="muted">No payments found for this user.</td>
-                          </tr>
-                        ) : (
-                          historyQuery.data.payments.map((payment) => (
-                            <tr key={payment.id}>
-                              <td>#{payment.id}</td>
-                              <td>#{payment.booking_id}</td>
-                              <td>
-                                <span className={`badge ${payment.type === 'deposit_refund' ? 'badge-green' : 'badge-blue'}`} style={{ display: 'inline-flex', fontSize: '0.75rem' }}>
-                                  {payment.type}
-                                </span>
-                              </td>
-                              <td>
-                                <span className={`status-badge status-${payment.status}`}>{payment.status}</span>
-                              </td>
-                              <td style={{ fontWeight: '600', color: '#e4e4e7' }}>₹{payment.amount.toLocaleString()}</td>
-                              <td style={{ color: '#a1a1aa' }}>{new Date(payment.created_at).toLocaleDateString()}</td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                      <p style={{ fontSize: '13.5px', fontWeight: 600, color: '#111827', margin: '0 0 4px' }}>
+                        {b.rental_plan?.name ?? `Plan #${b.rental_plan_id}`}
+                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#6b7280' }}>
+                        <span>Pickup: {new Date(b.pickup_date).toLocaleDateString()}</span>
+                        <span style={{ fontWeight: 600, color: '#374151' }}>₹{b.rent_amount}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </>
-            ) : null}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              )}
+
+              {/* Account Actions */}
+              <p style={{ fontSize: '12px', fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '20px 0 12px' }}>
+                Account Actions
+              </p>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[
+                  { label: selectedUser.role === 'admin' ? 'Set as User' : 'Set as Admin', onClick: () => roleMutation.mutate({ id: selectedUser.id, role: selectedUser.role === 'admin' ? 'user' : 'admin' }) },
+                  { label: selectedUser.is_active ? 'Suspend Account' : 'Activate Account', onClick: () => activeMutation.mutate({ id: selectedUser.id, is_active: !selectedUser.is_active }), danger: selectedUser.is_active },
+                ].map(({ label, onClick, danger }) => (
+                  <button
+                    key={label}
+                    onClick={onClick}
+                    style={{
+                      height: '34px', padding: '0 14px',
+                      background: danger ? '#fee2e2' : '#f3f4f6',
+                      color: danger ? '#dc2626' : '#374151',
+                      border: 'none', borderRadius: '8px',
+                      fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+                      transition: 'all 0.15s',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.8' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.opacity = '1' }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

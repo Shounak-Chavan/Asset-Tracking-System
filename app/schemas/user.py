@@ -5,6 +5,7 @@ from typing import Optional
 from app.models.user import UserRole
 from app.models.bookings import BookingStatus
 from app.models.payment import PaymentType, PaymentStatus
+from app.schemas.rental_plan import RentalPlanResponse
 
 class UserCreateAdmin(BaseModel):
     full_name: str
@@ -57,6 +58,7 @@ class UserHistorySummary(BaseModel):
 class UserBookingHistoryItem(BaseModel):
     id: int
     rental_plan_id: int
+    rental_plan: Optional[RentalPlanResponse] = None
     category_id: Optional[int] = None
     requested_asset_id: Optional[int] = None
     status: BookingStatus
@@ -69,6 +71,9 @@ class UserBookingHistoryItem(BaseModel):
     @field_serializer("deposit_amount", "rent_amount")
     def serialize_decimal(self, value: Decimal):
         return float(value)
+
+    class Config:
+        from_attributes = True
 
 
 class UserPaymentHistoryItem(BaseModel):

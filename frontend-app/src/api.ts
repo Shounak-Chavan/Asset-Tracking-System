@@ -122,9 +122,9 @@ export const api = {
   changePassword: (token: string, payload: { current_password: string; new_password: string }) =>
     request<{ detail: string }>('/auth/change-password', { method: 'POST', token, body: payload }),
 
-  listAssets: (token: string) => request<Asset[]>('/assets/', { token }),
+  listAssets: (token: string | null) => request<Asset[]>('/assets/', { token: token || null }),
   listAssetsFiltered: (
-    token: string,
+    token: string | null,
     params?: { name?: string; category_name?: string; status?: string },
   ) => {
     const query = new URLSearchParams()
@@ -132,7 +132,7 @@ export const api = {
     if (params?.category_name) query.set('category_name', params.category_name)
     if (params?.status) query.set('status', params.status)
     const q = query.toString()
-    return request<Asset[]>(`/assets/${q ? `?${q}` : ''}`, { token })
+    return request<Asset[]>(`/assets/${q ? `?${q}` : ''}`, { token: token || null })
   },
   updateAsset: (
     token: string,
@@ -150,7 +150,7 @@ export const api = {
   deleteAsset: (token: string, assetId: number) =>
     request<void>(`/assets/${assetId}`, { method: 'DELETE', token }),
 
-  listCategories: (token: string) => request<Category[]>('/categories/', { token }),
+  listCategories: (token: string | null) => request<Category[]>('/categories/', { token: token || null }),
   createCategory: (token: string, payload: { name: string }) =>
     request<Category>('/categories/', { method: 'POST', token, body: payload }),
   updateCategory: (token: string, categoryId: number, payload: { name: string }) =>

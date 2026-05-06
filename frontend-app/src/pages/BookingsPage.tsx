@@ -1,425 +1,806 @@
+import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import {
-  CalendarCheck2, Clock, CheckCircle2, XCircle, CreditCard,
-  AlertCircle, ArrowRight, BookOpen, Package2, ChevronRight,
-  RotateCcw, IndianRupee,
+  Calendar,
+  Clock,
+  RotateCcw,
+  CircleDollarSign,
+  History,
+  Sparkles,
+  Package,
+  CheckCircle2,
+  PlusCircle,
+  ChevronRight,
+  RefreshCw,
+  AlertCircle,
+  CreditCard,
+  X,
+  Tag,
 } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
-import type { Asset, Booking } from '../types'
+import { Button } from '../components/ui/Button'
+import { Alert } from '../components/ui/Alert'
+import type { Booking } from '../types'
 
-const statusConfig: Record<string, { label: string; cls: string; icon: React.ReactNode }> = {
-  pending:          { label: 'Pending',          cls: 'badge badge-yellow', icon: <Clock className="w-3 h-3" /> },
-  booked:           { label: 'Booked',           cls: 'badge badge-blue',   icon: <BookOpen className="w-3 h-3" /> },
-  allocated:        { label: 'Allocated',        cls: 'badge badge-purple', icon: <CheckCircle2 className="w-3 h-3" /> },
-  ready_for_pickup: { label: 'Return Requested', cls: 'badge badge-amber',  icon: <RotateCcw className="w-3 h-3" /> },
-  picked_up:        { label: 'Picked Up',        cls: 'badge badge-green',  icon: <CheckCircle2 className="w-3 h-3" /> },
-  returned:         { label: 'Returned',         cls: 'badge badge-gray',   icon: <CheckCircle2 className="w-3 h-3" /> },
-  cancelled:        { label: 'Cancelled',        cls: 'badge badge-red',    icon: <XCircle className="w-3 h-3" /> },
-  overdue:          { label: 'Overdue',          cls: 'badge badge-red',    icon: <AlertCircle className="w-3 h-3" /> },
-}
-
-const getNextStep = (status: string): { text: string; color: string } => {
-  if (status === 'pending')          return { text: 'Pay deposit to confirm booking', color: '#fbbf24' }
-  if (status === 'booked')           return { text: 'Waiting for admin to allocate', color: '#818cf8' }
-  if (status === 'allocated')        return { text: 'Pay rent, then request return', color: '#a78bfa' }
-  if (status === 'ready_for_pickup') return { text: 'Admin processing your return', color: '#fb923c' }
-  if (status === 'picked_up')        return { text: 'Asset currently in use', color: '#34d399' }
-  if (status === 'returned')         return { text: 'Booking completed ✓', color: '#6ee7b7' }
-  if (status === 'cancelled')        return { text: 'Booking cancelled', color: '#f87171' }
-  return { text: 'Monitor status', color: '#71717a' }
-}
-
-function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback
-}
-
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  return new Date(dateStr).toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
-function BookingStatCard({ label, value, icon, iconBg }: { label: string; value: number; icon: React.ReactNode; iconBg: string }) {
+function daysUntil(dateStr: string): number {
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const target = new Date(dateStr)
+  target.setHours(0, 0, 0, 0)
+  return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+function durationLabel(pickup: string, due: string): string {
+  const days = Math.ceil(
+    (new Date(due).getTime() - new Date(pickup).getTime()) / (1000 * 60 * 60 * 24)
+  )
+  return days === 1 ? '1 Day' : `${days} Days`
+}
+
+// ── Stat Card ─────────────────────────────────────────────────────────────────
+function StatCard({
+  label,
+  value,
+  icon: Icon,
+  iconBg,
+  topBorderColor,
+  valueColor,
+}: {
+  label: string
+  value: number
+  icon: React.ElementType
+  iconBg: string
+  topBorderColor: string
+  valueColor: string
+}) {
   return (
-    <div className="stat-card">
-      <div className={`stat-icon ${iconBg}`}>{icon}</div>
-      <div>
-        <p className="stat-label">{label}</p>
-        <p className="stat-value">{value}</p>
+    <div
+      className="bg-white rounded-xl hover:shadow-md transition-all duration-200 cursor-default"
+      style={{
+        padding: '20px 24px',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+        borderTop: `4px solid ${topBorderColor}`,
+        borderRadius: '12px',
+      }}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <p className={`font-bold ${valueColor}`} style={{ fontSize: '36px', lineHeight: 1.1 }}>
+            {value}
+          </p>
+          <p className="text-gray-500 font-medium mt-1" style={{ fontSize: '14px' }}>
+            {label}
+          </p>
+        </div>
+        <div
+          className={`flex items-center justify-center shrink-0 ${iconBg}`}
+          style={{ width: 40, height: 40, borderRadius: '50%' }}
+        >
+          <Icon className="w-5 h-5" />
+        </div>
       </div>
     </div>
   )
 }
 
+// ── Tab Bar ───────────────────────────────────────────────────────────────────
+type Tab = 'all' | 'active' | 'upcoming' | 'past'
+
+function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void }) {
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'all', label: 'All' },
+    { id: 'active', label: 'Active' },
+    { id: 'upcoming', label: 'Upcoming' },
+    { id: 'past', label: 'Completed' },
+  ]
+  return (
+    <div
+      className="flex gap-1"
+      style={{ background: '#f4f4f5', borderRadius: '8px', padding: '4px' }}
+    >
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => onChange(t.id)}
+          className="flex-1 transition-all"
+          style={{
+            padding: '6px 16px',
+            borderRadius: '6px',
+            fontSize: '14px',
+            fontWeight: active === t.id ? 500 : 400,
+            color: active === t.id ? '#111827' : '#6b7280',
+            background: active === t.id ? '#ffffff' : 'transparent',
+            boxShadow: active === t.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Empty State ───────────────────────────────────────────────────────────────
+function EmptyState({
+  icon: Icon,
+  title,
+  subtitle,
+}: {
+  icon: React.ElementType
+  title: string
+  subtitle: string
+}) {
+  return (
+    <div
+      className="flex flex-col items-center justify-center text-center"
+      style={{ paddingTop: '40px', paddingBottom: '40px' }}
+    >
+      <div
+        className="flex items-center justify-center mb-3"
+        style={{ width: 56, height: 56, borderRadius: '50%', background: '#f4f4f5' }}
+      >
+        <Icon className="w-6 h-6 text-gray-400" />
+      </div>
+      <p style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{title}</p>
+      <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>{subtitle}</p>
+    </div>
+  )
+}
+
+// ── Section Wrapper ───────────────────────────────────────────────────────────
+function Section({
+  icon: Icon,
+  title,
+  iconColor,
+  children,
+  count,
+}: {
+  icon: React.ElementType
+  title: string
+  iconColor: string   // hex for the circle bg
+  children: React.ReactNode
+  count?: number
+}) {
+  return (
+    <section
+      style={{
+        background: '#fff',
+        borderRadius: '14px',
+        padding: '20px 24px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        border: '1px solid #e2e8f0',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+        {/* Icon circle */}
+        <div style={{
+          width: 32, height: 32, borderRadius: '50%',
+          background: iconColor,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          flexShrink: 0,
+        }}>
+          <Icon style={{ width: 15, height: 15, color: '#fff' }} />
+        </div>
+        <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#111827', margin: 0 }}>{title}</h2>
+        {count !== undefined && (
+          <span style={{
+            fontSize: '12px', fontWeight: 500, color: '#374151',
+            background: '#e5e7eb', padding: '2px 10px', borderRadius: '20px',
+          }}>
+            {count}
+          </span>
+        )}
+        {count !== undefined && count > 3 && (
+          <span style={{ marginLeft: 'auto', fontSize: '13px', color: '#3b82f6', cursor: 'pointer' }}>
+            View All
+          </span>
+        )}
+      </div>
+      {children}
+    </section>
+  )
+}
+
+// ── Booking Card Image ────────────────────────────────────────────────────────
+function BookingThumb({ variant }: { variant: 'active' | 'upcoming' }) {
+  const bg = variant === 'active' ? '#dcfce7' : '#dbeafe'
+  const color = variant === 'active' ? '#16a34a' : '#2563eb'
+  return (
+    <div style={{
+      width: 48, height: 48, borderRadius: '10px', flexShrink: 0,
+      background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      <Package style={{ width: 22, height: 22, color }} />
+    </div>
+  )
+}
+
+// ── Active / Upcoming Booking Card ───────────────────────────────────────────
+interface BookingCardProps {
+  booking: Booking
+  onPayDeposit: (id: number) => void
+  onPayRent: (id: number) => void
+  onCancel: (id: number) => void
+  onReturn: (id: number) => void
+  isActionPending: boolean
+  variant?: 'active' | 'upcoming'
+}
+
+function BookingCard({
+  booking: b,
+  onPayDeposit,
+  onPayRent,
+  onCancel,
+  onReturn,
+  isActionPending,
+  variant = 'active',
+}: BookingCardProps) {
+  const daysLeft = variant === 'upcoming' ? daysUntil(b.pickup_date) : null
+
+  // Status badge colours
+  const statusStyle: Record<string, { bg: string; color: string; label: string }> = {
+    pending:          { bg: '#fef3c7', color: '#d97706', label: 'Pending' },
+    booked:           { bg: '#dbeafe', color: '#2563eb', label: 'Booked' },
+    allocated:        { bg: '#ede9fe', color: '#7c3aed', label: 'Allocated' },
+    ready_for_pickup: { bg: '#ffedd5', color: '#ea580c', label: 'Ready' },
+    picked_up:        { bg: '#dcfce7', color: '#16a34a', label: 'Picked Up' },
+    overdue:          { bg: '#fee2e2', color: '#dc2626', label: 'Overdue' },
+  }
+  const badge = statusStyle[b.status] ?? { bg: '#f3f4f6', color: '#374151', label: b.status }
+
+  const daysLeftLabel = daysLeft === null ? null
+    : daysLeft <= 0 ? 'Today'
+    : `Starts in ${daysLeft}d`
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: '14px',
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        padding: '20px 24px',
+        transition: 'box-shadow 0.2s',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)')}
+      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)')}
+    >
+      {/* ── Top row ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
+        <BookingThumb variant={variant} />
+
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: '15px', fontWeight: 700, color: '#111827', margin: 0 }}>
+            {b.rental_plan?.name ?? `Plan #${b.rental_plan_id}`}
+          </p>
+          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '2px 0 0 0' }}>
+            Booking #{b.id}
+          </p>
+        </div>
+
+        {/* Right badges */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px', flexShrink: 0 }}>
+          <span style={{
+            background: badge.bg, color: badge.color,
+            borderRadius: '20px', padding: '4px 12px',
+            fontSize: '12px', fontWeight: 600,
+          }}>
+            {badge.label}
+          </span>
+          {daysLeftLabel && (
+            <span style={{
+              background: '#fee2e2', color: '#dc2626',
+              borderRadius: '20px', padding: '3px 10px',
+              fontSize: '11px', fontWeight: 500,
+            }}>
+              {daysLeftLabel}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Info chips ── */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px' }}>
+        {[
+          { icon: Calendar, color: '#2563eb', text: `${formatDate(b.pickup_date)} – ${formatDate(b.due_date)}` },
+          { icon: Clock,    color: '#d97706', text: durationLabel(b.pickup_date, b.due_date) },
+          { icon: Tag,      color: '#16a34a', text: b.rental_plan?.daily_rate ? `₹${b.rental_plan.daily_rate}/day` : null },
+        ].filter(c => c.text).map(({ icon: Icon, color, text }) => (
+          <div key={text} style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: '#f8fafc', border: '1px solid #e5e7eb',
+            borderRadius: '8px', padding: '7px 12px',
+            fontSize: '13px', color: '#374151',
+          }}>
+            <Icon style={{ width: 14, height: 14, color, flexShrink: 0 }} />
+            {text}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Cost row ── */}
+      <div style={{ display: 'flex', gap: '24px', marginTop: '12px', fontSize: '13px' }}>
+        <span style={{ color: '#6b7280' }}>
+          Rent: <strong style={{ color: '#111827' }}>₹{b.rent_amount}</strong>
+        </span>
+        <span style={{ color: '#6b7280' }}>
+          Deposit: <strong style={{ color: '#111827' }}>₹{b.deposit_amount}</strong>
+        </span>
+      </div>
+
+      {/* ── Action buttons ── */}
+      {(b.status === 'pending' || b.status === 'allocated' || b.status === 'picked_up') && (
+        <div style={{
+          display: 'flex', flexWrap: 'wrap', gap: '10px',
+          marginTop: '16px', paddingTop: '14px',
+          borderTop: '1px solid #f1f5f9',
+        }}>
+          {b.status === 'pending' && (
+            <>
+              <button
+                onClick={() => onPayDeposit(b.id)}
+                disabled={isActionPending}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '7px',
+                  background: '#2563eb', color: '#fff',
+                  border: 'none', borderRadius: '8px',
+                  padding: '10px 20px', fontSize: '14px', fontWeight: 500,
+                  cursor: isActionPending ? 'not-allowed' : 'pointer',
+                  opacity: isActionPending ? 0.6 : 1,
+                  boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+                  transition: 'background 0.15s, transform 0.15s',
+                }}
+                onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = '#1d4ed8'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.transform = 'translateY(0)' }}
+              >
+                <CreditCard style={{ width: 16, height: 16 }} />
+                Pay Deposit
+              </button>
+              <button
+                onClick={() => onCancel(b.id)}
+                disabled={isActionPending}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '7px',
+                  background: '#fff', color: '#ef4444',
+                  border: '1.5px solid #fca5a5', borderRadius: '8px',
+                  padding: '10px 20px', fontSize: '14px', fontWeight: 500,
+                  cursor: isActionPending ? 'not-allowed' : 'pointer',
+                  opacity: isActionPending ? 0.6 : 1,
+                  transition: 'background 0.15s, border-color 0.15s',
+                }}
+                onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444' } }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#fca5a5' }}
+              >
+                <X style={{ width: 16, height: 16 }} />
+                Cancel
+              </button>
+            </>
+          )}
+          {b.status === 'allocated' && (
+            <button
+              onClick={() => onPayRent(b.id)}
+              disabled={isActionPending}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '7px',
+                background: '#2563eb', color: '#fff',
+                border: 'none', borderRadius: '8px',
+                padding: '10px 20px', fontSize: '14px', fontWeight: 500,
+                cursor: isActionPending ? 'not-allowed' : 'pointer',
+                opacity: isActionPending ? 0.6 : 1,
+                boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+                transition: 'background 0.15s, transform 0.15s',
+              }}
+              onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = '#1d4ed8'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.transform = 'translateY(0)' }}
+            >
+              <CreditCard style={{ width: 16, height: 16 }} />
+              Pay Rent
+            </button>
+          )}
+          {b.status === 'picked_up' && (
+            <button
+              onClick={() => onReturn(b.id)}
+              disabled={isActionPending}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '7px',
+                background: '#fff', color: '#374151',
+                border: '1.5px solid #d1d5db', borderRadius: '8px',
+                padding: '10px 20px', fontSize: '14px', fontWeight: 500,
+                cursor: isActionPending ? 'not-allowed' : 'pointer',
+                opacity: isActionPending ? 0.6 : 1,
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { if (!isActionPending) e.currentTarget.style.background = '#f9fafb' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#fff' }}
+            >
+              <RotateCcw style={{ width: 16, height: 16 }} />
+              Request Return
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Past Booking Card ─────────────────────────────────────────────────────────
+function PastBookingRow({ booking: b, onRebook }: { booking: Booking; onRebook: () => void }) {
+  const statusBadge: Record<string, { bg: string; color: string; label: string }> = {
+    returned:  { bg: '#dcfce7', color: '#16a34a', label: 'Returned' },
+    cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'Cancelled' },
+  }
+  const badge = statusBadge[b.status] ?? { bg: '#f3f4f6', color: '#6b7280', label: b.status }
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: '12px',
+        border: '1px solid #e2e8f0',
+        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+        padding: '16px 20px',
+        display: 'flex', alignItems: 'center', gap: '14px',
+        transition: 'box-shadow 0.15s',
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 3px 10px rgba(0,0,0,0.09)')}
+      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.05)')}
+    >
+      {/* Icon */}
+      <div style={{
+        width: 40, height: 40, borderRadius: '8px',
+        background: '#f3f4f6', flexShrink: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <Package style={{ width: 18, height: 18, color: '#9ca3af' }} />
+      </div>
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>
+          {b.rental_plan?.name ?? `Plan #${b.rental_plan_id}`}
+        </p>
+        <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>
+          {formatDate(b.pickup_date)} – {formatDate(b.due_date)} · {durationLabel(b.pickup_date, b.due_date)}
+        </p>
+      </div>
+
+      {/* Right side */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+        <span style={{
+          background: badge.bg, color: badge.color,
+          borderRadius: '20px', padding: '4px 12px',
+          fontSize: '12px', fontWeight: 600,
+        }}>
+          {badge.label}
+        </span>
+        <p style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: 0 }}>
+          ₹{b.rent_amount}
+        </p>
+        <button
+          onClick={onRebook}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '5px',
+            border: '1.5px solid #2563eb', color: '#2563eb',
+            borderRadius: '8px', padding: '6px 14px',
+            fontSize: '13px', fontWeight: 500,
+            background: 'transparent', cursor: 'pointer',
+            transition: 'background 0.15s',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#eff6ff')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        >
+          <RefreshCw style={{ width: 13, height: 13 }} />
+          Rebook
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+const PAST_PAGE_SIZE = 5
+
 export function BookingsPage() {
   const { token } = useAuth()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [notice, setNotice] = useState('')
   const [actionError, setActionError] = useState('')
+  const [actionSuccess, setActionSuccess] = useState('')
+  const [activeTab, setActiveTab] = useState<Tab>('all')
+  const [pastVisible, setPastVisible] = useState(PAST_PAGE_SIZE)
 
   const bookingsQuery = useQuery({
     queryKey: ['bookings', token],
-    queryFn: async () => {
-      if (!token) return []
-      return api.listBookings(token)
-    },
+    queryFn: () => api.listBookings(token!),
     enabled: Boolean(token),
   })
-
-  // Load assets to resolve asset names by ID
-  const assetsQuery = useQuery({
-    queryKey: ['assetsForBookings', token],
-    queryFn: async () => {
-      if (!token) return [] as Asset[]
-      return api.listAssets(token)
-    },
-    enabled: Boolean(token),
-  })
-
-  const assetById = new Map<number, Asset>()
-  ;(assetsQuery.data ?? []).forEach((a) => assetById.set(a.id, a))
-
-  const bookings: Booking[] = bookingsQuery.data ?? []
-  const pendingCount = bookings.filter((b) => b.status === 'pending').length
-  const allocatedCount = bookings.filter((b) => b.status === 'allocated').length
-  const activeCount = bookings.filter((b) => b.status !== 'cancelled' && b.status !== 'returned').length
 
   const payDepositMutation = useMutation({
-    mutationFn: async (bookingId: number) => {
-      if (!token) throw new Error('Missing token')
-      return api.payDeposit(token, bookingId)
-    },
-    onSuccess: async () => {
+    mutationFn: (bookingId: number) => api.payDeposit(token!, bookingId),
+    onSuccess: () => {
+      setActionSuccess('Deposit paid successfully!')
       setActionError('')
-      setNotice('Deposit paid successfully! Your booking is now confirmed.')
-      await queryClient.invalidateQueries({ queryKey: ['bookings', token] })
-      setTimeout(() => setNotice(''), 5000)
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      setTimeout(() => setActionSuccess(''), 3000)
     },
-    onError: (error: unknown) => {
-      setNotice('')
-      setActionError(getErrorMessage(error, 'Failed to pay deposit'))
-    },
+    onError: (err: Error) => setActionError(err.message),
   })
 
   const payRentMutation = useMutation({
-    mutationFn: async (bookingId: number) => {
-      if (!token) throw new Error('Missing token')
-      return api.payRent(token, bookingId)
-    },
-    onSuccess: async () => {
+    mutationFn: (bookingId: number) => api.payRent(token!, bookingId),
+    onSuccess: () => {
+      setActionSuccess('Rent paid successfully!')
       setActionError('')
-      setNotice('Rent paid successfully!')
-      await queryClient.invalidateQueries({ queryKey: ['bookings', token] })
-      setTimeout(() => setNotice(''), 5000)
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      setTimeout(() => setActionSuccess(''), 3000)
     },
-    onError: (error: unknown) => {
-      setNotice('')
-      setActionError(getErrorMessage(error, 'Failed to pay rent'))
-    },
+    onError: (err: Error) => setActionError(err.message),
   })
 
-  const requestReturnMutation = useMutation({
-    mutationFn: async (bookingId: number) => {
-      if (!token) throw new Error('Missing token')
-      return api.requestReturn(token, bookingId)
-    },
-    onSuccess: async () => {
+  const cancelMutation = useMutation({
+    mutationFn: (bookingId: number) => api.cancelBooking(token!, bookingId),
+    onSuccess: () => {
+      setActionSuccess('Booking cancelled.')
       setActionError('')
-      setNotice('Return request sent to admin. They will process it shortly.')
-      await queryClient.invalidateQueries({ queryKey: ['bookings', token] })
-      setTimeout(() => setNotice(''), 5000)
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      setTimeout(() => setActionSuccess(''), 3000)
     },
-    onError: (error: unknown) => {
-      setNotice('')
-      setActionError(getErrorMessage(error, 'Failed to request return'))
-    },
+    onError: (err: Error) => setActionError(err.message),
   })
 
-  const isActionPending = payDepositMutation.isPending || payRentMutation.isPending || requestReturnMutation.isPending
-  const formatAmount = (value: number) => `₹${Number(value).toFixed(2)}`
+  const returnMutation = useMutation({
+    mutationFn: (bookingId: number) => api.requestReturn(token!, bookingId),
+    onSuccess: () => {
+      setActionSuccess('Return requested successfully!')
+      setActionError('')
+      void queryClient.invalidateQueries({ queryKey: ['bookings'] })
+      setTimeout(() => setActionSuccess(''), 3000)
+    },
+    onError: (err: Error) => setActionError(err.message),
+  })
+
+  const isActionPending =
+    payDepositMutation.isPending ||
+    payRentMutation.isPending ||
+    cancelMutation.isPending ||
+    returnMutation.isPending
+
+  const bookings = bookingsQuery.data ?? []
+  const activeBookings = bookings.filter((b) => ['picked_up', 'overdue'].includes(b.status))
+  const upcomingBookings = bookings.filter((b) =>
+    ['pending', 'booked', 'allocated', 'ready_for_pickup'].includes(b.status)
+  )
+  const pastBookings = bookings.filter((b) => ['returned', 'cancelled'].includes(b.status))
+
+  const cardActions = {
+    onPayDeposit: (id: number) => payDepositMutation.mutate(id),
+    onPayRent: (id: number) => payRentMutation.mutate(id),
+    onCancel: (id: number) => cancelMutation.mutate(id),
+    onReturn: (id: number) => returnMutation.mutate(id),
+    isActionPending,
+  }
+
+  const showActive = activeTab === 'all' || activeTab === 'active'
+  const showUpcoming = activeTab === 'all' || activeTab === 'upcoming'
+  const showPast = activeTab === 'all' || activeTab === 'past'
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">My Bookings</h1>
-          <p className="page-subtitle">View and manage all your bookings in one place</p>
-        </div>
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate('/assets')}
+    <div style={{ minHeight: 'calc(100vh - 4rem)', background: '#f1f5f9' }}>
+      {/* Centered container — max 1200px, full bleed padding */}
+      <div
+        style={{
+          maxWidth: '1200px',
+          margin: '0 auto',
+          padding: '32px 24px',
+        }}
+      >
+        {/* ── Page Header ── */}
+        <div
+          className="flex items-center justify-between"
+          style={{ marginBottom: '28px', gap: '16px' }}
         >
-          <Package2 className="w-4 h-4" /> New Booking
-        </button>
-      </div>
-
-      {/* Inline notifications */}
-      <AnimatePresence>
-        {notice && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="flex items-center gap-3 rounded-xl px-4 py-3"
-            style={{ background: 'rgb(16 185 129 / 0.08)', border: '1px solid rgb(16 185 129 / 0.2)' }}
-          >
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0" style={{ color: '#34d399' }} />
-            <span style={{ fontSize: '0.875rem', color: '#6ee7b7' }}>{notice}</span>
-          </motion.div>
-        )}
-        {actionError && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="flex items-center gap-3 rounded-xl px-4 py-3"
-            style={{ background: 'rgb(239 68 68 / 0.08)', border: '1px solid rgb(239 68 68 / 0.2)' }}
-          >
-            <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#f87171' }} />
-            <span style={{ fontSize: '0.875rem', color: '#fca5a5' }}>{actionError}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Stats */}
-      {bookingsQuery.isLoading ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="stat-card">
-              <div className="skeleton w-11 h-11 rounded-xl" />
-              <div>
-                <div className="skeleton h-3 w-20 mb-2 rounded" />
-                <div className="skeleton h-7 w-12 rounded" />
-              </div>
+          <div className="flex items-start gap-3">
+            <div
+              className="shrink-0"
+              style={{
+                width: '4px',
+                height: '48px',
+                borderRadius: '9999px',
+                background: 'linear-gradient(to bottom, #3b82f6, #93c5fd)',
+                marginTop: '2px',
+              }}
+            />
+            <div>
+              <h1 className="font-bold text-gray-900 tracking-tight" style={{ fontSize: '26px' }}>
+                My Bookings
+              </h1>
+              <p className="text-gray-500" style={{ fontSize: '14px', marginTop: '2px' }}>
+                Track your active and past rentals
+              </p>
             </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <BookingStatCard label="Total Bookings"  value={bookings.length} icon={<CalendarCheck2 className="w-5 h-5 text-primary-400" />} iconBg="bg-primary-500/15" />
-          <BookingStatCard label="Pending Deposit" value={pendingCount}    icon={<Clock className="w-5 h-5 text-amber-400" />}           iconBg="bg-amber-500/15" />
-          <BookingStatCard label="Ready to Pay Rent" value={allocatedCount} icon={<CreditCard className="w-5 h-5 text-emerald-400" />}  iconBg="bg-emerald-500/15" />
-          <BookingStatCard label="Active"           value={activeCount}    icon={<CheckCircle2 className="w-5 h-5 text-blue-400" />}     iconBg="bg-blue-500/15" />
-        </div>
-      )}
-
-      {/* Bookings Cards (mobile) + Table (desktop) */}
-      <div>
-        <div className="section-header">
-          <div>
-            <h2 className="section-title">Your Bookings</h2>
-            <p className="section-subtitle">{bookings.length} total booking{bookings.length !== 1 ? 's' : ''}</p>
           </div>
+          <Button onClick={() => navigate('/assets')} className="shrink-0">
+            <PlusCircle className="w-4 h-4" />
+            Book New Asset
+          </Button>
         </div>
 
+        {/* ── Stats Grid — 4 equal columns ── */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(4, 1fr)',
+            gap: '16px',
+            marginBottom: '28px',
+          }}
+        >
+          <StatCard
+            label="Total Bookings"
+            value={bookings.length}
+            icon={CircleDollarSign}
+            iconBg="bg-blue-50 text-blue-600"
+            topBorderColor="#3b82f6"
+            valueColor="text-blue-700"
+          />
+          <StatCard
+            label="Active Now"
+            value={activeBookings.length}
+            icon={Sparkles}
+            iconBg="bg-green-50 text-green-600"
+            topBorderColor="#22c55e"
+            valueColor="text-green-700"
+          />
+          <StatCard
+            label="Upcoming"
+            value={upcomingBookings.length}
+            icon={Clock}
+            iconBg="bg-amber-50 text-amber-600"
+            topBorderColor="#f59e0b"
+            valueColor="text-amber-700"
+          />
+          <StatCard
+            label="Completed"
+            value={pastBookings.length}
+            icon={History}
+            iconBg="bg-teal-50 text-teal-600"
+            topBorderColor="#14b8a6"
+            valueColor="text-teal-700"
+          />
+        </div>
+
+        {/* ── Alerts ── */}
+        {actionError && (
+          <Alert variant="error" message={actionError} onDismiss={() => setActionError('')} className="mb-5" />
+        )}
+        {actionSuccess && (
+          <Alert variant="success" message={actionSuccess} onDismiss={() => setActionSuccess('')} className="mb-5" />
+        )}
+
+        {/* ── Loading skeleton ── */}
         {bookingsQuery.isLoading ? (
-          <div className="card flex flex-col gap-3 p-5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="flex gap-4 items-center">
-                <div className="skeleton h-4 w-8 rounded" />
-                <div className="skeleton h-4 flex-1 rounded" />
-                <div className="skeleton h-6 w-20 rounded-full" />
-                <div className="skeleton h-4 w-24 rounded" />
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white animate-pulse"
+                style={{ borderRadius: '12px', padding: '20px 24px', height: '96px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
+              />
             ))}
           </div>
         ) : bookings.length === 0 ? (
-          <div className="card empty-state py-16">
-            <div className="empty-state-icon"><CalendarCheck2 className="w-7 h-7" /></div>
-            <p className="empty-state-title">No bookings yet</p>
-            <p className="empty-state-desc">Go to Assets page to create your first booking.</p>
-            <button className="btn btn-primary btn-sm mt-4" onClick={() => navigate('/assets')}>
-              Browse Assets
-            </button>
+          /* ── Zero state ── */
+          <div className="flex justify-center" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
+            <div
+              className="text-center bg-white"
+              style={{
+                maxWidth: '360px',
+                width: '100%',
+                borderRadius: '16px',
+                padding: '48px 32px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+              }}
+            >
+              <div
+                className="flex items-center justify-center mx-auto"
+                style={{ width: 64, height: 64, borderRadius: '50%', background: '#eff6ff', marginBottom: '16px' }}
+              >
+                <Calendar className="w-8 h-8 text-blue-500" />
+              </div>
+              <p className="font-semibold text-gray-900" style={{ fontSize: '17px' }}>No bookings yet</p>
+              <p className="text-gray-500" style={{ fontSize: '14px', marginTop: '8px' }}>
+                Browse the catalog to book an asset and start your rental journey.
+              </p>
+              <Button onClick={() => navigate('/assets')} className="mt-6 w-full">
+                Browse Catalog
+              </Button>
+            </div>
           </div>
         ) : (
-          <>
-            {/* Mobile cards */}
-            <div className="flex flex-col gap-3 lg:hidden">
-              {bookings.map((booking) => {
-                const cfg = statusConfig[booking.status] ?? { label: booking.status, cls: 'badge badge-gray', icon: null }
-                const step = getNextStep(booking.status)
-                const allocatedAsset = booking.allocated_asset_id != null ? assetById.get(booking.allocated_asset_id) : undefined
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {/* ── Tab bar ── */}
+            <TabBar active={activeTab} onChange={setActiveTab} />
 
-                return (
-                  <div key={booking.id} className="card" style={{ padding: '1rem 1.25rem' }}>
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span style={{ fontFamily: 'monospace', fontSize: '0.75rem', color: '#71717a' }}>#{booking.id}</span>
-                          <span className={cfg.cls}>{cfg.icon}{cfg.label}</span>
-                        </div>
-                        <p style={{ fontWeight: '600', color: '#e4e4e7', fontSize: '0.9rem' }}>
-                          {booking.rental_plan?.name ?? `Plan #${booking.rental_plan_id}`}
-                        </p>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <p style={{ fontSize: '0.75rem', color: '#71717a' }}>Deposit</p>
-                        <p style={{ fontWeight: '700', color: '#ffffff', fontSize: '0.9rem' }}>{formatAmount(booking.deposit_amount)}</p>
-                      </div>
-                    </div>
-
-                    {allocatedAsset && (
-                      <div className="flex items-center gap-2 mb-3 px-3 py-2 rounded-lg" style={{ background: 'rgb(99 102 241 / 0.08)', border: '1px solid rgb(99 102 241 / 0.15)' }}>
-                        <Package2 className="w-3.5 h-3.5" style={{ color: '#818cf8' }} />
-                        <div>
-                          <span style={{ fontWeight: '600', color: '#c7d2fe', fontSize: '0.8125rem' }}>{allocatedAsset.name}</span>
-                          <span style={{ color: '#71717a', fontSize: '0.75rem', marginLeft: '0.5rem' }}>({allocatedAsset.asset_code})</span>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-2 mb-3" style={{ fontSize: '0.8125rem', color: '#71717a' }}>
-                      <div><span style={{ color: '#52525b' }}>Pickup:</span> {formatDate(booking.pickup_date)}</div>
-                      <div><span style={{ color: '#52525b' }}>Due:</span> {formatDate(booking.due_date)}</div>
-                    </div>
-
-                    <div className="flex items-center gap-1.5 mb-3" style={{ fontSize: '0.8125rem' }}>
-                      <ChevronRight className="w-3.5 h-3.5 flex-shrink-0" style={{ color: step.color }} />
-                      <span style={{ color: step.color }}>{step.text}</span>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-wrap gap-2">
-                      {booking.status === 'pending' && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => { setNotice(''); setActionError(''); payDepositMutation.mutate(booking.id) }}
-                          disabled={isActionPending}
-                        >
-                          <IndianRupee className="w-3.5 h-3.5" />
-                          {payDepositMutation.isPending ? 'Processing…' : 'Pay Deposit'}
-                        </button>
-                      )}
-                      {booking.status === 'allocated' && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => { setNotice(''); setActionError(''); payRentMutation.mutate(booking.id) }}
-                          disabled={isActionPending}
-                        >
-                          <IndianRupee className="w-3.5 h-3.5" />
-                          {payRentMutation.isPending ? 'Processing…' : 'Pay Rent'}
-                        </button>
-                      )}
-                      {(booking.status === 'picked_up' || booking.status === 'overdue') && (
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => { setNotice(''); setActionError(''); requestReturnMutation.mutate(booking.id) }}
-                          disabled={isActionPending}
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          {requestReturnMutation.isPending ? 'Requesting…' : 'Request Return'}
-                        </button>
-                      )}
-                    </div>
+            {/* ── Active Bookings ── */}
+            {showActive && (
+              <Section icon={Sparkles} title="Active Bookings" iconColor="#22c55e" count={activeBookings.length}>
+                {activeBookings.length === 0 ? (
+                  <EmptyState
+                    icon={CheckCircle2}
+                    title="No active rentals right now"
+                    subtitle="Assets you've picked up will appear here"
+                  />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {activeBookings.map((b) => (
+                      <BookingCard key={b.id} booking={b} variant="active" {...cardActions} />
+                    ))}
                   </div>
-                )
-              })}
-            </div>
+                )}
+              </Section>
+            )}
 
-            {/* Desktop table */}
-            <div className="table-wrap hidden lg:block">
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>#ID</th>
-                    <th>Plan</th>
-                    <th>Status</th>
-                    <th>Asset Allocated</th>
-                    <th>Pickup</th>
-                    <th>Due Date</th>
-                    <th>Deposit</th>
-                    <th>Rent</th>
-                    <th>Next Step</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {bookings.map((booking) => {
-                    const cfg = statusConfig[booking.status] ?? { label: booking.status, cls: 'badge badge-gray', icon: null }
-                    const step = getNextStep(booking.status)
-                    const allocatedAsset = booking.allocated_asset_id != null ? assetById.get(booking.allocated_asset_id) : undefined
+            {/* ── Upcoming Bookings ── */}
+            {showUpcoming && (
+              <Section icon={Clock} title="Upcoming Bookings" iconColor="#f59e0b" count={upcomingBookings.length}>
+                {upcomingBookings.length === 0 ? (
+                  <EmptyState
+                    icon={AlertCircle}
+                    title="No upcoming bookings"
+                    subtitle="Confirmed bookings awaiting pickup will appear here"
+                  />
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {upcomingBookings.map((b) => (
+                      <BookingCard key={b.id} booking={b} variant="upcoming" {...cardActions} />
+                    ))}
+                  </div>
+                )}
+              </Section>
+            )}
 
-                    return (
-                      <tr key={booking.id}>
-                        <td style={{ fontFamily: 'monospace', fontSize: '0.8125rem', color: '#71717a' }}>#{booking.id}</td>
-                        <td style={{ fontWeight: '600', color: '#e4e4e7' }}>{booking.rental_plan?.name ?? `Plan #${booking.rental_plan_id}`}</td>
-                        <td>
-                          <span className={cfg.cls}>
-                            {cfg.icon}{cfg.label}
-                          </span>
-                        </td>
-                        <td>
-                          {allocatedAsset ? (
-                            <div className="flex items-center gap-2">
-                              <Package2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#818cf8' }} />
-                              <div>
-                                <div style={{ fontWeight: '600', color: '#c7d2fe', fontSize: '0.8125rem', lineHeight: 1.2 }}>{allocatedAsset.name}</div>
-                                <div style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: '#71717a' }}>{allocatedAsset.asset_code}</div>
-                              </div>
-                            </div>
-                          ) : (
-                            <span style={{ color: '#52525b', fontSize: '0.8125rem', fontStyle: 'italic' }}>Not yet allocated</span>
-                          )}
-                        </td>
-                        <td style={{ color: '#a1a1aa' }}>{formatDate(booking.pickup_date)}</td>
-                        <td style={{ color: '#a1a1aa' }}>{formatDate(booking.due_date)}</td>
-                        <td style={{ fontWeight: '600', color: '#ffffff' }}>{formatAmount(booking.deposit_amount)}</td>
-                        <td style={{ fontWeight: '600', color: '#ffffff' }}>{formatAmount(booking.rent_amount)}</td>
-                        <td>
-                          <div className="flex items-center gap-1.5" style={{ fontSize: '0.8125rem' }}>
-                            <ArrowRight className="w-3 h-3 flex-shrink-0" style={{ color: step.color }} />
-                            <span style={{ color: step.color }}>{step.text}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <div className="flex flex-col gap-1.5">
-                            {booking.status === 'pending' && (
-                              <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() => { setNotice(''); setActionError(''); payDepositMutation.mutate(booking.id) }}
-                                disabled={isActionPending}
-                              >
-                                {payDepositMutation.isPending ? 'Processing…' : 'Pay Deposit'}
-                              </button>
-                            )}
-                            {booking.status === 'allocated' && (
-                              <button
-                                className="btn btn-primary btn-sm"
-                                onClick={() => { setNotice(''); setActionError(''); payRentMutation.mutate(booking.id) }}
-                                disabled={isActionPending}
-                              >
-                                {payRentMutation.isPending ? 'Processing…' : 'Pay Rent'}
-                              </button>
-                            )}
-                            {(booking.status === 'picked_up' || booking.status === 'overdue') && (
-                              <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => { setNotice(''); setActionError(''); requestReturnMutation.mutate(booking.id) }}
-                                disabled={isActionPending}
-                              >
-                                {requestReturnMutation.isPending ? 'Requesting…' : 'Request Return'}
-                              </button>
-                            )}
-                            {booking.status === 'ready_for_pickup' && (
-                              <span style={{ color: '#fb923c', fontSize: '0.8125rem' }}>Return Requested</span>
-                            )}
-                            {(booking.status === 'returned' || booking.status === 'cancelled') && (
-                              <span style={{ color: '#52525b', fontSize: '0.8125rem' }}>—</span>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </>
+            {/* ── Past Bookings ── */}
+            {showPast && (pastBookings.length > 0 || activeTab === 'past') && (
+              <Section icon={History} title="Past Bookings" iconColor="#94a3b8" count={pastBookings.length}>
+                {pastBookings.length === 0 ? (
+                  <EmptyState
+                    icon={History}
+                    title="No completed bookings"
+                    subtitle="Returned or cancelled bookings will appear here"
+                  />
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {pastBookings.slice(0, pastVisible).map((b) => (
+                        <PastBookingRow key={b.id} booking={b} onRebook={() => navigate('/assets')} />
+                      ))}
+                    </div>
+                    {pastVisible < pastBookings.length && (
+                      <button
+                        onClick={() => setPastVisible((v) => v + PAST_PAGE_SIZE)}
+                        className="flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                        style={{ fontSize: '13px', marginTop: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                      >
+                        Load more <ChevronRight className="w-4 h-4" />
+                      </button>
+                    )}
+                  </>
+                )}
+              </Section>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -1,149 +1,147 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  X,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Package2,
-  CreditCard,
-  CheckCircle2,
-  Loader2,
-  AlertCircle,
-  Tag,
-  Clock,
-} from 'lucide-react'
-import { api } from '../api'
-import type { Asset, BlockedDateRange } from '../types'
-import { RentCalculator } from './RentCalculator'
+  X, Calendar, ChevronLeft, ChevronRight, Package2,
+  CheckCircle2, Loader2, AlertCircle, Tag, Info,
+} from 'lucide-react';
+import { api } from '../api';
+import type { Asset, BlockedDateRange } from '../types';
+import { Input } from './ui/Input';
 
-const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
-
-interface AssetBookingModalProps {
-  asset: Asset | null
-  categoryId?: number | null
-  onClose: () => void
-  token: string | null
-  onBookingSuccess?: () => void
-}
-
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function getErrorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback
+  return error instanceof Error ? error.message : fallback;
 }
-
 function toDateOnly(date: Date): Date {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
-
 function fromISODate(value: string): Date {
-  const [y, m, d] = value.split('-').map(Number)
-  return new Date(y, (m ?? 1) - 1, d ?? 1)
+  const [y, m, d] = value.split('-').map(Number);
+  return new Date(y, (m ?? 1) - 1, d ?? 1);
 }
-
 function toISODate(value: Date): string {
-  const y = value.getFullYear()
-  const m = String(value.getMonth() + 1).padStart(2, '0')
-  const d = String(value.getDate()).padStart(2, '0')
-  return `${y}-${m}-${d}`
+  const y = value.getFullYear();
+  const m = String(value.getMonth() + 1).padStart(2, '0');
+  const d = String(value.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
-
+function formatDisplayDate(iso: string): string {
+  return fromISODate(iso).toLocaleDateString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric',
+  });
+}
 function addDays(value: Date, days: number): Date {
-  const result = new Date(value)
-  result.setDate(result.getDate() + days)
-  return result
+  const result = new Date(value);
+  result.setDate(result.getDate() + days);
+  return result;
 }
-
 function overlapsAnyBlockedRange(
-  start: Date,
-  durationDays: number,
-  blockedRanges: BlockedDateRange[],
+  start: Date, durationDays: number, blockedRanges: BlockedDateRange[]
 ): boolean {
-  const normalizedStart = toDateOnly(start)
-  const normalizedEnd = toDateOnly(addDays(normalizedStart, durationDays))
-
-  return blockedRanges.some((range) => {
-    const blockedStart = toDateOnly(fromISODate(range.from_date))
-    const blockedEnd = toDateOnly(fromISODate(range.to_date))
-    return blockedStart <= normalizedEnd && blockedEnd >= normalizedStart
-  })
+  const s = toDateOnly(start);
+  const e = toDateOnly(addDays(s, durationDays));
+  return blockedRanges.some((r) => {
+    const bs = toDateOnly(fromISODate(r.from_date));
+    const be = toDateOnly(fromISODate(r.to_date));
+    return bs <= e && be >= s;
+  });
 }
-
 function getMonthDays(viewMonth: Date): Date[] {
-  const first = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1)
-  const firstGridDay = new Date(first)
-  firstGridDay.setDate(first.getDate() - first.getDay())
-
-  return Array.from({ length: 42 }, (_, i) => addDays(firstGridDay, i))
+  const first = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1);
+  const firstGrid = new Date(first);
+  firstGrid.setDate(first.getDate() - first.getDay());
+  return Array.from({ length: 42 }, (_, i) => addDays(firstGrid, i));
 }
 
-export function AssetBookingModal({ asset, categoryId, onClose, token, onBookingSuccess }: AssetBookingModalProps) {
-  const queryClient = useQueryClient()
-  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null)
-  const [pickupDate, setPickupDate] = useState('')
-  const [aadhaarNumber, setAadhaarNumber] = useState('')
-  const [panNumber, setPanNumber] = useState('')
-  const [notice, setNotice] = useState('')
-  const [error, setError] = useState('')
-  const [calendarMonth, setCalendarMonth] = useState(() => toDateOnly(new Date()))
+// ── Asset Thumbnail ───────────────────────────────────────────────────────────
+function AssetThumb({ src, alt }: { src: string | null | undefined; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (!src?.trim() || failed) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', color: '#9ca3af' }}>
+        <Package2 size={28} />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src.trim()}
+      alt={alt}
+      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
+// ── Label ─────────────────────────────────────────────────────────────────────
+function FieldLabel({ icon: Icon, children }: { icon?: React.ElementType; children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '6px' }}>
+      {Icon && <Icon size={13} color="#9ca3af" />}
+      <span style={{ fontSize: '12px', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{children}</span>
+    </div>
+  );
+}
+
+// ── Props ─────────────────────────────────────────────────────────────────────
+interface AssetBookingModalProps {
+  asset: Asset | null;
+  categoryId?: number | null;
+  onClose: () => void;
+  token: string | null;
+  onBookingSuccess?: () => void;
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+export function AssetBookingModal({
+  asset, categoryId, onClose, token, onBookingSuccess,
+}: AssetBookingModalProps) {
+  const queryClient = useQueryClient();
+  const [selectedPlanId, setSelectedPlanId] = useState<number | null>(null);
+  const [pickupDate, setPickupDate] = useState('');
+  const [aadhaarNumber, setAadhaarNumber] = useState('');
+  const [panNumber, setPanNumber] = useState('');
+  const [notice, setNotice] = useState('');
+  const [error, setError] = useState('');
+  const [calendarMonth, setCalendarMonth] = useState(() => toDateOnly(new Date()));
 
   const plansQuery = useQuery({
     queryKey: ['plans', token],
     queryFn: async () => {
-      if (!token) return []
-      const plans = await api.listRentalPlans(token)
-      return plans.map((plan) => ({
-        ...plan,
-        daily_rate: Number(plan.daily_rate),
-        deposit_amount: Number(plan.deposit_amount),
-        daily_fine_rate: Number(plan.daily_fine_rate),
-        damage_fee: Number(plan.damage_fee),
-      }))
+      if (!token) return [];
+      const plans = await api.listRentalPlans(token);
+      return plans.map((p) => ({
+        ...p,
+        daily_rate: Number(p.daily_rate),
+        deposit_amount: Number(p.deposit_amount),
+        daily_fine_rate: Number(p.daily_fine_rate),
+        damage_fee: Number(p.damage_fee),
+      }));
     },
     enabled: Boolean(token),
-  })
+  });
 
   const blockedDatesQuery = useQuery({
     queryKey: ['blockedDates', token, asset?.id],
     queryFn: async () => {
-      if (!token || !asset) return [] as BlockedDateRange[]
-      const response = await api.getBlockedDatesForAsset(token, asset.id)
-      return response.blocked_ranges
+      if (!token || !asset) return [] as BlockedDateRange[];
+      const res = await api.getBlockedDatesForAsset(token, asset.id);
+      return res.blocked_ranges;
     },
     enabled: Boolean(token && asset),
-  })
+  });
 
   const createBookingMutation = useMutation({
     mutationFn: async () => {
-      if (!token || !asset || !selectedPlanId || !pickupDate || !aadhaarNumber || !panNumber) {
-        throw new Error('Aadhaar and PAN are required to create booking')
-      }
-
-      if (!/^\d{12}$/.test(aadhaarNumber)) {
-        throw new Error('Aadhaar must be exactly 12 digits')
-      }
-
-      if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber)) {
-        throw new Error('PAN format must be like ABCDE1234F')
-      }
-
-      if (selectedPlanId && pickupDate) {
-        const selectedPlan = plansQuery.data?.find((plan) => plan.id === selectedPlanId)
-        if (!selectedPlan) {
-          throw new Error('Please select a valid rental plan')
-        }
-
-        const overlaps = overlapsAnyBlockedRange(
-          fromISODate(pickupDate),
-          selectedPlan.duration_days,
-          blockedDatesQuery.data ?? [],
-        )
-
-        if (overlaps) {
-          throw new Error('Selected dates are blocked for this asset. Please choose another date range.')
-        }
-      }
-
+      if (!token || !asset || !selectedPlanId || !pickupDate || !aadhaarNumber || !panNumber)
+        throw new Error('Aadhaar and PAN are required to create booking');
+      if (!/^\d{12}$/.test(aadhaarNumber)) throw new Error('Aadhaar must be exactly 12 digits');
+      if (!/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber)) throw new Error('PAN format must be like ABCDE1234F');
+      const selectedPlan = plansQuery.data?.find((p) => p.id === selectedPlanId);
+      if (!selectedPlan) throw new Error('Please select a valid rental plan');
+      if (overlapsAnyBlockedRange(fromISODate(pickupDate), selectedPlan.duration_days, blockedDatesQuery.data ?? []))
+        throw new Error('Selected dates are blocked. Please choose another date.');
       return api.createBooking(token, {
         rental_plan_id: selectedPlanId,
         pickup_date: pickupDate,
@@ -151,389 +149,538 @@ export function AssetBookingModal({ asset, categoryId, onClose, token, onBooking
         requested_asset_id: asset.id,
         aadhaar_number: aadhaarNumber,
         pan_number: panNumber,
-      })
+      });
     },
     onSuccess: () => {
-      setNotice('Booking created successfully! Admin will allocate the asset.')
-      setSelectedPlanId(null)
-      setPickupDate('')
-      setAadhaarNumber('')
-      setPanNumber('')
-      setError('')
-      queryClient.invalidateQueries({ queryKey: ['bookings'] })
-      setTimeout(() => {
-        onBookingSuccess?.()
-        onClose()
-      }, 1800)
+      setNotice('Booking created! Admin will allocate the asset.');
+      setError('');
+      queryClient.invalidateQueries({ queryKey: ['bookings'] });
+      setTimeout(() => { onBookingSuccess?.(); onClose(); }, 1500);
     },
-    onError: (error: unknown) => {
-      setError(getErrorMessage(error, 'Failed to create booking'))
-    },
-  })
+    onError: (err: unknown) => setError(getErrorMessage(err, 'Failed to create booking')),
+  });
 
-  if (!asset) return null
-
-  const previewImage = asset.image_url && asset.image_url.trim() ? asset.image_url : fallbackImage
-
-  const selectedPlan = plansQuery.data?.find((p) => p.id === selectedPlanId)
+  const selectedPlan = plansQuery.data?.find((p) => p.id === selectedPlanId);
   const hasDateOverlap = Boolean(
-    selectedPlan &&
-      pickupDate &&
-      overlapsAnyBlockedRange(
-        fromISODate(pickupDate),
-        selectedPlan.duration_days,
-        blockedDatesQuery.data ?? [],
-      ),
-  )
+    selectedPlan && pickupDate &&
+    overlapsAnyBlockedRange(fromISODate(pickupDate), selectedPlan.duration_days, blockedDatesQuery.data ?? [])
+  );
   const isFormValid = Boolean(
-    selectedPlanId &&
-      pickupDate &&
-      /^\d{12}$/.test(aadhaarNumber) &&
-      /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber) &&
-      !hasDateOverlap,
-  )
-  const todayDate = toDateOnly(new Date())
-  const isPending = createBookingMutation.isPending
-  const isBooked = Boolean(notice)
-  const monthDays = getMonthDays(calendarMonth)
-  const monthLabel = calendarMonth.toLocaleString('en-IN', { month: 'long', year: 'numeric' })
+    selectedPlanId && pickupDate &&
+    /^\d{12}$/.test(aadhaarNumber) &&
+    /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber) &&
+    !hasDateOverlap
+  );
 
-  function handleCalendarSelect(day: Date) {
-    if (!selectedPlan) {
-      setError('Select a rental plan first to choose a valid date range')
-      return
-    }
+  const todayDate = toDateOnly(new Date());
+  const isPending = createBookingMutation.isPending;
+  const isBooked = Boolean(notice);
 
-    const isInPast = toDateOnly(day) < todayDate
-    const isBlocked = overlapsAnyBlockedRange(
-      day,
-      selectedPlan.duration_days,
-      blockedDatesQuery.data ?? [],
-    )
+  const handleCalendarSelect = (day: Date) => {
+    if (!selectedPlan) return setError('Select a rental plan first');
+    if (toDateOnly(day) < todayDate) return;
+    if (overlapsAnyBlockedRange(day, selectedPlan.duration_days, blockedDatesQuery.data ?? []))
+      return setError('Selected date range is blocked for this asset.');
+    setError('');
+    setPickupDate(toISODate(day));
+  };
 
-    if (isInPast || isBlocked) {
-      setError('Selected date range is blocked for this asset. Please pick another date.')
-      return
-    }
-
-    setError('')
-    setPickupDate(toISODate(day))
-  }
+  if (!asset) return null;
 
   return (
     <AnimatePresence>
+      {/* ── Full-screen overlay: centers the modal via flex ── */}
       <motion.div
-        className="modal-overlay"
+        key="overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 50,
+          background: 'rgba(0,0,0,0.45)',
+          backdropFilter: 'blur(2px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '16px',
+        }}
       >
+        {/* ── Modal ── */}
         <motion.div
-          className="modal-content"
-          initial={{ opacity: 0, scale: 0.94, y: 20 }}
+          key="modal"
+          initial={{ opacity: 0, scale: 0.96, y: 12 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.94, y: 20 }}
-          transition={{ type: 'spring', stiffness: 280, damping: 28 }}
+          exit={{ opacity: 0, scale: 0.96, y: 12 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           onClick={(e) => e.stopPropagation()}
+          style={{
+            width: '520px',
+            maxWidth: '100%',
+            maxHeight: '85vh',
+            background: '#ffffff',
+            borderRadius: '16px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+          }}
         >
-          {/* Header */}
-          <div className="modal-header">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-primary-600/20 flex items-center justify-center">
-                <Package2 className="w-4 h-4 text-primary-400" />
-              </div>
-              <div>
-                <h2 className="text-base font-bold text-white">Book Asset</h2>
-                <p className="text-xs text-surface-400">{asset.name}</p>
-              </div>
-            </div>
-            <button className="modal-close" onClick={onClose} type="button">
-              <X className="w-4 h-4" />
-            </button>
-          </div>
 
-          <div className="modal-body">
-            {/* Asset Preview */}
-            <div className="relative rounded-2xl overflow-hidden h-40">
-              <img
-                src={previewImage}
-                alt={asset.name}
-                className="w-full h-full object-cover"
-                onError={(e) => { e.currentTarget.src = fallbackImage }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-surface-950/80 via-transparent to-transparent" />
-              <div className="absolute bottom-3 left-3 right-3 flex items-end justify-between">
-                <div>
-                  <h3 className="text-white font-semibold text-sm">{asset.name}</h3>
-                  <p className="text-surface-300 text-xs mt-0.5">{asset.asset_code}</p>
-                </div>
-                <span className={`badge ${asset.status === 'available' ? 'badge-green' : 'badge-gray'}`}>
-                  {asset.status}
-                </span>
-              </div>
+        {/* ── Header ── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '16px 20px',
+          borderBottom: '1px solid #f0f0f0',
+          flexShrink: 0,
+          background: '#fff',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: '50%',
+              background: '#eff6ff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Package2 size={18} color="#2563eb" />
             </div>
-
-            {/* Asset Description */}
-            {asset.description && (
-              <p className="text-sm text-surface-400 bg-surface-800/40 rounded-xl px-3 py-2.5">
-                {asset.description}
+            <div>
+              <p style={{ fontSize: '18px', fontWeight: 700, color: '#111827', margin: 0, lineHeight: 1.2 }}>
+                Book Asset
               </p>
+              <p style={{ fontSize: '13px', color: '#6b7280', margin: '2px 0 0 0' }}>
+                {asset.name}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              width: 32, height: 32, borderRadius: '50%',
+              background: '#f3f4f6', border: 'none', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#6b7280', flexShrink: 0,
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#e5e7eb')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = '#f3f4f6')}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* ── Asset Preview Card ── */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '14px',
+          padding: '12px 20px',
+          background: '#f8fafc',
+          borderBottom: '1px solid #f0f0f0',
+          flexShrink: 0,
+        }}>
+          {/* Thumbnail */}
+          <div style={{
+            width: 72, height: 72, borderRadius: '10px',
+            overflow: 'hidden', flexShrink: 0,
+            background: '#f3f4f6',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <AssetThumb src={asset.image_url} alt={asset.name} />
+          </div>
+          {/* Info */}
+          <div>
+            <p style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: '0 0 3px 0' }}>
+              {asset.name}
+            </p>
+            <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 8px 0', fontFamily: 'monospace' }}>
+              {asset.asset_code}
+            </p>
+            <span style={{
+              display: 'inline-block',
+              background: '#dcfce7', color: '#16a34a',
+              fontSize: '11px', fontWeight: 600,
+              padding: '3px 10px', borderRadius: '9999px',
+              textTransform: 'uppercase', letterSpacing: '0.3px',
+            }}>
+              {asset.status}
+            </span>
+          </div>
+        </div>
+
+        {/* ── Scrollable Body ── */}
+        <div style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '0 20px',
+          scrollbarWidth: 'thin',
+          scrollbarColor: '#e5e7eb transparent',
+        } as React.CSSProperties}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px 0' }}>
+
+            {/* Description */}
+            {asset.description && (
+              <div>
+                <FieldLabel icon={Info}>Asset Description</FieldLabel>
+                <div style={{
+                  background: '#f8fafc', borderRadius: '8px',
+                  padding: '10px 14px', fontSize: '14px', color: '#374151',
+                  border: '1px solid #e5e7eb',
+                }}>
+                  {asset.description}
+                </div>
+              </div>
             )}
 
             {/* Notices */}
             <AnimatePresence>
               {notice && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl px-4 py-3"
+                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '12px 14px', borderRadius: '8px',
+                    background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d',
+                    fontSize: '14px', fontWeight: 500,
+                  }}
                 >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <p className="text-sm text-emerald-300">{notice}</p>
+                  <CheckCircle2 size={16} />
+                  {notice}
                 </motion.div>
               )}
               {error && (
                 <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="flex items-center gap-3 bg-rose-500/10 border border-rose-500/20 rounded-xl px-4 py-3"
+                  initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                    padding: '12px 14px', borderRadius: '8px',
+                    background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626',
+                    fontSize: '14px', fontWeight: 500,
+                  }}
                 >
-                  <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
-                  <p className="text-sm text-rose-300">{error}</p>
+                  <AlertCircle size={16} />
+                  {error}
                 </motion.div>
               )}
             </AnimatePresence>
 
             {!isBooked && (
               <>
-                {/* Rental Plan Selector */}
-                <div className="form-group">
-                  <label className="form-label flex items-center gap-2">
-                    <Tag className="w-3.5 h-3.5 text-primary-400" />
-                    Select Rental Plan *
-                  </label>
+                {/* ── Rental Plan ── */}
+                <div>
+                  <FieldLabel icon={Tag}>Rental Plan</FieldLabel>
                   {plansQuery.isLoading ? (
-                    <div className="skeleton h-10 rounded-xl" />
+                    <div style={{ height: 42, background: '#f3f4f6', borderRadius: '8px' }} />
                   ) : (
                     <>
                       <select
-                        className="form-select"
                         value={selectedPlanId ?? ''}
-                        onChange={(e) => setSelectedPlanId(Number(e.target.value) || null)}
-                        disabled={isPending || (plansQuery.data?.length ?? 0) === 0}
+                        onChange={(e) => { setSelectedPlanId(Number(e.target.value) || null); setPickupDate(''); }}
+                        disabled={isPending || !plansQuery.data?.length}
+                        style={{
+                          width: '100%', padding: '10px 14px',
+                          border: '1.5px solid #e5e7eb', borderRadius: '8px',
+                          fontSize: '14px', color: selectedPlanId ? '#111827' : '#9ca3af',
+                          background: '#fff', outline: 'none', cursor: 'pointer',
+                          boxSizing: 'border-box', appearance: 'none',
+                          transition: 'border-color 0.15s, box-shadow 0.15s',
+                        }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = '#3b82f6';
+                          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = '#e5e7eb';
+                          e.currentTarget.style.boxShadow = 'none';
+                        }}
                       >
                         <option value="">-- Choose a rental plan --</option>
                         {plansQuery.data?.map((plan) => (
                           <option key={plan.id} value={plan.id}>
-                            {plan.name} · {plan.duration_days} days · ₹{plan.daily_rate}/day · Deposit ₹{plan.deposit_amount}
+                            {plan.name} — {plan.duration_days} days · ₹{plan.daily_rate}/day · Deposit ₹{plan.deposit_amount}
                           </option>
                         ))}
                       </select>
-                      {(plansQuery.data?.length ?? 0) === 0 && (
-                        <p className="text-xs text-amber-300 mt-1">
-                          No active rental plans found. Please contact admin.
+                      {selectedPlan && (
+                        <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '6px' }}>
+                          ₹{selectedPlan.daily_rate}/day · {selectedPlan.duration_days} day plan · Deposit ₹{selectedPlan.deposit_amount}
                         </p>
                       )}
                     </>
                   )}
                 </div>
 
-                {/* Pickup Date */}
-                <div className="form-group">
-                  <label className="form-label flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-primary-400" />
-                    Pickup Date *
-                  </label>
-                  <input
-                    className="form-input"
-                    type="text"
-                    value={pickupDate}
-                    readOnly
-                    placeholder="Select date from calendar below"
-                  />
-                  {hasDateOverlap && (
-                    <p className="text-xs text-rose-400 mt-1">
-                      Selected dates overlap with an existing booking for this asset.
-                    </p>
-                  )}
-
-                  <div className="rounded-xl border border-surface-700 p-3 bg-surface-900/40">
-                    <div className="flex items-center justify-between mb-3">
+                {/* ── Pickup Date Calendar ── */}
+                <div>
+                  <FieldLabel icon={Calendar}>Pickup Date</FieldLabel>
+                  <div style={{
+                    border: '1.5px solid #e5e7eb', borderRadius: '10px',
+                    background: '#fff', overflow: 'hidden',
+                  }}>
+                    {/* Month nav */}
+                    <div style={{
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      padding: '12px 16px', borderBottom: '1px solid #f3f4f6',
+                    }}>
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm"
                         onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))}
-                        disabled={isPending}
+                        style={{
+                          width: 28, height: 28, borderRadius: '50%', border: 'none',
+                          background: 'transparent', cursor: 'pointer', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', color: '#6b7280',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                       >
-                        <ChevronLeft className="w-3.5 h-3.5" />
+                        <ChevronLeft size={16} />
                       </button>
-                      <p className="text-sm text-surface-200 font-medium">{monthLabel}</p>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: '#111827' }}>
+                        {calendarMonth.toLocaleString('en-IN', { month: 'long', year: 'numeric' })}
+                      </span>
                       <button
                         type="button"
-                        className="btn btn-ghost btn-sm"
                         onClick={() => setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))}
-                        disabled={isPending}
+                        style={{
+                          width: 28, height: 28, borderRadius: '50%', border: 'none',
+                          background: 'transparent', cursor: 'pointer', display: 'flex',
+                          alignItems: 'center', justifyContent: 'center', color: '#6b7280',
+                        }}
+                        onMouseEnter={(e) => (e.currentTarget.style.background = '#f3f4f6')}
+                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                       >
-                        <ChevronRight className="w-3.5 h-3.5" />
+                        <ChevronRight size={16} />
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 mb-1">
-                      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label) => (
-                        <span key={label} className="text-[10px] text-surface-500 text-center py-1">{label}</span>
-                      ))}
+                    <div style={{ padding: '12px 16px' }}>
+                      {/* Day headers */}
+                      <div style={{
+                        display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
+                        marginBottom: '6px',
+                      }}>
+                        {['Su','Mo','Tu','We','Th','Fr','Sa'].map((d) => (
+                          <div key={d} style={{
+                            textAlign: 'center', fontSize: '11px', fontWeight: 600,
+                            color: '#9ca3af', textTransform: 'uppercase', padding: '4px 0',
+                          }}>
+                            {d}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Day cells */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px' }}>
+                        {getMonthDays(calendarMonth).map((day) => {
+                          const isCurrentMonth = day.getMonth() === calendarMonth.getMonth();
+                          const isSelected = pickupDate === toISODate(day);
+                          const isToday = toDateOnly(day).getTime() === todayDate.getTime();
+                          const isInPast = toDateOnly(day) < todayDate;
+                          const isBlocked = selectedPlan
+                            ? overlapsAnyBlockedRange(day, selectedPlan.duration_days, blockedDatesQuery.data ?? [])
+                            : false;
+                          const disabled = isPending || !isCurrentMonth || isInPast || !selectedPlan || isBlocked;
+
+                          let bg = 'transparent';
+                          let color = '#374151';
+                          let border = 'none';
+                          let cursor = 'pointer';
+
+                          if (!isCurrentMonth) { color = 'transparent'; cursor = 'default'; }
+                          else if (isSelected) { bg = '#2563eb'; color = '#fff'; }
+                          else if (isToday) { border = '2px solid #3b82f6'; color = '#2563eb'; }
+                          else if (isInPast || isBlocked) { color = '#d1d5db'; cursor = 'not-allowed'; }
+
+                          return (
+                            <button
+                              key={toISODate(day)}
+                              type="button"
+                              onClick={() => !disabled && handleCalendarSelect(day)}
+                              disabled={disabled}
+                              style={{
+                                width: 36, height: 36, borderRadius: '50%',
+                                border, background: bg, color,
+                                fontSize: '13px', fontWeight: isSelected ? 600 : 400,
+                                cursor, display: 'flex', alignItems: 'center',
+                                justifyContent: 'center', margin: '0 auto',
+                                transition: 'background 0.1s',
+                                textDecoration: isBlocked && isCurrentMonth ? 'line-through' : 'none',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!disabled && !isSelected)
+                                  e.currentTarget.style.background = '#dbeafe';
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!disabled && !isSelected)
+                                  e.currentTarget.style.background = 'transparent';
+                              }}
+                            >
+                              {day.getDate()}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1">
-                      {monthDays.map((day) => {
-                        const isCurrentMonth = day.getMonth() === calendarMonth.getMonth()
-                        const isSelected = pickupDate === toISODate(day)
-                        const isInPast = toDateOnly(day) < todayDate
-                        const isBlocked = Boolean(
-                          selectedPlan && overlapsAnyBlockedRange(day, selectedPlan.duration_days, blockedDatesQuery.data ?? []),
-                        )
-                        const disabled = isPending || !isCurrentMonth || isInPast || !selectedPlan || isBlocked
-
-                        return (
-                          <button
-                            key={`${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`}
-                            type="button"
-                            onClick={() => handleCalendarSelect(day)}
-                            disabled={disabled}
-                            className="h-8 rounded-md text-xs transition-colors"
-                            style={{
-                              background: isSelected ? 'rgb(99 102 241 / 0.28)' : isBlocked ? 'rgb(244 63 94 / 0.16)' : 'transparent',
-                              color: disabled ? '#52525b' : '#e4e4e7',
-                              border: isSelected ? '1px solid rgb(99 102 241 / 0.8)' : isBlocked ? '1px solid rgb(244 63 94 / 0.35)' : '1px solid transparent',
-                              cursor: disabled ? 'not-allowed' : 'pointer',
-                              textDecoration: isBlocked ? 'line-through' : 'none',
-                            }}
-                          >
-                            {day.getDate()}
-                          </button>
-                        )
-                      })}
-                    </div>
+                    {/* Selected date display */}
+                    {pickupDate && (
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        padding: '10px 16px', borderTop: '1px solid #f0f9ff',
+                        background: '#f0f9ff',
+                      }}>
+                        <Calendar size={14} color="#0284c7" />
+                        <span style={{ fontSize: '13px', color: '#0369a1' }}>
+                          Scheduled Date: <strong>{formatDisplayDate(pickupDate)}</strong>
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Blocked date ranges */}
-                {(blockedDatesQuery.data?.length ?? 0) > 0 && (
-                  <div className="form-group">
-                    <label className="form-label">Blocked Date Ranges</label>
-                    <div className="bg-surface-800/40 rounded-xl px-3 py-2.5 text-xs text-surface-300 flex flex-col gap-1.5">
-                      {blockedDatesQuery.data?.map((range) => (
-                        <span key={range.booking_id}>
-                          {range.from_date} to {range.to_date}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Document Verification */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="form-group">
-                    <label className="form-label">Aadhaar Number *</label>
-                    <input
-                      className="form-input"
-                      type="text"
-                      inputMode="numeric"
+                {/* ── Documents ── */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div>
+                    <FieldLabel>Aadhaar Number *</FieldLabel>
+                    <Input
+                      placeholder="123456789012"
                       maxLength={12}
-                      placeholder="12-digit Aadhaar"
                       value={aadhaarNumber}
                       onChange={(e) => setAadhaarNumber(e.target.value.replace(/\D/g, '').slice(0, 12))}
+                      error={aadhaarNumber && !/^\d{12}$/.test(aadhaarNumber) ? 'Must be 12 digits' : undefined}
                       disabled={isPending}
                     />
-                    {aadhaarNumber && !/^\d{12}$/.test(aadhaarNumber) && (
-                      <p className="text-xs text-rose-400">Enter exactly 12 digits.</p>
-                    )}
                   </div>
-
-                  <div className="form-group">
-                    <label className="form-label">PAN Number *</label>
-                    <input
-                      className="form-input uppercase"
-                      type="text"
-                      maxLength={10}
+                  <div>
+                    <FieldLabel>PAN Number *</FieldLabel>
+                    <Input
                       placeholder="ABCDE1234F"
+                      maxLength={10}
+                      className="uppercase"
                       value={panNumber}
                       onChange={(e) => setPanNumber(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
+                      error={panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber) ? 'Invalid format' : undefined}
                       disabled={isPending}
                     />
-                    {panNumber && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNumber) && (
-                      <p className="text-xs text-rose-400">Format must be ABCDE1234F.</p>
-                    )}
                   </div>
                 </div>
 
-                {/* Rent Calculator */}
-                <AnimatePresence>
-                  {selectedPlan && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <RentCalculator
-                        planName={selectedPlan.name}
-                        dailyRate={selectedPlan.daily_rate}
-                        durationDays={selectedPlan.duration_days}
-                        depositAmount={selectedPlan.deposit_amount}
-                        damageLineFee={selectedPlan.damage_fee}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Payment notes */}
+                {/* ── Unified Booking Summary + Cost ── */}
                 {selectedPlan && (
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-start gap-2 text-xs text-surface-400">
-                      <Clock className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                      <span>Deposit is paid upfront and is non-refundable.</span>
+                  <div style={{
+                    background: '#f8fafc', border: '1px solid #e5e7eb',
+                    borderRadius: '12px', padding: '16px',
+                  }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#111827', margin: '0 0 12px 0' }}>
+                      Booking summary
+                    </p>
+
+                    {/* Meta grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', marginBottom: '12px' }}>
+                      {[
+                        { label: 'Asset', value: asset.name },
+                        { label: 'Rental plan', value: selectedPlan.name },
+                        { label: 'Pickup date', value: pickupDate ? formatDisplayDate(pickupDate) : '—' },
+                        { label: 'Duration', value: `${selectedPlan.duration_days} days` },
+                      ].map(({ label, value }) => (
+                        <div key={label}>
+                          <p style={{ fontSize: '11px', color: '#9ca3af', margin: '0 0 1px 0', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>{label}</p>
+                          <p style={{ fontSize: '13px', color: '#111827', fontWeight: 500, margin: 0 }}>{value}</p>
+                        </div>
+                      ))}
                     </div>
-                    <div className="flex items-start gap-2 text-xs text-surface-400">
-                      <CreditCard className="w-3.5 h-3.5 text-blue-400 mt-0.5 flex-shrink-0" />
-                      <span>Rent is paid after the asset is allocated to you by admin</span>
+
+                    {/* Divider */}
+                    <div style={{ borderTop: '1px dashed #e5e7eb', margin: '12px 0' }} />
+
+                    {/* Cost lines */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                        <span style={{ color: '#6b7280' }}>Daily rate</span>
+                        <span style={{ color: '#111827', fontWeight: 500 }}>₹{selectedPlan.daily_rate.toFixed(2)} /day</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                        <span style={{ color: '#6b7280' }}>Rent total</span>
+                        <span style={{ color: '#2563eb', fontWeight: 500 }}>₹{(selectedPlan.daily_rate * selectedPlan.duration_days).toFixed(2)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                        <span style={{ color: '#6b7280' }}>Security deposit</span>
+                        <span style={{ color: '#16a34a', fontWeight: 500 }}>₹{selectedPlan.deposit_amount.toFixed(2)}</span>
+                      </div>
+                      <div style={{
+                        display: 'flex', justifyContent: 'space-between',
+                        fontSize: '16px', fontWeight: 700,
+                        paddingTop: '8px', borderTop: '1px solid #e5e7eb', marginTop: '2px',
+                      }}>
+                        <span style={{ color: '#111827' }}>Total due</span>
+                        <span style={{ color: '#111827' }}>₹{(selectedPlan.daily_rate * selectedPlan.duration_days + selectedPlan.deposit_amount).toFixed(2)}</span>
+                      </div>
                     </div>
                   </div>
                 )}
               </>
             )}
           </div>
+        </div>
 
-          {/* Footer */}
-          {!isBooked && (
-            <div className="modal-footer">
-              <button className="btn-secondary btn" onClick={onClose} disabled={isPending} type="button">
+        {/* ── Footer ── */}
+        {!isBooked && (
+          <div style={{
+            padding: '12px 20px',
+            borderTop: '1px solid #f0f0f0',
+            background: '#fff',
+            flexShrink: 0,
+          }}>
+            {/* Info banner */}
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              background: '#fffbeb', border: '1px solid #fde68a',
+              borderRadius: '8px', padding: '10px 14px',
+              marginBottom: '12px',
+            }}>
+              <Info size={15} color="#d97706" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.4 }}>
+                Deposit is paid upfront. Rent is charged after admin approval.
+              </span>
+            </div>
+
+            {/* Buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px' }}>
+              <button
+                onClick={onClose}
+                disabled={isPending}
+                style={{
+                  padding: '10px 20px', borderRadius: '8px',
+                  border: '1px solid #e5e7eb', background: '#fff',
+                  fontSize: '14px', fontWeight: 500, color: '#374151',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = '#f9fafb')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = '#fff')}
+              >
                 Cancel
               </button>
-              <motion.button
-                className="btn-primary btn"
+              <button
                 onClick={() => createBookingMutation.mutate()}
                 disabled={!isFormValid || isPending}
-                type="button"
-                whileTap={{ scale: 0.96 }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  padding: '10px 24px', borderRadius: '8px',
+                  border: 'none', background: '#2563eb', color: '#fff',
+                  fontSize: '14px', fontWeight: 600,
+                  cursor: isFormValid && !isPending ? 'pointer' : 'not-allowed',
+                  opacity: isFormValid && !isPending ? 1 : 0.5,
+                  transition: 'background 0.15s, opacity 0.15s',
+                }}
+                onMouseEnter={(e) => { if (isFormValid && !isPending) e.currentTarget.style.background = '#1d4ed8'; }}
+                onMouseLeave={(e) => { if (isFormValid && !isPending) e.currentTarget.style.background = '#2563eb'; }}
               >
-                {isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    Confirm Booking
-                  </>
-                )}
-              </motion.button>
+                {isPending ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
+                {isPending ? 'Processing...' : 'Confirm Booking'}
+              </button>
             </div>
-          )}
+          </div>
+        )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }

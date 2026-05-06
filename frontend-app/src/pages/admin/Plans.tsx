@@ -1,314 +1,214 @@
-import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useForm } from 'react-hook-form'
-import { z } from 'zod'
-import {
-  CreditCard, Clock, IndianRupee, AlertCircle, CheckCircle2,
-  ToggleLeft, ToggleRight, BadgePercent, Shield,
-} from 'lucide-react'
-import { api } from '../../api'
-import { useAuth } from '../../auth-context'
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useForm } from "react-hook-form"
+import { z } from "zod"
+import { Clock, IndianRupee, Shield, CreditCard } from "lucide-react"
+import { api } from "../../api"
+import { useAuth } from "../../auth-context"
 
 const schema = z.object({
-  name: z.string().min(2, 'Plan name required'),
-  duration_days: z.number().int().positive('Must be a positive integer'),
-  daily_rate: z.number().positive('Must be positive'),
-  deposit_amount: z.number().nonnegative('Cannot be negative'),
-  daily_fine_rate: z.number().nonnegative('Cannot be negative'),
-  damage_fee: z.number().nonnegative('Cannot be negative'),
+  name: z.string().min(2, "Plan name required"),
+  duration_days: z.number().int().positive("Must be > 0"),
+  daily_rate: z.number().nonnegative(),
+  deposit_amount: z.number().nonnegative(),
+  daily_fine_rate: z.number().nonnegative(),
+  damage_fee: z.number().nonnegative(),
 })
 
 type FormValues = z.infer<typeof schema>
 
+const inputStyle: React.CSSProperties = {
+  width: '100%', height: '42px',
+  border: '1.5px solid #d1d5db', borderRadius: '8px',
+  padding: '0 12px', fontSize: '14px', color: '#111827',
+  background: 'white', outline: 'none', boxSizing: 'border-box',
+  transition: 'border-color 0.15s',
+}
+
+const labelStyle: React.CSSProperties = {
+  fontSize: '13px', fontWeight: 600, color: '#374151',
+  display: 'block', marginBottom: '6px',
+}
+
 export function AdminPlansPage() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
-
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
-  })
+  const form = useForm<FormValues>({ resolver: zodResolver(schema) })
 
   const plansQuery = useQuery({
-    queryKey: ['plans', token],
-    queryFn: async () => {
-      if (!token) return []
-      return api.listRentalPlans(token)
-    },
+    queryKey: ["plans"],
+    queryFn: async () => api.listRentalPlans(token!),
     enabled: Boolean(token),
   })
 
   const createMutation = useMutation({
-    mutationFn: async (payload: FormValues) => {
-      if (!token) throw new Error('Missing token')
-      return api.createRentalPlan(token, payload)
-    },
+    mutationFn: async (payload: FormValues) => api.createRentalPlan(token!, payload),
     onSuccess: async () => {
       form.reset()
-      await queryClient.invalidateQueries({ queryKey: ['plans', token] })
-    },
-  })
-
-  const toggleMutation = useMutation({
-    mutationFn: async (payload: { id: number; is_active: boolean }) => {
-      if (!token) throw new Error('Missing token')
-      return api.updateRentalPlan(token, payload.id, { is_active: payload.is_active })
-    },
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ['plans', token] })
+      await queryClient.invalidateQueries({ queryKey: ["plans"] })
     },
   })
 
   const plans = plansQuery.data ?? []
-  const activePlans = plans.filter((p) => p.is_active).length
+
+  const fields: { name: keyof FormValues; label: string; placeholder: string; hint?: string }[] = [
+    { name: 'name',           label: 'Plan Name',    placeholder: 'e.g. 7 Day Standard' },
+    { name: 'duration_days',  label: 'Duration',     placeholder: '7',      hint: 'Days' },
+    { name: 'daily_rate',     label: 'Daily Rate',   placeholder: '100.00', hint: '₹' },
+    { name: 'deposit_amount', label: 'Deposit Amt.', placeholder: '500.00', hint: '₹' },
+    { name: 'daily_fine_rate',label: 'Late Fine/Day',placeholder: '50.00',  hint: '₹' },
+    { name: 'damage_fee',     label: 'Damage Fee',   placeholder: '200.00', hint: '₹' },
+  ]
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">Rental Plans</h1>
-          <p className="page-subtitle">Create and manage pricing plans with billing rules.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="badge badge-green">
-            <CheckCircle2 className="w-3 h-3" /> {activePlans} Active
-          </div>
-          <div className="badge badge-purple">
-            <CreditCard className="w-3 h-3" /> {plans.length} Total
-          </div>
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Page header */}
+      <div>
+        <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', margin: 0 }}>
+          Rental Logic
+        </h1>
+        <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}>
+          Configure pricing tiers, duration, and penalty logic.
+        </p>
       </div>
 
-      {/* Create Form */}
-      <div className="card">
-        <div className="flex items-center gap-3 mb-5">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4338ca 100%)' }}
-          >
-            <CreditCard className="w-4 h-4 text-white" />
+      {/* Create form card */}
+      <div style={{
+        background: '#ffffff', border: '1px solid #e5e7eb',
+        borderRadius: '12px', overflow: 'hidden',
+      }}>
+        <div style={{
+          padding: '16px 22px', borderBottom: '1px solid #f3f4f6',
+          display: 'flex', alignItems: 'center', gap: '10px',
+          background: '#f9fafb',
+        }}>
+          <div style={{
+            width: '32px', height: '32px', borderRadius: '8px',
+            background: '#2563eb', color: 'white',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <CreditCard size={15} />
           </div>
-          <div>
-            <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7' }}>Create New Plan</h2>
-            <p style={{ fontSize: '0.8125rem', color: '#71717a' }}>Define pricing and billing parameters</p>
-          </div>
+          <span style={{ fontSize: '15px', fontWeight: 600, color: '#111827' }}>
+            Create New Rental Plan
+          </span>
         </div>
 
         <form
-          className="flex flex-col gap-4"
-          onSubmit={form.handleSubmit((values) => createMutation.mutate(values))}
+          onSubmit={form.handleSubmit((vals) => createMutation.mutate(vals))}
+          style={{ padding: '22px' }}
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Name */}
-            <div className="form-group">
-              <label className="form-label">Plan Name</label>
-              <input
-                className="form-input"
-                type="text"
-                placeholder="e.g. 7 Day Standard"
-                {...form.register('name')}
-              />
-              {form.formState.errors.name && (
-                <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                  <AlertCircle className="w-3 h-3" /> {form.formState.errors.name.message}
-                </p>
-              )}
-            </div>
-
-            {/* Duration */}
-            <div className="form-group">
-              <label className="form-label">
-                <Clock className="w-3 h-3" style={{ color: '#818cf8' }} />
-                Duration (days)
-              </label>
-              <input
-                className="form-input"
-                type="number"
-                placeholder="7"
-                {...form.register('duration_days', { valueAsNumber: true })}
-              />
-              {form.formState.errors.duration_days && (
-                <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                  <AlertCircle className="w-3 h-3" /> {form.formState.errors.duration_days.message}
-                </p>
-              )}
-            </div>
-
-            {/* Daily Rate */}
-            <div className="form-group">
-              <label className="form-label">
-                <IndianRupee className="w-3 h-3" style={{ color: '#818cf8' }} />
-                Daily Rate (₹)
-              </label>
-              <input
-                className="form-input"
-                type="number"
-                step="0.01"
-                placeholder="100.00"
-                {...form.register('daily_rate', { valueAsNumber: true })}
-              />
-              {form.formState.errors.daily_rate && (
-                <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                  <AlertCircle className="w-3 h-3" /> {form.formState.errors.daily_rate.message}
-                </p>
-              )}
-            </div>
-
-            {/* Deposit */}
-            <div className="form-group">
-              <label className="form-label">
-                <Shield className="w-3 h-3" style={{ color: '#818cf8' }} />
-                Deposit Amount (₹)
-              </label>
-              <input
-                className="form-input"
-                type="number"
-                step="0.01"
-                placeholder="500.00"
-                {...form.register('deposit_amount', { valueAsNumber: true })}
-              />
-              {form.formState.errors.deposit_amount && (
-                <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                  <AlertCircle className="w-3 h-3" /> {form.formState.errors.deposit_amount.message}
-                </p>
-              )}
-            </div>
-
-            {/* Daily Fine */}
-            <div className="form-group">
-              <label className="form-label">
-                <BadgePercent className="w-3 h-3" style={{ color: '#818cf8' }} />
-                Daily Fine Rate (₹)
-              </label>
-              <input
-                className="form-input"
-                type="number"
-                step="0.01"
-                placeholder="50.00"
-                {...form.register('daily_fine_rate', { valueAsNumber: true })}
-              />
-              {form.formState.errors.daily_fine_rate && (
-                <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                  <AlertCircle className="w-3 h-3" /> {form.formState.errors.daily_fine_rate.message}
-                </p>
-              )}
-            </div>
-
-            {/* Damage Fee */}
-            <div className="form-group">
-              <label className="form-label">
-                <AlertCircle className="w-3 h-3" style={{ color: '#818cf8' }} />
-                Damage Fee (₹)
-              </label>
-              <input
-                className="form-input"
-                type="number"
-                step="0.01"
-                placeholder="200.00"
-                {...form.register('damage_fee', { valueAsNumber: true })}
-              />
-              {form.formState.errors.damage_fee && (
-                <p className="error-text text-xs flex items-center gap-1 mt-0.5">
-                  <AlertCircle className="w-3 h-3" /> {form.formState.errors.damage_fee.message}
-                </p>
-              )}
-            </div>
+          <div style={{
+            display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px',
+            marginBottom: '20px',
+          }}>
+            {fields.map(({ name, label, placeholder, hint }) => (
+              <div key={name}>
+                <label style={labelStyle}>
+                  {label}{hint && <span style={{ color: '#9ca3af', fontWeight: 400, marginLeft: '4px' }}>({hint})</span>}
+                </label>
+                <input
+                  style={inputStyle}
+                  placeholder={placeholder}
+                  type={name === 'name' ? 'text' : 'number'}
+                  step={name !== 'name' && name !== 'duration_days' ? '0.01' : undefined}
+                  {...form.register(name, name !== 'name' ? { valueAsNumber: true } : {})}
+                  onFocus={(e) => { e.currentTarget.style.borderColor = '#2563eb' }}
+                  onBlur={(e) => { e.currentTarget.style.borderColor = '#d1d5db' }}
+                />
+                {form.formState.errors[name] && (
+                  <p style={{ fontSize: '11px', color: '#dc2626', margin: '4px 0 0' }}>
+                    {form.formState.errors[name]?.message}
+                  </p>
+                )}
+              </div>
+            ))}
           </div>
 
-          <div className="flex items-center gap-3 pt-1">
-            <button className="btn btn-primary" type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Creating...' : 'Create Plan'}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button
+              type="submit"
+              disabled={createMutation.isPending}
+              style={{
+                height: '40px', padding: '0 20px',
+                background: '#2563eb', color: 'white',
+                border: 'none', borderRadius: '8px',
+                fontSize: '14px', fontWeight: 500,
+                cursor: 'pointer', userSelect: 'none',
+                opacity: createMutation.isPending ? 0.7 : 1,
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { if (!createMutation.isPending) e.currentTarget.style.background = '#1d4ed8' }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = '#2563eb' }}
+            >
+              {createMutation.isPending ? 'Saving...' : 'Create Pricing Plan'}
             </button>
             {createMutation.error && (
-              <p className="error-text text-xs flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" /> {createMutation.error.message}
-              </p>
+              <span style={{ fontSize: '13px', color: '#dc2626' }}>
+                {createMutation.error.message}
+              </span>
             )}
           </div>
         </form>
       </div>
 
-      {/* Existing Plans */}
-      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: '1px solid #27272a' }}>
-          <h2 style={{ fontSize: '1rem', fontWeight: '600', color: '#e4e4e7' }}>Existing Plans</h2>
-          {plansQuery.isLoading && (
-            <span style={{ fontSize: '0.8125rem', color: '#71717a' }}>Loading...</span>
-          )}
-        </div>
-
-        {plansQuery.isError ? (
-          <div className="px-5 py-6">
-            <p className="error-text text-sm">Failed to load plans.</p>
-          </div>
-        ) : plans.length === 0 && !plansQuery.isLoading ? (
-          <div className="flex flex-col items-center gap-3 py-12 text-center">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center"
-              style={{ background: 'rgb(99 102 241 / 0.08)', border: '1px solid rgb(99 102 241 / 0.15)' }}
-            >
-              <CreditCard className="w-5 h-5" style={{ color: '#818cf8' }} />
+      {/* Plan cards */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+        {plansQuery.isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} style={{
+              width: '220px', background: '#ffffff', border: '1px solid #e5e7eb',
+              borderRadius: '12px', padding: '20px 22px',
+            }}>
+              {[40, 60, 30, 30, 30].map((w, j) => (
+                <div key={j} style={{ height: '14px', background: '#f3f4f6', borderRadius: '4px', width: `${w}%`, marginBottom: '10px' }} />
+              ))}
             </div>
-            <p style={{ color: '#71717a', fontSize: '0.875rem' }}>No plans yet. Create your first one above.</p>
+          ))
+        ) : plans.map((p) => (
+          <div key={p.id} style={{
+            background: '#ffffff', border: '1px solid #e5e7eb',
+            borderRadius: '12px', padding: '20px 22px',
+            minWidth: '220px', width: 'fit-content',
+          }}>
+            <div style={{ marginBottom: '12px' }}>
+              <p style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 4px' }}>
+                PLAN #{p.id}
+              </p>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#111827', margin: 0 }}>{p.name}</h3>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+              {[
+                { icon: Clock,        label: 'Duration',   value: `${p.duration_days} Days` },
+                { icon: IndianRupee,  label: 'Daily Rate', value: `₹${p.daily_rate}` },
+                { icon: Shield,       label: 'Deposit',    value: `₹${p.deposit_amount}` },
+              ].map(({ icon: Icon, label, value }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '13px' }}>
+                  <span style={{ color: '#6b7280', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Icon size={13} /> {label}
+                  </span>
+                  <strong style={{ color: '#111827' }}>{value}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {[
+                { label: `Damage ₹${p.damage_fee}` },
+                { label: `Late ₹${p.daily_fine_rate}/d` },
+              ].map(({ label }) => (
+                <span key={label} style={{
+                  background: '#fee2e2', color: '#dc2626',
+                  padding: '4px 10px', borderRadius: '6px',
+                  fontSize: '12px', fontWeight: 500,
+                }}>
+                  {label}
+                </span>
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="table w-full" style={{ minWidth: '700px' }}>
-              <thead>
-                <tr>
-                  <th>Plan Name</th>
-                  <th>Duration</th>
-                  <th>Daily Rate</th>
-                  <th>Deposit</th>
-                  <th>Fine / day</th>
-                  <th>Damage Fee</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {plans.map((plan) => (
-                  <tr key={plan.id}>
-                    <td>
-                      <div style={{ fontWeight: '600', color: '#e4e4e7' }}>{plan.name}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#71717a' }}>ID #{plan.id}</div>
-                    </td>
-                    <td>
-                      <div className="flex items-center gap-1.5" style={{ color: '#d4d4d8' }}>
-                        <Clock className="w-3.5 h-3.5" style={{ color: '#818cf8', flexShrink: 0 }} />
-                        {plan.duration_days} days
-                      </div>
-                    </td>
-                    <td style={{ color: '#d4d4d8' }}>₹{plan.daily_rate}/day</td>
-                    <td style={{ color: '#d4d4d8' }}>₹{plan.deposit_amount}</td>
-                    <td style={{ color: '#d4d4d8' }}>₹{plan.daily_fine_rate}</td>
-                    <td style={{ color: '#d4d4d8' }}>₹{plan.damage_fee}</td>
-                    <td>
-                      <button
-                        className={plan.is_active ? 'btn btn-secondary' : 'btn btn-primary'}
-                        style={{ height: '2rem', padding: '0 0.75rem', fontSize: '0.8125rem', gap: '0.375rem' }}
-                        type="button"
-                        onClick={() => toggleMutation.mutate({ id: plan.id, is_active: !plan.is_active })}
-                        disabled={toggleMutation.isPending}
-                      >
-                        {plan.is_active
-                          ? <><ToggleRight className="w-3.5 h-3.5 text-emerald-400" /> Active</>
-                          : <><ToggleLeft className="w-3.5 h-3.5" /> Inactive</>
-                        }
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {toggleMutation.error && (
-          <div className="px-5 py-3" style={{ borderTop: '1px solid #27272a' }}>
-            <p className="error-text text-xs flex items-center gap-1">
-              <AlertCircle className="w-3 h-3" /> {toggleMutation.error.message}
-            </p>
-          </div>
-        )}
+        ))}
       </div>
     </div>
   )
