@@ -232,7 +232,7 @@ function AssetsPage() {
       if (!a.is_active) continue
       const key = `${a.name.trim().toLowerCase()}__${a.category_id}`
       const existing = map.get(key)
-      const isAvailable = a.status === 'available' && !a.is_in_dry_cleaning
+      const isAvailable = !a.is_in_dry_cleaning
       if (existing) {
         existing.total += 1
         if (isAvailable) {

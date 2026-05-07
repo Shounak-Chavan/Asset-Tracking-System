@@ -123,7 +123,7 @@ export function AssetBookingModal({
   });
 
   const blockedDatesQuery = useQuery({
-    queryKey: ['blockedDates', token, asset?.id],
+    queryKey: ['blockedDates', asset?.id],
     queryFn: async () => {
       if (!token || !asset) return [] as BlockedDateRange[];
       const res = await api.getBlockedDatesForAsset(token, asset.id);
