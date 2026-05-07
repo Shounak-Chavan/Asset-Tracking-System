@@ -71,3 +71,6 @@ ehthumbs.db
 # ============ Local Development ============
 logs/
 *.log
+
+# ============ Kiro IDE ============
+.kiro/
