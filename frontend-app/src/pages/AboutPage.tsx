@@ -114,7 +114,7 @@ export function AboutPage() {
   ]
 
   return (
-    <div style={{ background: '#fff', width: '100%' }}>
+    <div style={{ background: '#f0f4f8', width: '100%' }}>
       <style>{`
         .about-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
         .about-section-label {
@@ -123,13 +123,14 @@ export function AboutPage() {
         }
         .about-what-card {
           background: white; border-radius: 14px; padding: 24px;
-          border: 1px solid #e5e7eb;
+          border: 1px solid #e2e8f0;
           box-shadow: 0 2px 8px rgba(0,0,0,0.05);
           transition: all 0.2s ease;
         }
         .about-what-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+          box-shadow: 0 8px 24px rgba(0,201,167,0.1);
+          border-color: #00c9a7;
         }
         @media (max-width: 768px) {
           .about-mission-grid { grid-template-columns: 1fr !important; }
@@ -189,11 +190,11 @@ export function AboutPage() {
       </section>
 
       {/* ── 2. Mission ── */}
-      <section ref={missionRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#fff', padding: '80px 0' }}>
+      <section ref={missionRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: 'white', padding: '80px 0' }}>
         <div className="about-wrap">
           <div className="about-mission-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '64px', alignItems: 'center' }}>
             {/* Left */}
-            <div>
+            <div style={{ borderLeft: '4px solid #00c9a7', paddingLeft: '32px' }}>
               <p className="about-section-label">OUR MISSION</p>
               <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', marginTop: '8px', marginBottom: 0 }}>
                 Why we built AssetTrack
@@ -239,7 +240,7 @@ export function AboutPage() {
       </section>
 
       {/* ── 3. What We Do ── */}
-      <section ref={whatRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#f8fafc', padding: '80px 0' }}>
+      <section ref={whatRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#f0f4f8', padding: '80px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
         <div className="about-wrap">
           <p className="about-section-label" style={{ textAlign: 'center' }}>WHAT WE DO</p>
           <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>
@@ -268,7 +269,7 @@ export function AboutPage() {
       </section>
 
       {/* ── 4. Key Features ── */}
-      <section ref={featRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#fff', padding: '80px 0' }}>
+      <section ref={featRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: 'white', padding: '80px 0' }}>
         <div className="about-wrap">
           <p className="about-section-label" style={{ textAlign: 'center' }}>KEY FEATURES</p>
           <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>

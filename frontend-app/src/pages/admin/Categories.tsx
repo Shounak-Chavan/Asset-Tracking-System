@@ -79,10 +79,10 @@ export function AdminCategoriesPage() {
       {/* ── Create category card ── */}
       <div style={{
         background: "#ffffff",
-        border: "1px solid #e5e7eb",
-        borderRadius: "12px",
+        border: "1px solid #e2e8f0",
+        borderRadius: "16px",
         padding: "24px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
       }}>
         {/* Label sits clearly above the input row */}
         <label style={{
@@ -147,9 +147,9 @@ export function AdminCategoriesPage() {
       {/* ── Category list card ── */}
       <div style={{
         background: "#ffffff",
-        border: "1px solid #e5e7eb",
-        borderRadius: "12px",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+        border: "1px solid #e2e8f0",
+        borderRadius: "16px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
         overflow: "hidden",
       }}>
         {/* List header */}

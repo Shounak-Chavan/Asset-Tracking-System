@@ -110,8 +110,9 @@ export function AdminUsersPage() {
 
         {/* LEFT — user list */}
         <div style={{
-          background: '#ffffff', border: '1px solid #e5e7eb',
-          borderRadius: '12px', overflow: 'hidden',
+          background: '#ffffff', border: '1px solid #e2e8f0',
+          borderRadius: '16px', overflow: 'hidden',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
         }}>
           {/* Header */}
           <div style={{
@@ -189,8 +190,9 @@ export function AdminUsersPage() {
 
         {/* RIGHT — detail panel */}
         <div style={{
-          background: '#ffffff', border: '1px solid #e5e7eb',
-          borderRadius: '12px', padding: '24px',
+          background: '#ffffff', border: '1px solid #e2e8f0',
+          borderRadius: '16px', padding: '24px',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
         }}>
           {!selectedUser ? (
             <div style={{

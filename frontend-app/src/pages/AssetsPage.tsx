@@ -1,16 +1,189 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Search, Package2, SlidersHorizontal, AlertCircle, X } from 'lucide-react'
+import { Search, Package2, AlertCircle, X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
 import { AssetBookingModal } from '../components/AssetBookingModal'
 import type { Asset } from '../types'
 
-const fallbackImage =
-  'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
+// ─── Asset Card ────────────────────────────────────────────────────────────
 
-export function AssetsPage() {
+function AssetCard({
+  asset,
+  availableAsset,
+  available,
+  total,
+  categoryName,
+  minDailyRate,
+  onRent,
+}: {
+  asset: Asset
+  availableAsset: Asset | null
+  available: number
+  total: number
+  categoryName: string
+  minDailyRate: number | null
+  onRent: (asset: Asset | null, isAvailable: boolean) => void
+}) {
+  const [hovered, setHovered] = useState(false)
+  const [imgError, setImgError] = useState(false)
+  const isAvailable = available > 0
+  const isElectronics = categoryName === 'Electronics'
+
+  const containerStyle: React.CSSProperties = {
+    width: '100%',
+    aspectRatio: '3 / 4',
+    overflow: 'hidden',
+    position: 'relative',
+    backgroundColor: isElectronics ? '#f8fafc' : '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  }
+
+  const imgTagStyle: React.CSSProperties = isElectronics
+    ? {
+        width: '100%',
+        height: '100%',
+        objectFit: 'contain',
+        objectPosition: 'center',
+        display: 'block',
+        padding: '16px',
+        boxSizing: 'border-box',
+        minHeight: '60%',
+      }
+    : {
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',
+        objectPosition: 'top',
+        display: 'block',
+      }
+
+  return (
+    <div
+      style={{
+        background: '#fff',
+        borderRadius: '8px',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+        cursor: 'pointer',
+        position: 'relative',
+        boxShadow: hovered ? '0 8px 24px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.06)',
+        transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
+        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+        opacity: isAvailable ? 1 : 0.75,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* ── Image ── */}
+      <div style={containerStyle}>
+        {imgError ? (
+          <div style={{
+            width: '100%', height: '100%', background: '#f1f5f9',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          }}>
+            <i className="ti ti-photo" style={{ fontSize: '32px', color: '#94a3b8' }} />
+            <span style={{ fontSize: '12px', color: '#94a3b8' }}>No image</span>
+          </div>
+        ) : (
+          <img
+            src={asset.image_url?.trim() || ''}
+            alt={asset.name}
+            style={{
+              ...imgTagStyle,
+              transform: hovered && !isElectronics ? 'scale(1.03)' : 'scale(1)',
+              transition: 'transform 0.3s ease',
+            }}
+            onError={() => setImgError(true)}
+          />
+        )}
+
+        {/* Unavailable overlay */}
+        {!isAvailable && (
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.4)', pointerEvents: 'none' }} />
+        )}
+
+        {/* Qty badge — top-right */}
+        {total > 1 && (
+          <div style={{
+            position: 'absolute', top: '8px', right: '8px',
+            background: 'rgba(255,255,255,0.92)', color: '#374151',
+            fontSize: '10px', fontWeight: 600, padding: '3px 8px', borderRadius: '2px',
+          }}>
+            {available}/{total}
+          </div>
+        )}
+
+        {/* RENT NOW — slides up on hover */}
+        <button
+          onClick={() => onRent(availableAsset, isAvailable)}
+          disabled={!isAvailable}
+          style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0,
+            background: isAvailable ? '#0d9488' : '#9ca3af',
+            color: '#fff',
+            border: 'none',
+            padding: '11px',
+            fontSize: '13px',
+            fontWeight: 600,
+            letterSpacing: '0.5px',
+            cursor: isAvailable ? 'pointer' : 'not-allowed',
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? 'translateY(0)' : 'translateY(100%)',
+            transition: 'opacity 0.25s ease, transform 0.25s ease',
+          }}
+        >
+          {isAvailable ? 'RENT NOW' : 'OUT OF STOCK'}
+        </button>
+      </div>
+
+      {/* ── Card Body ── */}
+      <div style={{ padding: '8px 10px 12px' }}>
+        {/* Category */}
+        <p style={{
+          fontSize: '11px', fontWeight: 700, color: '#535766',
+          textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0,
+        }}>
+          {categoryName}
+        </p>
+
+        {/* Name */}
+        <p style={{
+          fontSize: '13px', color: '#3e4152', margin: '2px 0 0 0',
+          whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+        }}>
+          {asset.name}
+        </p>
+
+        {/* Price row */}
+        <div style={{ marginTop: '6px', display: 'flex', alignItems: 'baseline', gap: '4px' }}>
+          {minDailyRate != null && (
+            <>
+              <span style={{ fontSize: '15px', fontWeight: 700, color: '#3e4152' }}>₹{minDailyRate}</span>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>/day</span>
+            </>
+          )}
+        </div>
+
+        {/* Availability */}
+        <p style={{
+          fontSize: '11px', fontWeight: 500, margin: '4px 0 0 0',
+          color: isAvailable ? '#03a685' : '#ff6161',
+        }}>
+          ● {isAvailable ? 'In Stock' : 'Out of Stock'}
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ─── Page ──────────────────────────────────────────────────────────────────
+
+function AssetsPage() {
   const { token } = useAuth()
   const navigate = useNavigate()
   const [search, setSearch] = useState('')
@@ -19,36 +192,40 @@ export function AssetsPage() {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null)
   const [loginPromptAsset, setLoginPromptAsset] = useState<Asset | null>(null)
 
-  // Fetch assets publicly — no token required
   const assetsQuery = useQuery({
     queryKey: ['assets-public'],
     queryFn: async () => {
-      try {
-        return await api.listAssets(token)
-      } catch {
-        return []
-      }
+      try { return await api.listAssets(token) } catch { return [] }
     },
   })
 
   const categoriesQuery = useQuery({
     queryKey: ['categories-public'],
     queryFn: async () => {
-      try {
-        return await api.listCategories(token)
-      } catch {
-        return []
-      }
+      try { return await api.listCategories(token) } catch { return [] }
+    },
+  })
+
+  const rentalPlansQuery = useQuery({
+    queryKey: ['rental-plans-public'],
+    queryFn: async () => {
+      try { return await api.listRentalPlans('') } catch { return [] }
     },
   })
 
   const assets = assetsQuery.data ?? []
   const categories = categoriesQuery.data ?? []
+  const rentalPlans = rentalPlansQuery.data ?? []
+
+  const minDailyRate = useMemo(() => {
+    const active = rentalPlans.filter((p) => p.is_active)
+    if (active.length === 0) return null
+    return Math.min(...active.map((p) => p.daily_rate))
+  }, [rentalPlans])
 
   const getCategoryName = (id: number) =>
     categories.find((c) => c.id === id)?.name ?? 'Uncategorized'
 
-  // Group assets by name+category so duplicates (quantity > 1) show as one card
   const grouped = useMemo(() => {
     const map = new Map<string, { asset: Asset; availableAsset: Asset | null; available: number; total: number }>()
     for (const a of assets) {
@@ -91,230 +268,141 @@ export function AssetsPage() {
 
   const handleRentNow = (asset: Asset | null, isAvailable: boolean) => {
     if (!isAvailable || !asset) return
-    if (!token) {
-      setLoginPromptAsset(asset)
-      return
-    }
+    if (!token) { setLoginPromptAsset(asset); return }
     setSelectedAsset(asset)
   }
 
-  const clearFilters = () => {
-    setSearch('')
-    setSelectedCategory('all')
-  }
-
   return (
-    <div style={{ background: '#fff', minHeight: '100vh' }}>
+    <div style={{ background: '#f5f5f6', minHeight: '100vh' }}>
+
+      {/* ── Category Tab Bar ── */}
       <div style={{
-        maxWidth: '1200px',
-        margin: '0 auto',
-        padding: '40px 48px',
-      }} className="sm-assets-pad">
-
-        {/* ── Header ── */}
-        <div style={{ marginBottom: '8px' }}>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: 700,
-            color: '#111827',
-            margin: '0 0 6px 0',
-          }}>
-            Browse the rental catalog
-          </h1>
-          <p style={{ fontSize: '15px', color: '#6b7280', margin: 0 }}>
-            Explore shared equipment, check availability, and book what you need.
-          </p>
-        </div>
-
-        {/* ── Stat Cards ── */}
+        background: '#fff',
+        borderBottom: '2px solid #f0f0f0',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        overflowX: 'auto',
+        WebkitOverflowScrolling: 'touch',
+        position: 'sticky',
+        top: '64px',
+        zIndex: 50,
+      }}>
         <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          maxWidth: '1280px',
+          margin: '0 auto',
+          padding: '0 24px',
+          display: 'flex',
+          gap: '0',
+        }}>
+          {(['all', ...categories] as const).map((item) => {
+            const isAll = item === 'all'
+            const id = isAll ? 'all' : (item as { id: number }).id
+            const label = isAll ? 'All' : (item as { name: string }).name
+            const active = selectedCategory === id
+            return (
+              <button
+                key={String(id)}
+                onClick={() => setSelectedCategory(id as 'all' | number)}
+                style={{
+                  padding: '14px 20px',
+                  fontSize: '13px',
+                  fontWeight: active ? 700 : 500,
+                  cursor: 'pointer',
+                  border: 'none',
+                  borderBottom: active ? '3px solid #00c9a7' : '2px solid transparent',
+                  background: 'transparent',
+                  color: active ? '#00c9a7' : '#535766',
+                  whiteSpace: 'nowrap',
+                  transition: 'color 0.15s',
+                }}
+                onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = '#3e4152' }}
+                onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = '#535766' }}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* ── Toolbar ── */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px' }}>
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '14px 0',
+          borderBottom: '1px solid #e9e9eb',
           gap: '12px',
-          margin: '24px 0 32px 0',
+          flexWrap: 'wrap',
         }}>
-          {[
-            { label: 'Items', value: grouped.length },
-            { label: 'Visible', value: filtered.length },
-            { label: 'Categories', value: categories.length },
-          ].map((stat) => (
-            <div key={stat.label} style={{
-              background: '#f9fafb',
-              border: '1px solid #e5e7eb',
-              borderRadius: '10px',
-              padding: '16px 20px',
-            }}>
-              <p style={{
-                fontSize: '11px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                color: '#6b7280',
-                margin: '0 0 4px 0',
-              }}>
-                {stat.label}
-              </p>
-              <p style={{
-                fontSize: '28px',
-                fontWeight: 600,
-                color: '#111827',
-                margin: 0,
-              }}>
-                {stat.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* ── Search + Sort + Filters ── */}
-        <div style={{
-          background: '#fff',
-          border: '1px solid #e5e7eb',
-          borderRadius: '12px',
-          padding: '20px 24px',
-          marginBottom: '28px',
-        }}>
-          {/* Search + Sort row */}
-          <div style={{
-            display: 'flex',
-            gap: '12px',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            marginBottom: '16px',
-          }}>
-            <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+          <span style={{ fontSize: '14px', color: '#535766' }}>
+            All Assets ({filtered.length})
+          </span>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            {/* Search */}
+            <div style={{ position: 'relative' }}>
               <Search style={{
-                position: 'absolute',
-                left: '14px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af',
-                width: '16px',
-                height: '16px',
-                pointerEvents: 'none',
+                position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)',
+                color: '#9ca3af', width: '13px', height: '13px', pointerEvents: 'none',
               }} />
               <input
                 type="text"
-                placeholder="Search assets, codes, or categories..."
+                placeholder="Search..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
-                  width: '100%',
-                  padding: '10px 14px 10px 40px',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  color: '#111827',
+                  padding: '7px 10px 7px 30px',
+                  border: '1px solid #d4d5d9',
+                  borderRadius: '2px',
+                  fontSize: '13px',
+                  color: '#3e4152',
                   outline: 'none',
+                  width: '160px',
                   boxSizing: 'border-box',
+                  background: '#fff',
                 }}
               />
             </div>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              border: '1px solid #e5e7eb',
-              borderRadius: '8px',
-              padding: '10px 14px',
-              background: '#f9fafb',
-            }}>
-              <SlidersHorizontal style={{ width: '15px', height: '15px', color: '#6b7280' }} />
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as 'featured' | 'name')}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  color: '#374151',
-                  outline: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <option value="featured">Featured</option>
-                <option value="name">Name A–Z</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Category pills */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-            <button
-              onClick={() => setSelectedCategory('all')}
+            {/* Sort */}
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'featured' | 'name')}
               style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '6px 16px',
-                borderRadius: '999px',
+                border: '1px solid #d4d5d9',
+                borderRadius: '2px',
+                padding: '7px 12px',
                 fontSize: '13px',
-                fontWeight: 500,
+                color: '#3e4152',
+                outline: 'none',
                 cursor: 'pointer',
-                border: selectedCategory === 'all' ? 'none' : '1px solid #e5e7eb',
-                background: selectedCategory === 'all' ? '#2563eb' : '#f3f4f6',
-                color: selectedCategory === 'all' ? '#fff' : '#374151',
-                transition: 'background 0.15s',
+                background: '#fff',
               }}
             >
-              All
-            </button>
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  padding: '6px 16px',
-                  borderRadius: '999px',
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                  border: selectedCategory === cat.id ? 'none' : '1px solid #e5e7eb',
-                  background: selectedCategory === cat.id ? '#2563eb' : '#f3f4f6',
-                  color: selectedCategory === cat.id ? '#fff' : '#374151',
-                  transition: 'background 0.15s',
-                }}
-              >
-                {cat.name}
-              </button>
-            ))}
+              <option value="featured">Recommended</option>
+              <option value="name">Name A–Z</option>
+            </select>
           </div>
         </div>
+      </div>
 
-        {/* ── Asset Grid ── */}
+      {/* ── Grid ── */}
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '16px 24px 48px' }}>
         {assetsQuery.isLoading ? (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '20px',
-          }} className="assets-grid">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                background: '#fff',
-              }}>
-                <div style={{ height: '180px', background: '#f3f4f6' }} />
-                <div style={{ padding: '16px' }}>
-                  <div style={{ height: '16px', background: '#f3f4f6', borderRadius: '4px', marginBottom: '8px', width: '70%' }} />
-                  <div style={{ height: '12px', background: '#f3f4f6', borderRadius: '4px', width: '40%' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', alignItems: 'start' }} className="assets-grid">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} style={{ background: '#fff', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ aspectRatio: '2 / 3', background: '#f3f4f6' }} />
+                <div style={{ padding: '8px 10px 12px' }}>
+                  <div style={{ height: '10px', background: '#f3f4f6', borderRadius: '2px', marginBottom: '6px', width: '50%' }} />
+                  <div style={{ height: '13px', background: '#f3f4f6', borderRadius: '2px', width: '80%' }} />
                 </div>
               </div>
             ))}
           </div>
         ) : assetsQuery.isError ? (
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '64px 24px',
-            border: '1px solid #fee2e2',
-            borderRadius: '12px',
-            background: '#fef2f2',
-            textAlign: 'center',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            padding: '64px 24px', background: '#fef2f2', borderRadius: '4px', textAlign: 'center',
           }}>
             <AlertCircle style={{ width: '32px', height: '32px', color: '#ef4444', marginBottom: '12px' }} />
             <p style={{ fontSize: '15px', fontWeight: 600, color: '#b91c1c', margin: '0 0 4px 0' }}>Failed to load assets</p>
@@ -322,155 +410,33 @@ export function AssetsPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '80px 24px',
-            border: '1px dashed #e5e7eb',
-            borderRadius: '12px',
-            background: '#fafafa',
-            textAlign: 'center',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+            padding: '80px 24px', background: '#fff', borderRadius: '4px', textAlign: 'center',
           }}>
             <Package2 style={{ width: '36px', height: '36px', color: '#9ca3af', marginBottom: '12px' }} />
             <p style={{ fontSize: '16px', fontWeight: 600, color: '#374151', margin: '0 0 4px 0' }}>No assets found</p>
-            <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 20px 0' }}>
-              Try a different search term or category filter.
-            </p>
+            <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 20px 0' }}>Try a different search or category.</p>
             <button
-              onClick={clearFilters}
-              style={{
-                padding: '8px 20px',
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '13px',
-                fontWeight: 500,
-                cursor: 'pointer',
-              }}
+              onClick={() => { setSearch(''); setSelectedCategory('all') }}
+              style={{ padding: '8px 20px', background: '#3e4152', color: '#fff', border: 'none', borderRadius: '2px', fontSize: '13px', fontWeight: 500, cursor: 'pointer' }}
             >
               Clear filters
             </button>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '20px',
-          }} className="assets-grid">
-            {filtered.map(({ asset, availableAsset, available, total }) => {
-              const isAvailable = available > 0
-              const categoryName = getCategoryName(asset.category_id)
-              return (
-                <div
-                  key={asset.id}
-                  style={{
-                    background: '#fff',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '12px',
-                    overflow: 'hidden',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'box-shadow 0.15s, transform 0.15s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.10)'
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = 'none'
-                    e.currentTarget.style.transform = 'translateY(0)'
-                  }}
-                >
-                  {/* Image */}
-                  <div style={{ position: 'relative', height: '180px', background: '#f3f4f6', overflow: 'hidden' }}>
-                    <img
-                      src={asset.image_url?.trim() || fallbackImage}
-                      alt={asset.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => { e.currentTarget.src = fallbackImage }}
-                    />
-                    {/* Qty badge — only shown when total > 1 */}
-                    {total > 1 && (
-                      <div style={{
-                        position: 'absolute', top: '10px', left: '10px',
-                        background: 'rgba(0,0,0,0.55)', color: '#fff',
-                        fontSize: '11px', fontWeight: 600,
-                        padding: '3px 8px', borderRadius: '999px',
-                        backdropFilter: 'blur(4px)',
-                      }}>
-                        {available}/{total} available
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Card body */}
-                  <div style={{ padding: '16px 18px', flex: 1, display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    {/* Name + status */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px' }}>
-                      <p style={{ fontSize: '15px', fontWeight: 600, color: '#111827', margin: 0, lineHeight: '1.4' }}>
-                        {asset.name}
-                      </p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexShrink: 0 }}>
-                        <div style={{
-                          width: '8px', height: '8px', borderRadius: '50%',
-                          background: isAvailable ? '#22c55e' : '#ef4444', flexShrink: 0,
-                        }} />
-                        <span style={{ fontSize: '11px', color: isAvailable ? '#16a34a' : '#dc2626', fontWeight: 500 }}>
-                          {isAvailable ? 'Available' : 'Unavailable'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Category badge */}
-                    <div>
-                      <span style={{
-                        display: 'inline-block',
-                        padding: '3px 10px',
-                        background: '#eff6ff',
-                        color: '#2563eb',
-                        borderRadius: '999px',
-                        fontSize: '11px',
-                        fontWeight: 500,
-                      }}>
-                        {categoryName}
-                      </span>
-                    </div>
-
-                    {/* Spacer */}
-                    <div style={{ flex: 1 }} />
-
-                    {/* Rent Now button */}
-                    <button
-                      onClick={() => handleRentNow(availableAsset, isAvailable)}
-                      disabled={!isAvailable}
-                      style={{
-                        width: '100%',
-                        padding: '9px 0',
-                        borderRadius: '8px',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        cursor: isAvailable ? 'pointer' : 'not-allowed',
-                        border: 'none',
-                        background: isAvailable ? '#2563eb' : '#e5e7eb',
-                        color: isAvailable ? '#fff' : '#9ca3af',
-                        transition: 'background 0.15s',
-                        marginTop: '4px',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (isAvailable) e.currentTarget.style.background = '#1d4ed8'
-                      }}
-                      onMouseLeave={(e) => {
-                        if (isAvailable) e.currentTarget.style.background = '#2563eb'
-                      }}
-                    >
-                      {isAvailable ? 'Rent Now' : 'Not Available'}
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', alignItems: 'start' }} className="assets-grid">
+            {filtered.map(({ asset, availableAsset, available, total }) => (
+              <AssetCard
+                key={asset.id}
+                asset={asset}
+                availableAsset={availableAsset}
+                available={available}
+                total={total}
+                categoryName={getCategoryName(asset.category_id)}
+                minDailyRate={minDailyRate}
+                onRent={handleRentNow}
+              />
+            ))}
           </div>
         )}
       </div>
@@ -478,113 +444,56 @@ export function AssetsPage() {
       {/* ── Login Prompt Modal ── */}
       {loginPromptAsset && (
         <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            background: 'rgba(0,0,0,0.4)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-            padding: '24px',
-          }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '24px' }}
           onClick={() => setLoginPromptAsset(null)}
         >
           <div
-            style={{
-              background: '#fff',
-              borderRadius: '14px',
-              padding: '28px 32px',
-              maxWidth: '380px',
-              width: '100%',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-              position: 'relative',
-            }}
+            style={{ background: '#fff', borderRadius: '8px', padding: '28px 32px', maxWidth: '380px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', position: 'relative' }}
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setLoginPromptAsset(null)}
-              style={{
-                position: 'absolute',
-                top: '16px',
-                right: '16px',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#9ca3af',
-                padding: '4px',
-              }}
+              style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: '4px' }}
             >
               <X size={18} />
             </button>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              borderRadius: '10px',
-              background: '#eff6ff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              marginBottom: '16px',
-            }}>
-              <Package2 size={22} color="#2563eb" />
+            <div style={{ width: '44px', height: '44px', borderRadius: '8px', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px' }}>
+              <Package2 size={22} color="#3e4152" />
             </div>
-            <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#111827', margin: '0 0 8px 0' }}>
-              Sign in to rent
-            </h3>
+            <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#3e4152', margin: '0 0 8px 0' }}>Sign in to rent</h3>
             <p style={{ fontSize: '14px', color: '#6b7280', margin: '0 0 20px 0', lineHeight: '1.6' }}>
-              Please sign in to rent <strong style={{ color: '#111827' }}>{loginPromptAsset.name}</strong>.
+              Please sign in to rent <strong style={{ color: '#3e4152' }}>{loginPromptAsset.name}</strong>.
             </p>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button
                 onClick={() => navigate('/login')}
-                style={{
-                  flex: 1,
-                  padding: '10px 0',
-                  background: '#2563eb',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
+                style={{ flex: 1, padding: '10px 0', background: '#3e4152', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
               >
                 Sign in
               </button>
               <button
                 onClick={() => setLoginPromptAsset(null)}
-                style={{
-                  flex: 1,
-                  padding: '10px 0',
-                  background: '#f3f4f6',
-                  color: '#374151',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  cursor: 'pointer',
-                }}
+                style={{ flex: 1, padding: '10px 0', background: '#f3f4f6', color: '#374151', border: '1px solid #e5e7eb', borderRadius: '4px', fontSize: '14px', fontWeight: 500, cursor: 'pointer' }}
               >
                 Cancel
-          </button>
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Booking Modal (logged in only) ── */}
+      {/* ── Booking Modal ── */}
       {token && (
         <AssetBookingModal
           asset={selectedAsset}
           onClose={() => setSelectedAsset(null)}
           token={token}
-          onBookingSuccess={() => {
-            setSelectedAsset(null)
-            void assetsQuery.refetch()
-          }}
+          onBookingSuccess={() => { setSelectedAsset(null); void assetsQuery.refetch() }}
         />
       )}
     </div>
   )
 }
+
+export { AssetsPage }
+export default AssetsPage

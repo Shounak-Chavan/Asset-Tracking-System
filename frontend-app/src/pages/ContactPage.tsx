@@ -129,7 +129,7 @@ export function ContactPage() {
   ]
 
   return (
-    <div style={{ background: '#f8fafc', width: '100%' }}>
+    <div style={{ background: '#f0f4f8', width: '100%' }}>
       <style>{`
         @keyframes pulse-dot {
           0%, 100% { opacity: 1; transform: scale(1); }
@@ -185,12 +185,12 @@ export function ContactPage() {
       </section>
 
       {/* ── 2. Main 2-col layout ── */}
-      <section ref={mainRef as React.RefObject<HTMLElement>} style={{ ...fadeInit }}>
+      <section ref={mainRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#f0f4f8' }}>
         <div style={{ maxWidth: 1100, margin: '-32px auto 0', padding: '0 24px 64px' }}>
           <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '28px', alignItems: 'start' }}>
 
             {/* LEFT — Contact Info */}
-            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', boxShadow: '0 8px 40px rgba(0,0,0,0.1)' }}>
+            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: 0 }}>Contact information</h2>
               <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Reach us through any of these channels</p>
               <div style={{ borderTop: '1px solid #f1f5f9', margin: '20px 0' }} />
@@ -230,7 +230,7 @@ export function ContactPage() {
             </div>
 
             {/* RIGHT — Contact Form */}
-            <div style={{ background: '#fff', borderRadius: '20px', padding: '36px 32px', boxShadow: '0 8px 40px rgba(0,0,0,0.1)' }}>
+            <div style={{ background: '#fff', borderRadius: '20px', padding: '36px 32px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', margin: 0 }}>Send us a message</h2>
               <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px' }}>Fill out the form and we'll get back to you shortly.</p>
               <div style={{ borderTop: '1px solid #f1f5f9', margin: '20px 0' }} />
@@ -389,7 +389,7 @@ export function ContactPage() {
       </section>
 
       {/* ── 3. FAQ Strip ── */}
-      <section ref={faqRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#f8fafc', padding: '64px 24px' }}>
+      <section ref={faqRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: 'white', padding: '64px 24px', borderTop: '1px solid #e2e8f0' }}>
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
           <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#2563eb', fontWeight: 700, textAlign: 'center', margin: 0 }}>FAQ</p>
           <h2 style={{ fontSize: '30px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>Common questions</h2>

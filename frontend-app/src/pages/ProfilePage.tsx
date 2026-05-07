@@ -169,7 +169,7 @@ export function ProfilePage() {
         }
       `}</style>
 
-      <div style={{ background: '#f1f5f9', minHeight: 'calc(100vh - 4rem)', padding: '32px 24px' }}>
+      <div style={{ background: 'linear-gradient(180deg, #eef6ff 0%, #f0f4f8 100%)', minHeight: 'calc(100vh - 4rem)', padding: '32px 24px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
           {/* ── Page header ── */}
@@ -184,6 +184,7 @@ export function ProfilePage() {
             <div style={{
               background: '#fff', borderRadius: '16px', padding: '32px 24px',
               boxShadow: '0 2px 8px rgba(0,0,0,0.07)', textAlign: 'center',
+              borderTop: '3px solid #00c9a7',
             }}>
               {/* Avatar */}
               <div style={{ position: 'relative', display: 'inline-block' }}>

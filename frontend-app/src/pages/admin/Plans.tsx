@@ -74,8 +74,9 @@ export function AdminPlansPage() {
 
       {/* Create form card */}
       <div style={{
-        background: '#ffffff', border: '1px solid #e5e7eb',
-        borderRadius: '12px', overflow: 'hidden',
+        background: '#ffffff', border: '1px solid #e2e8f0',
+        borderRadius: '16px', overflow: 'hidden',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
       }}>
         <div style={{
           padding: '16px 22px', borderBottom: '1px solid #f3f4f6',
@@ -167,9 +168,10 @@ export function AdminPlansPage() {
           ))
         ) : plans.map((p) => (
           <div key={p.id} style={{
-            background: '#ffffff', border: '1px solid #e5e7eb',
-            borderRadius: '12px', padding: '20px 22px',
+            background: '#ffffff', border: '1px solid #e2e8f0',
+            borderRadius: '16px', padding: '20px 22px',
             minWidth: '220px', width: 'fit-content',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
           }}>
             <div style={{ marginBottom: '12px' }}>
               <p style={{ fontSize: '10px', fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 4px' }}>

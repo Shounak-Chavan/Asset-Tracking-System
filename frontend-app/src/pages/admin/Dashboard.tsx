@@ -95,10 +95,10 @@ export function AdminDashboardPage() {
         {stats.map(({ label, value, icon: Icon, trend }) => (
           <div key={label} style={{
             background: '#ffffff',
-            border: '1px solid #e5e7eb',
-            borderRadius: '12px',
+            border: '1px solid #e2e8f0',
+            borderRadius: '16px',
             padding: '20px 22px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={{
@@ -161,8 +161,8 @@ export function AdminDashboardPage() {
       {/* Recent Bookings table */}
       <div style={{
         background: '#ffffff',
-        border: '1px solid #e5e7eb',
-        borderRadius: '12px',
+        border: '1px solid #e2e8f0',
+        borderRadius: '16px',
         overflow: 'hidden',
         marginBottom: '0',
       }}>
@@ -176,12 +176,13 @@ export function AdminDashboardPage() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#f9fafb' }}>
+              <tr style={{ background: '#f8fafc' }}>
                 {['Booking ID', 'Plan', 'Pickup Date', 'Status'].map(h => (
                   <th key={h} style={{
                     padding: '11px 20px', fontSize: '11px', fontWeight: 600,
-                    letterSpacing: '0.5px', textTransform: 'uppercase',
-                    color: '#6b7280', textAlign: 'left',
+                    letterSpacing: '0.06em', textTransform: 'uppercase',
+                    color: '#64748b', textAlign: 'left',
+                    borderBottom: '2px solid #e2e8f0',
                   }}>{h}</th>
                 ))}
               </tr>
@@ -202,8 +203,8 @@ export function AdminDashboardPage() {
               ) : recentBookings.map((b) => (
                 <tr
                   key={b.id}
-                  style={{ borderBottom: '1px solid #f3f4f6', cursor: 'default' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f9fafb' }}
+                  style={{ borderBottom: '1px solid #f1f5f9', cursor: 'default' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf9' }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                 >
                   <td style={{ padding: '14px 20px', fontSize: '13.5px', color: '#374151', fontWeight: 500 }}>

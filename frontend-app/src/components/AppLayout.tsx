@@ -38,8 +38,8 @@ export function AppLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/30 flex flex-col font-sans text-gray-900 overflow-x-hidden">
-      <header style={{ background: '#ffffff', borderBottom: '1px solid #f1f5f9', position: 'relative', width: '100%' }}>
+    <div className="min-h-screen flex flex-col font-sans text-gray-900 overflow-x-hidden" style={{ background: '#f0f4f8' }}>
+      <header style={{ background: '#ffffff', borderBottom: '2px solid #00c9a7', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', position: 'sticky', top: 0, zIndex: 100, width: '100%' }}>
         <div className="page-container">
           <div className="h-[64px] flex items-center justify-between gap-4">
 
@@ -85,22 +85,22 @@ export function AppLayout() {
                     onClick={() => navigate("/profile")}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '8px',
-                      background: '#f8fafc', border: '1.5px solid #e5e7eb',
-                      borderRadius: '100px', padding: '5px 14px 5px 6px',
-                      cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s',
+                      background: '#0f172a', border: 'none',
+                      borderRadius: '100px', padding: '6px 14px 6px 8px',
+                      cursor: 'pointer', transition: 'background 0.15s',
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#f1f5f9'; e.currentTarget.style.borderColor = '#cbd5e1' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.borderColor = '#e5e7eb' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#1e293b' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#0f172a' }}
                   >
                     <div style={{
-                      width: 34, height: 34, borderRadius: '50%',
-                      background: '#1a3a6b', color: '#fff',
-                      fontSize: '13px', fontWeight: 600,
+                      width: 28, height: 28, borderRadius: '50%',
+                      background: '#00c9a7', color: '#fff',
+                      fontSize: '12px', fontWeight: 700,
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}>
                       {getInitials(user?.full_name)}
                     </div>
-                    <span style={{ fontSize: '14px', fontWeight: 500, color: '#111827' }} className="hidden lg:inline">
+                    <span style={{ fontSize: '14px', fontWeight: 500, color: '#fff' }} className="hidden lg:inline">
                       {user?.full_name?.split(' ')[0]}
                     </span>
                   </button>
@@ -109,12 +109,12 @@ export function AppLayout() {
                     style={{
                       display: 'flex', alignItems: 'center', gap: '6px',
                       background: '#fff', border: '1.5px solid #fca5a5',
-                      borderRadius: '8px', padding: '7px 16px',
+                      borderRadius: '8px', padding: '7px 14px',
                       fontSize: '13px', fontWeight: 500, color: '#ef4444',
-                      cursor: 'pointer', transition: 'background 0.15s, border-color 0.15s',
+                      cursor: 'pointer', transition: 'background 0.15s',
                     }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444' }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#fca5a5' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = '#fef2f2' }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = '#fff' }}
                   >
                     <LogOut size={14} />
                     Sign out

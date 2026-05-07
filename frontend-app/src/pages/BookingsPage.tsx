@@ -107,7 +107,7 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
   return (
     <div
       className="flex gap-1"
-      style={{ background: '#f4f4f5', borderRadius: '8px', padding: '4px' }}
+      style={{ background: 'white', borderRadius: '12px', padding: '4px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
     >
       {tabs.map((t) => (
         <button
@@ -116,12 +116,12 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
           className="flex-1 transition-all"
           style={{
             padding: '6px 16px',
-            borderRadius: '6px',
+            borderRadius: '8px',
             fontSize: '14px',
-            fontWeight: active === t.id ? 500 : 400,
-            color: active === t.id ? '#111827' : '#6b7280',
-            background: active === t.id ? '#ffffff' : 'transparent',
-            boxShadow: active === t.id ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+            fontWeight: active === t.id ? 600 : 400,
+            color: active === t.id ? '#ffffff' : '#6b7280',
+            background: active === t.id ? '#0f172a' : 'transparent',
+            boxShadow: active === t.id ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
             border: 'none',
             cursor: 'pointer',
           }}
@@ -598,7 +598,7 @@ export function BookingsPage() {
   const showPast = activeTab === 'all' || activeTab === 'past'
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 4rem)', background: '#f1f5f9' }}>
+    <div style={{ minHeight: 'calc(100vh - 4rem)', background: 'linear-gradient(180deg, #eef6ff 0%, #f0f4f8 100%)' }}>
       {/* Centered container — max 1200px, full bleed padding */}
       <div
         style={{
@@ -608,34 +608,40 @@ export function BookingsPage() {
         }}
       >
         {/* ── Page Header ── */}
-        <div
-          className="flex items-center justify-between"
-          style={{ marginBottom: '28px', gap: '16px' }}
-        >
-          <div className="flex items-start gap-3">
-            <div
-              className="shrink-0"
-              style={{
-                width: '4px',
-                height: '48px',
-                borderRadius: '9999px',
-                background: 'linear-gradient(to bottom, #3b82f6, #93c5fd)',
-                marginTop: '2px',
-              }}
-            />
-            <div>
-              <h1 className="font-bold text-gray-900 tracking-tight" style={{ fontSize: '26px' }}>
-                My Bookings
-              </h1>
-              <p className="text-gray-500" style={{ fontSize: '14px', marginTop: '2px' }}>
-                Track your active and past rentals
-              </p>
-            </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
+          <div style={{ borderLeft: '4px solid #00c9a7', paddingLeft: '12px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+              My Bookings
+            </h1>
+            <p style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', marginBottom: 0 }}>
+              Track your active and past rentals
+            </p>
           </div>
-          <Button onClick={() => navigate('/assets')} className="shrink-0">
-            <PlusCircle className="w-4 h-4" />
+          <button
+            onClick={() => navigate('/assets')}
+            style={{
+              background: '#00c9a7', color: '#fff', border: 'none',
+              borderRadius: '10px', padding: '10px 20px',
+              fontSize: '14px', fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: '8px',
+              cursor: 'pointer', flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(0,201,167,0.3)',
+              transition: 'all 0.15s ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#00b396'
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,201,167,0.4)'
+              e.currentTarget.style.transform = 'translateY(-1px)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = '#00c9a7'
+              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,201,167,0.3)'
+              e.currentTarget.style.transform = 'translateY(0)'
+            }}
+          >
+            <PlusCircle style={{ width: 16, height: 16 }} />
             Book New Asset
-          </Button>
+          </button>
         </div>
 
         {/* ── Stats Grid — 4 equal columns ── */}
@@ -652,7 +658,7 @@ export function BookingsPage() {
             value={bookings.length}
             icon={CircleDollarSign}
             iconBg="bg-blue-50 text-blue-600"
-            topBorderColor="#3b82f6"
+            topBorderColor="#1a3a6b"
             valueColor="text-blue-700"
           />
           <StatCard
@@ -660,7 +666,7 @@ export function BookingsPage() {
             value={activeBookings.length}
             icon={Sparkles}
             iconBg="bg-green-50 text-green-600"
-            topBorderColor="#22c55e"
+            topBorderColor="#00c9a7"
             valueColor="text-green-700"
           />
           <StatCard
@@ -675,9 +681,9 @@ export function BookingsPage() {
             label="Completed"
             value={pastBookings.length}
             icon={History}
-            iconBg="bg-teal-50 text-teal-600"
-            topBorderColor="#14b8a6"
-            valueColor="text-teal-700"
+            iconBg="bg-purple-50 text-purple-600"
+            topBorderColor="#7c3aed"
+            valueColor="text-purple-700"
           />
         </div>
 

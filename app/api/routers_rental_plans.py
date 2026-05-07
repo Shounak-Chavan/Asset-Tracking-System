@@ -39,10 +39,9 @@ async def create_rental_plan(
     await db.refresh(plan)
     return plan
 
-# GET /rental-plans/ - any logged in user sees only active plans
+# GET /rental-plans/ - public endpoint, returns active plans to anyone
 @router.get("/", response_model=list[RentalPlanResponse])
 async def list_rental_plans(
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(RentalPlan).where(RentalPlan.is_active == True))

@@ -153,7 +153,7 @@ export function TermsPage() {
   ]
 
   return (
-    <div style={{ background: '#f8fafc', width: '100%' }}>
+    <div style={{ background: '#f0f4f8', width: '100%' }}>
       <style>{`
         .terms-sidebar-item {
           display: flex; align-items: center; gap: 10px;
@@ -165,13 +165,13 @@ export function TermsPage() {
         .terms-sidebar-item:hover .terms-nav-num,
         .terms-sidebar-item:hover .terms-nav-label { color: #2563eb; }
         .terms-sidebar-item.active {
-          background: #eff6ff;
-          border-left: 2px solid #2563eb;
+          background: #f0fdf9;
+          border-left: 3px solid #00c9a7;
           padding-left: 8px;
         }
         .terms-sidebar-item.active .terms-nav-num,
         .terms-sidebar-item.active .terms-nav-label {
-          color: #2563eb; font-weight: 500;
+          color: #00c9a7; font-weight: 500;
         }
         .terms-nav-num { font-size: 11px; font-weight: 700; color: #9ca3af; min-width: 18px; }
         .terms-nav-label { font-size: 13px; color: #374151; }

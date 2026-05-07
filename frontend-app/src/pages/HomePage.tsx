@@ -71,7 +71,7 @@ export function HomePage() {
   ]
 
   return (
-    <div style={{ background: '#ffffff', width: '100%' }}>
+    <div style={{ background: '#f0f4f8', width: '100%' }}>
       <style>{`
         html { scroll-behavior: smooth; }
         .home-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
@@ -134,23 +134,28 @@ export function HomePage() {
         style={{
           ...fadeInit,
           width: '100%',
-          minHeight: '100vh',
+          minHeight: '90vh',
           position: 'relative',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          background: 'linear-gradient(180deg, #eef2ff 0%, #ffffff 60%)',
+          background: 'linear-gradient(160deg, #e8f4fd 0%, #eef6ff 40%, #f0fdf9 100%)',
           borderBottom: '1px solid rgba(26,58,107,0.08)',
           willChange: 'auto',
         }}
       >
+        {/* Decorative background shapes */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
+          <div style={{ position: 'absolute', top: -120, right: -120, width: 500, height: 500, borderRadius: '50%', background: 'rgba(0,201,167,0.06)' }} />
+          <div style={{ position: 'absolute', bottom: -80, left: -80, width: 350, height: 350, borderRadius: '50%', background: 'rgba(26,58,107,0.05)' }} />
+          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.4 }} />
+        </div>
         {/* Hero content */}
         <div style={{
           position: 'relative', zIndex: 1,
           flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
           maxWidth: '780px', margin: '0 auto', padding: '100px 24px 60px', textAlign: 'center',
-        }}>
-          {/* Badge pill */}
+        }}>          {/* Badge pill */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '8px',
             background: 'white', border: '1px solid #e5e7eb',
@@ -231,10 +236,10 @@ export function HomePage() {
           <div ref={statsRef} className="stats-bar" style={{
             display: 'flex', justifyContent: 'space-around', alignItems: 'center',
             background: 'white',
-            border: '1px solid #e5e7eb',
+            border: '1px solid #e2e8f0',
             borderRadius: '20px', padding: '24px 48px',
             marginTop: '48px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
           }}>
             {[
               { value: '500+', label: 'Assets Managed', icon: <Package size={16} color="#1a3a6b" />, iconBg: '#e8eef7' },
@@ -266,7 +271,7 @@ export function HomePage() {
       </section>
 
       {/* ── SECTION 2: How It Works ── */}
-      <section ref={howRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#f8fafc', padding: '80px 0' }}>
+      <section ref={howRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#f8fafc', padding: '80px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
         <div className="home-wrap">
           <p className="section-label">HOW IT WORKS</p>
           <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>
@@ -274,7 +279,7 @@ export function HomePage() {
           </h2>
           <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', marginTop: '48px' }}>
             {steps.map((s) => (
-              <div key={s.num} className="step-card">
+              <div key={s.num} className="step-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderTop: '3px solid #00c9a7', borderRadius: '16px', padding: '28px', boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>
                 <div style={{ fontSize: '48px', fontWeight: 800, color: '#dbeafe', lineHeight: 1 }}>{s.num}</div>
                 <div style={{ width: 48, height: 48, background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '8px' }}>
                   {s.icon}
@@ -288,7 +293,7 @@ export function HomePage() {
       </section>
 
       {/* ── SECTION 3: Features ── */}
-      <section ref={featRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#fff', padding: '80px 0' }}>
+      <section ref={featRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#ffffff', padding: '80px 0' }}>
         <div className="home-wrap">
           <p className="section-label">FEATURES</p>
           <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>
@@ -299,7 +304,7 @@ export function HomePage() {
           </p>
           <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '48px' }}>
             {features.map((f) => (
-              <div key={f.title} className="feature-card">
+              <div key={f.title} className="feature-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '28px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', transition: 'all 0.2s ease', cursor: 'default' }}>
                 <div style={{ width: 48, height: 48, borderRadius: '12px', background: f.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {f.icon}
                 </div>

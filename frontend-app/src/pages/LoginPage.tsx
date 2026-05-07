@@ -47,7 +47,7 @@ export function LoginPage() {
   return (
     <div style={{
       minHeight: 'calc(100vh - 64px)',
-      background: '#f8fafc',
+      background: 'linear-gradient(135deg, #e8f4fd 0%, #eef6ff 50%, #f0fdf9 100%)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -56,22 +56,20 @@ export function LoginPage() {
       overflow: 'hidden',
     }}>
 
-      {/* ── Background blobs ── */}
-      <div style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}>
-        <div style={{ position: 'absolute', width: 500, height: 500, borderRadius: '50%', background: 'rgba(37,99,235,0.08)', top: -100, left: -150, filter: 'blur(80px)' }} />
-        <div style={{ position: 'absolute', width: 400, height: 400, borderRadius: '50%', background: 'rgba(124,58,237,0.06)', bottom: -80, right: -100, filter: 'blur(60px)' }} />
-        <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(59,130,246,0.05)', top: '40%', left: '60%', filter: 'blur(70px)' }} />
-      </div>
+      {/* ── Background blobs (static, no blur) ── */}
+      <div style={{ position: 'fixed', top: -100, left: -100, width: 400, height: 400, borderRadius: '50%', background: 'rgba(0,201,167,0.08)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'fixed', bottom: -80, right: -80, width: 320, height: 320, borderRadius: '50%', background: 'rgba(26,58,107,0.06)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'fixed', inset: 0, backgroundImage: 'radial-gradient(#94a3b8 1px, transparent 1px)', backgroundSize: '28px 28px', opacity: 0.2, pointerEvents: 'none', zIndex: 0 }} />
 
       {/* ── Card ── */}
       <div style={{
         position: 'relative', zIndex: 1,
-        width: '100%', maxWidth: '440px',
-        background: '#fff',
+        width: '100%', maxWidth: '460px',
+        background: 'rgba(255,255,255,0.95)',
         borderRadius: '20px',
-        border: '1px solid #e5e7eb',
-        boxShadow: '0 8px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)',
-        padding: '48px 44px',
+        border: '1px solid rgba(255,255,255,0.8)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.1), 0 1px 0 rgba(255,255,255,0.6) inset',
+        padding: '44px',
       }}>
 
         {/* Brand header */}

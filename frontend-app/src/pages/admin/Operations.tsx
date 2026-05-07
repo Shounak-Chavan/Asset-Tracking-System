@@ -97,8 +97,8 @@ export function AdminOperationsPage() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-6">
-      <div className="mb-8">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', borderLeft: '4px solid #00c9a7', padding: '20px 0', marginBottom: '8px' }}>
         <h1 className="text-2xl font-semibold text-gray-900">Operations Center</h1>
         <p className="text-sm text-gray-500 mt-1">Allocate assets, process returns, and manage bookings.</p>
       </div>
@@ -119,7 +119,7 @@ export function AdminOperationsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
         {/* ── Pending Approval — amber ── */}
-        <div style={{ background: '#fffbf5', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #fde68a', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
+        <div style={{ background: '#fffbf5', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #fde68a', borderLeft: '4px solid #d97706', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
           onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.10)')}
           onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)')}
         >
@@ -166,7 +166,7 @@ export function AdminOperationsPage() {
         </div>
 
         {/* ── Allocate Assets — blue ── */}
-        <div style={{ background: '#f5f9ff', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #bfdbfe', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
+        <div style={{ background: '#f5f9ff', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #bfdbfe', borderLeft: '4px solid #2563eb', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
           onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.10)')}
           onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)')}
         >
@@ -235,7 +235,7 @@ export function AdminOperationsPage() {
         </div>
 
         {/* ── Process Returns — emerald ── */}
-        <div style={{ background: '#f4fdf8', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #a7f3d0', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
+        <div style={{ background: '#f4fdf8', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #a7f3d0', borderLeft: '4px solid #16a34a', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
           onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.10)')}
           onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)')}
         >
@@ -316,7 +316,7 @@ export function AdminOperationsPage() {
         </div>
 
         {/* ── Active Bookings — indigo ── */}
-        <div style={{ background: '#f7f5ff', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #c7d2fe', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
+        <div style={{ background: '#f7f5ff', borderRadius: '16px', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)', border: '1px solid #c7d2fe', borderLeft: '4px solid #7c3aed', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
           onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.10)')}
           onMouseLeave={e => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06)')}
         >

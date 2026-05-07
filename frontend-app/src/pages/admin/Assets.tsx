@@ -474,13 +474,13 @@ export function AdminAssetsPage() {
       />
 
       {/* Assets table */}
-      <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
             <thead>
-              <tr style={{ background: '#f9fafb' }}>
+              <tr style={{ background: '#f8fafc' }}>
                 {['Asset', 'Code', 'Category', 'Status', 'Active', 'Actions'].map((h) => (
-                  <th key={h} style={{ padding: '12px 20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.6px', textTransform: 'uppercase', color: '#374151', textAlign: 'left', borderBottom: '1px solid #e5e7eb', whiteSpace: 'nowrap' }}>
+                  <th key={h} style={{ padding: '12px 20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#64748b', textAlign: 'left', borderBottom: '2px solid #e2e8f0', whiteSpace: 'nowrap' }}>
                     {h}
                   </th>
                 ))}
@@ -506,12 +506,12 @@ export function AdminAssetsPage() {
                 </tr>
               )}
 
-              {assets.map((a) => (
+              {assets.map((a, rowIdx) => (
                 <tr
                   key={a.id}
-                  style={{ borderBottom: '1px solid #f3f4f6', transition: 'background 0.1s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f9fafb' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
+                  style={{ borderBottom: '1px solid #f3f4f6', transition: 'background 0.1s', background: rowIdx % 2 === 0 ? '#ffffff' : '#fafafa' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf9' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = rowIdx % 2 === 0 ? '#ffffff' : '#fafafa' }}
                 >
                   <td style={{ padding: '14px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>

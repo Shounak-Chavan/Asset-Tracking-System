@@ -40,7 +40,7 @@ export function AdminLayout() {
         height: "100vh",
         position: "sticky",
         top: 0,
-        background: "#111827",
+        background: "linear-gradient(180deg, #0f172a 0%, #111827 100%)",
         display: "flex",
         flexDirection: "column",
         zIndex: 40,
@@ -91,7 +91,8 @@ export function AdminLayout() {
                 fontSize: "13.5px",
                 fontWeight: 500,
                 color: isActive ? "#ffffff" : "#9ca3af",
-                background: isActive ? "#1e3a5f" : "transparent",
+                background: isActive ? "rgba(0,201,167,0.08)" : "transparent",
+                borderLeft: isActive ? "3px solid #00c9a7" : "3px solid transparent",
                 textDecoration: "none",
                 cursor: "pointer",
                 transition: "all 0.15s",
@@ -178,7 +179,7 @@ export function AdminLayout() {
         <header style={{
           height: "56px",
           background: "#ffffff",
-          borderBottom: "1px solid #e5e7eb",
+          borderBottom: "2px solid #00c9a7",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -222,7 +223,7 @@ export function AdminLayout() {
         <main style={{
           flex: 1,
           overflowY: "auto",
-          background: "#f3f4f6",
+          background: "#f0f4f8",
           padding: "32px 36px",
           minHeight: "calc(100vh - 56px)",
         }}>
