@@ -65,7 +65,7 @@ export function HomePage() {
   ]
 
   const testimonials = [
-    { initials: 'HW', color: '#2563eb', name: 'Hoshang W.', role: 'Operations Lead', quote: 'AssetFlow completely changed how we manage shared equipment. No more confusion about who has what.' },
+    { initials: 'HW', color: '#2563eb', name: 'Hoshang W.', role: 'Operations Lead', quote: 'AssetTrack completely changed how we manage shared equipment. No more confusion about who has what.' },
     { initials: 'RK', color: '#16a34a', name: 'Rahul K.', role: 'Facility Manager', quote: "The deposit and tracking system gives us full accountability. We've reduced losses by 80%." },
     { initials: 'PS', color: '#9333ea', name: 'Priya S.', role: 'Team Lead', quote: 'Booking an asset takes 30 seconds. The whole team adopted it immediately.' },
   ]
@@ -179,7 +179,7 @@ export function HomePage() {
 
           {/* Subheadline */}
           <p style={{ fontSize: '18px', color: '#64748b', lineHeight: 1.7, marginTop: '20px', maxWidth: '540px', marginInline: 'auto' }}>
-            AssetFlow streamlines the entire rental lifecycle — from booking and allocation to payment and return — in one transparent platform.
+            AssetTrack streamlines the entire rental lifecycle — from booking and allocation to payment and return — in one transparent platform.
           </p>
 
           {/* CTA buttons */}
@@ -315,7 +315,7 @@ export function HomePage() {
       <section ref={testRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#0f172a', padding: '80px 0' }}>
         <div className="home-wrap">
           <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 0 }}>
-            Why teams choose AssetFlow
+            Why teams choose AssetTrack
           </h2>
           <div className="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '48px' }}>
             {testimonials.map((t) => (
@@ -366,3 +366,4 @@ export function HomePage() {
     </div>
   )
 }
+

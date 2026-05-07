@@ -84,8 +84,8 @@ export function AdminOperationsPage() {
 
   const pending = bookings.filter((b) => b.status === 'pending')
   const toAllocate = bookings.filter((b) => b.status === 'booked')
-  const returnRequests = bookings.filter((b) => b.status === 'returned')
-  const active = bookings.filter((b) => ['allocated', 'ready_for_pickup', 'picked_up', 'overdue'].includes(b.status))
+  const returnRequests = bookings.filter((b) => b.status === 'ready_for_pickup')
+  const active = bookings.filter((b) => ['allocated', 'picked_up', 'overdue'].includes(b.status))
 
   function EmptyState({ message }: { message: string }) {
     return (
@@ -194,18 +194,41 @@ export function AdminOperationsPage() {
                   </div>
                   <StatusBadge status={b.status} />
                 </div>
-                <select
-                  style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #bfdbfe', background: '#fff', padding: '0 8px', fontSize: '13px', color: '#1f2937', outline: 'none' }}
-                  defaultValue=""
-                  onChange={(e) => { if (e.target.value) allocateMutation.mutate({ bookingId: b.id, assetId: Number(e.target.value) }) }}
-                  disabled={allocateMutation.isPending}
-                  aria-label="Select asset to allocate"
-                >
-                  <option value="">Select asset to allocate</option>
-                  {availableAssets.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.asset_code})</option>
-                  ))}
-                </select>
+                {b.requested_asset_id ? (
+                  (() => {
+                    const requestedAsset = availableAssets.find((a) => a.id === b.requested_asset_id)
+                    return requestedAsset ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '8px 12px' }}>
+                        <div>
+                          <p style={{ fontSize: '12px', fontWeight: 600, color: '#1e40af', margin: 0 }}>{requestedAsset.name}</p>
+                          <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0' }}>{requestedAsset.asset_code} · Requested by user</p>
+                        </div>
+                        <button
+                          style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', background: '#2563eb', color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0, marginLeft: '12px' }}
+                          onClick={() => allocateMutation.mutate({ bookingId: b.id, assetId: requestedAsset.id })}
+                          disabled={allocateMutation.isPending}
+                        >
+                          Allocate
+                        </button>
+                      </div>
+                    ) : (
+                      <p style={{ fontSize: '12px', color: '#dc2626', margin: 0 }}>Requested asset (#{b.requested_asset_id}) is not available</p>
+                    )
+                  })()
+                ) : (
+                  <select
+                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid #bfdbfe', background: '#fff', padding: '0 8px', fontSize: '13px', color: '#1f2937', outline: 'none' }}
+                    defaultValue=""
+                    onChange={(e) => { if (e.target.value) allocateMutation.mutate({ bookingId: b.id, assetId: Number(e.target.value) }) }}
+                    disabled={allocateMutation.isPending}
+                    aria-label="Select asset to allocate"
+                  >
+                    <option value="">Select asset to allocate</option>
+                    {availableAssets.map((a) => (
+                      <option key={a.id} value={a.id}>{a.name} ({a.asset_code})</option>
+                    ))}
+                  </select>
+                )}
               </div>
             ))}
           </div>

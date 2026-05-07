@@ -70,13 +70,11 @@ async def get_all_assets(
 ):
     query = select(Asset).join(Category, Asset.category_id == Category.id)
 
-    # Public users see only active, available assets
-    # Admin (if logged in) sees all
+    # Public users see all active assets (any status) so the frontend can
+    # compute correct available/total counts per asset group.
+    # Admin sees everything including inactive and dry-cleaning assets.
     if current_user is None or current_user.role != UserRole.admin:
-        query = query.where(
-            Asset.is_active == True,
-            Asset.is_in_dry_cleaning == False
-        )
+        query = query.where(Asset.is_active == True)
 
     if name is not None:
         query = query.where(Asset.name.ilike(f"%{name}%"))

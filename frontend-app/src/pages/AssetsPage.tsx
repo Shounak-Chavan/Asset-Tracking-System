@@ -50,19 +50,24 @@ export function AssetsPage() {
 
   // Group assets by name+category so duplicates (quantity > 1) show as one card
   const grouped = useMemo(() => {
-    const map = new Map<string, { asset: Asset; available: number; total: number }>()
+    const map = new Map<string, { asset: Asset; availableAsset: Asset | null; available: number; total: number }>()
     for (const a of assets) {
       if (!a.is_active) continue
       const key = `${a.name.trim().toLowerCase()}__${a.category_id}`
       const existing = map.get(key)
+      const isAvailable = a.status === 'available' && !a.is_in_dry_cleaning
       if (existing) {
         existing.total += 1
-        if (a.status === 'available') existing.available += 1
+        if (isAvailable) {
+          existing.available += 1
+          if (!existing.availableAsset) existing.availableAsset = a
+        }
       } else {
         map.set(key, {
           asset: a,
+          availableAsset: isAvailable ? a : null,
           total: 1,
-          available: a.status === 'available' ? 1 : 0,
+          available: isAvailable ? 1 : 0,
         })
       }
     }
@@ -84,8 +89,8 @@ export function AssetsPage() {
     return items
   }, [grouped, search, selectedCategory, sortBy, categories])
 
-  const handleRentNow = (asset: Asset, isAvailable: boolean) => {
-    if (!isAvailable) return
+  const handleRentNow = (asset: Asset | null, isAvailable: boolean) => {
+    if (!isAvailable || !asset) return
     if (!token) {
       setLoginPromptAsset(asset)
       return
@@ -354,7 +359,7 @@ export function AssetsPage() {
             gridTemplateColumns: 'repeat(3, 1fr)',
             gap: '20px',
           }} className="assets-grid">
-            {filtered.map(({ asset, available, total }) => {
+            {filtered.map(({ asset, availableAsset, available, total }) => {
               const isAvailable = available > 0
               const categoryName = getCategoryName(asset.category_id)
               return (
@@ -438,7 +443,7 @@ export function AssetsPage() {
 
                     {/* Rent Now button */}
                     <button
-                      onClick={() => handleRentNow(asset, isAvailable)}
+                      onClick={() => handleRentNow(availableAsset, isAvailable)}
                       disabled={!isAvailable}
                       style={{
                         width: '100%',

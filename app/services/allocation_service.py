@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from app.models.allocations import Allocation
 from app.models.bookings import Booking,BookingStatus
-from app.models.asset import Asset
+from app.models.asset import Asset, AssetStatus
 
 async def allocate_asset(
         db: AsyncSession,
@@ -50,8 +50,9 @@ async def allocate_asset(
     )
     db.add(allocation)
 
-    # 7. Update booking status.
+    # 7. Update booking and asset status.
     booking.status = BookingStatus.allocated
+    asset.status = AssetStatus.allocated
 
     await db.commit()
     await db.refresh(allocation)

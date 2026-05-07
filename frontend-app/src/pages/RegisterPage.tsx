@@ -159,7 +159,7 @@ export function RegisterPage() {
             Create an account
           </h1>
           <p style={{ fontSize: '14px', color: '#6b7280', margin: 0 }}>
-            Join AssetFlow to start renting assets
+            Join AssetTrack to start renting assets
           </p>
           <div style={{ width: '100%', borderTop: '1px solid #f1f5f9', margin: '20px 0 0 0' }} />
         </div>
@@ -350,3 +350,4 @@ export function RegisterPage() {
     </div>
   )
 }
+

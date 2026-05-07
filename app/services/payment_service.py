@@ -4,6 +4,8 @@ from fastapi import HTTPException
 
 from app.models.payment import Payment, PaymentType, PaymentStatus
 from app.models.bookings import Booking, BookingStatus
+from app.models.allocations import Allocation
+from app.models.asset import Asset, AssetStatus
 
 #  DEPOSIT PAYMENT (MOCK)
 
@@ -101,8 +103,17 @@ async def pay_rent(
 
     db.add(payment)
 
-    # 6. Update booking status
+    # 6. Update booking and asset status
     booking.status = BookingStatus.picked_up
+
+    alloc_result = await db.execute(
+        select(Allocation).where(Allocation.booking_id == booking_id)
+    )
+    allocation = alloc_result.scalar_one_or_none()
+    if allocation:
+        asset = await db.get(Asset, allocation.asset_id)
+        if asset:
+            asset.status = AssetStatus.picked_up
 
     await db.commit()
     await db.refresh(payment)

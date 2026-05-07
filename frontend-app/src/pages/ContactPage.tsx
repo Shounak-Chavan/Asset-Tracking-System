@@ -102,7 +102,7 @@ export function ContactPage() {
       icon: <Mail size={20} color="#2563eb" />,
       iconBg: '#eff6ff',
       label: 'EMAIL',
-      value: 'support@assetflow.local',
+      value: 'support@assettrack.local',
       sub: 'Response within 24 hours',
     },
     {
@@ -423,3 +423,4 @@ export function ContactPage() {
     </div>
   )
 }
+

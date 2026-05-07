@@ -2,7 +2,7 @@
 
 ## Introduction
 
-AssetFlow is a full-stack asset rental management application with a React/TypeScript frontend. After a partial revert, the UI is in a broken state: the global CSS (`index.css`) defines a dark theme (near-black background, near-white text) while the component layer (AppLayout, AdminLayout, admin pages) was already migrated to a light Tailwind theme. This mismatch causes visual distortions — dark backgrounds bleeding through, unreadable text, garbled currency symbols, and broken component styles. The goal is a complete, consistent light-theme UI overhaul that is polished and submission-ready.
+AssetTrack is a full-stack asset rental management application with a React/TypeScript frontend. After a partial revert, the UI is in a broken state: the global CSS (`index.css`) defines a dark theme (near-black background, near-white text) while the component layer (AppLayout, AdminLayout, admin pages) was already migrated to a light Tailwind theme. This mismatch causes visual distortions — dark backgrounds bleeding through, unreadable text, garbled currency symbols, and broken component styles. The goal is a complete, consistent light-theme UI overhaul that is polished and submission-ready.
 
 ## Glossary
 
@@ -80,3 +80,4 @@ AssetFlow is a full-stack asset rental management application with a React/TypeS
 2. WHEN interactive elements (buttons, links, inputs) are hovered, THE UI SHALL show smooth transition effects
 3. THE UI SHALL display no broken layouts, overlapping elements, or invisible text on any page
 4. WHERE the application uses the `RentCalculator` component, THE UI SHALL render it with a clean light card style matching the surrounding modal
+

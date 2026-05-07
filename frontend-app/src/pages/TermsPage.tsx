@@ -86,8 +86,8 @@ export function TermsPage() {
   }> = [
     {
       title: 'Acceptance of Terms',
-      callout: <Callout type="info" text="By using AssetFlow, you agree to all terms below." />,
-      content: 'By accessing and using AssetFlow, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.',
+      callout: <Callout type="info" text="By using AssetTrack, you agree to all terms below." />,
+      content: 'By accessing and using AssetTrack, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.',
     },
     {
       title: 'User Accounts',
@@ -136,15 +136,15 @@ export function TermsPage() {
     },
     {
       title: 'Intellectual Property Rights',
-      content: 'All content, features, and functionality of AssetFlow (including but not limited to all information, software, text, displays, images, video, and audio) are owned by AssetFlow, its licensors, or other providers of such material and are protected by international copyright, trademark, and other intellectual property laws.',
+      content: 'All content, features, and functionality of AssetTrack (including but not limited to all information, software, text, displays, images, video, and audio) are owned by AssetTrack, its licensors, or other providers of such material and are protected by international copyright, trademark, and other intellectual property laws.',
     },
     {
       title: 'Limitation of Liability',
-      content: 'In no event shall AssetFlow, its directors, employees, or agents be liable for any indirect, incidental, special, consequential, or punitive damages, including lost profits, arising out of or in connection with your use of the service.',
+      content: 'In no event shall AssetTrack, its directors, employees, or agents be liable for any indirect, incidental, special, consequential, or punitive damages, including lost profits, arising out of or in connection with your use of the service.',
     },
     {
       title: 'Modifications to Terms',
-      content: 'AssetFlow reserves the right to modify these terms at any time. Changes will be effective immediately upon posting to the website. Your continued use of the service following the posting of revised terms means that you accept and agree to the changes.',
+      content: 'AssetTrack reserves the right to modify these terms at any time. Changes will be effective immediately upon posting to the website. Your continued use of the service following the posting of revised terms means that you accept and agree to the changes.',
     },
     {
       title: 'Governing Law',
@@ -207,7 +207,7 @@ export function TermsPage() {
             Terms and Conditions
           </h1>
           <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)', marginTop: '10px' }}>
-            Please read these terms carefully before using AssetFlow.
+            Please read these terms carefully before using AssetTrack.
           </p>
           <div className="terms-hero-meta" style={{ display: 'flex', gap: '24px', justifyContent: 'center', alignItems: 'center', marginTop: '24px' }}>
             {[
@@ -369,3 +369,4 @@ export function TermsPage() {
     </div>
   )
 }
+

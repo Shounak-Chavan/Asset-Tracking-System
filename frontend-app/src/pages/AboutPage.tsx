@@ -160,7 +160,7 @@ export function AboutPage() {
           </div>
 
           <h1 className="about-hero-title" style={{ fontSize: '52px', fontWeight: 800, color: '#fff', marginTop: '16px', marginBottom: 0 }}>
-            About AssetFlow
+            About AssetTrack
           </h1>
           <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.7)', marginTop: '12px', maxWidth: '520px', marginInline: 'auto' }}>
             Building accountable and efficient asset operations for modern teams.
@@ -196,10 +196,10 @@ export function AboutPage() {
             <div>
               <p className="about-section-label">OUR MISSION</p>
               <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', marginTop: '8px', marginBottom: 0 }}>
-                Why we built AssetFlow
+                Why we built AssetTrack
               </h2>
               <p style={{ fontSize: '16px', color: '#64748b', lineHeight: 1.8, marginTop: '20px' }}>
-                AssetFlow empowers organizations to manage shared assets with transparency, accountability, and efficiency. We believe that asset management shouldn't be complicated. Our platform simplifies the entire lifecycle—from discovery and booking to allocation, usage, and return—enabling teams to focus on what matters most.
+                AssetTrack empowers organizations to manage shared assets with transparency, accountability, and efficiency. We believe that asset management shouldn't be complicated. Our platform simplifies the entire lifecycle—from discovery and booking to allocation, usage, and return—enabling teams to focus on what matters most.
               </p>
               <a
                 href="#"
@@ -221,7 +221,7 @@ export function AboutPage() {
               <p style={{ fontSize: '22px', fontWeight: 700, color: '#1e40af', lineHeight: 1.4, marginTop: '8px' }}>
                 Asset management shouldn't be complicated.
               </p>
-              <p style={{ fontSize: '14px', color: '#3b82f6', marginTop: '16px' }}>— AssetFlow Team</p>
+              <p style={{ fontSize: '14px', color: '#3b82f6', marginTop: '16px' }}>— AssetTrack Team</p>
               <div style={{ display: 'flex', gap: '12px', marginTop: '28px' }}>
                 {[ShieldCheck, Calendar, Users].map((Icon, i) => (
                   <div key={i} style={{
@@ -246,7 +246,7 @@ export function AboutPage() {
             A complete rental platform
           </h2>
           <p style={{ fontSize: '16px', color: '#64748b', textAlign: 'center', maxWidth: '600px', marginInline: 'auto', marginTop: '12px' }}>
-            AssetFlow is a comprehensive asset management platform designed for teams that need to track, book, allocate, and return shared resources. Whether you're managing equipment, vehicles, office spaces, or any other assets, our system provides end-to-end visibility and control.
+            AssetTrack is a comprehensive asset management platform designed for teams that need to track, book, allocate, and return shared resources. Whether you're managing equipment, vehicles, office spaces, or any other assets, our system provides end-to-end visibility and control.
           </p>
 
           <div className="about-what-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px', marginTop: '48px', maxWidth: '900px', marginInline: 'auto' }}>
@@ -345,7 +345,7 @@ export function AboutPage() {
               Start managing assets the right way
             </h2>
             <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.8)', marginTop: '12px' }}>
-              Join teams already using AssetFlow for accountable asset management.
+              Join teams already using AssetTrack for accountable asset management.
             </p>
             <button
               onClick={() => navigate('/register')}
@@ -367,3 +367,4 @@ export function AboutPage() {
     </div>
   )
 }
+
