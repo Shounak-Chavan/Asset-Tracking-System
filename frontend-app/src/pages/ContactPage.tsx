@@ -2,8 +2,19 @@ import { useState, useRef, useEffect } from 'react'
 import {
   Mail, Phone, Clock, Calendar, CreditCard, Package,
   HelpCircle, ChevronRight, Send, Lock, Plus, Minus, User,
-  ChevronDown,
+  ChevronDown, AlertCircle,
 } from 'lucide-react'
+import { validateName, validateEmail, validateMessage } from '../utils/validation'
+
+function FieldError({ message }: { message: string | null }) {
+  if (!message) return null
+  return (
+    <p style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#ef4444', margin: '4px 0 0 0' }}>
+      <AlertCircle size={12} color="#ef4444" style={{ flexShrink: 0 }} />
+      {message}
+    </p>
+  )
+}
 
 function useFadeIn() {
   const ref = useRef<HTMLElement>(null)
@@ -86,6 +97,29 @@ export function ContactPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(null)
   const [submitted, setSubmitted] = useState(false)
 
+  const [errors, setErrors] = useState<Record<string, string | null>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
+  const validateField = (field: string, value: string) => {
+    let err: string | null = null
+    if (field === 'name') err = validateName(value)
+    if (field === 'email') err = validateEmail(value)
+    if (field === 'subject') err = !value ? 'Please select a topic' : null
+    if (field === 'message') err = validateMessage(value)
+    setErrors(prev => ({ ...prev, [field]: err }))
+    return err
+  }
+
+  const handleBlur = (field: string, value: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+    validateField(field, value)
+  }
+
+  const getFieldBorder = (field: string, value: string) => {
+    if (!touched[field]) return '#e5e7eb'
+    return errors[field] ? '#ef4444' : value ? '#22c55e' : '#e5e7eb'
+  }
+
   const priorityStyles: Record<Priority, React.CSSProperties> = {
     Normal: { background: '#f1f5f9', color: '#475569', border: '1.5px solid #e2e8f0' },
     Urgent: { background: '#fef3c7', color: '#92400e', border: '1.5px solid #fcd34d' },
@@ -94,6 +128,20 @@ export function ContactPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    const newErrors = {
+      name: validateName(name),
+      email: validateEmail(email),
+      subject: !subject ? 'Please select a topic' : null,
+      message: validateMessage(message),
+    }
+    setErrors(newErrors)
+    setTouched({ name: true, email: true, subject: true, message: true })
+    if (Object.values(newErrors).some(Boolean)) {
+      const firstErrorField = document.querySelector('[data-invalid="true"]') as HTMLElement
+      firstErrorField?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      firstErrorField?.focus()
+      return
+    }
     setSubmitted(true)
   }
 
@@ -250,7 +298,7 @@ export function ContactPage() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} noValidate>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
                     {/* Row 1 — Name + Email */}
@@ -263,13 +311,14 @@ export function ContactPage() {
                             type="text"
                             placeholder="Your full name"
                             value={name}
-                            onChange={e => setName(e.target.value)}
-                            required
-                            style={{ ...inputBase, padding: '12px 16px 12px 42px' }}
+                            onChange={e => { setName(e.target.value); if (touched.name) validateField('name', e.target.value) }}
+                            onBlur={() => handleBlur('name', name)}
+                            data-invalid={touched.name && !!errors.name ? 'true' : undefined}
+                            style={{ ...inputBase, padding: '12px 16px 12px 42px', border: `1.5px solid ${getFieldBorder('name', name)}` }}
                             onFocus={onFocus}
-                            onBlur={onBlur}
                           />
                         </div>
+                        <FieldError message={touched.name ? errors.name ?? null : null} />
                       </div>
                       <div>
                         <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Email Address</label>
@@ -279,13 +328,14 @@ export function ContactPage() {
                             type="email"
                             placeholder="you@example.com"
                             value={email}
-                            onChange={e => setEmail(e.target.value)}
-                            required
-                            style={{ ...inputBase, padding: '12px 16px 12px 42px' }}
+                            onChange={e => { setEmail(e.target.value); if (touched.email) validateField('email', e.target.value) }}
+                            onBlur={() => handleBlur('email', email)}
+                            data-invalid={touched.email && !!errors.email ? 'true' : undefined}
+                            style={{ ...inputBase, padding: '12px 16px 12px 42px', border: `1.5px solid ${getFieldBorder('email', email)}` }}
                             onFocus={onFocus}
-                            onBlur={onBlur}
                           />
                         </div>
+                        <FieldError message={touched.email ? errors.email ?? null : null} />
                       </div>
                     </div>
 
@@ -295,11 +345,11 @@ export function ContactPage() {
                       <div style={{ position: 'relative' }}>
                         <select
                           value={subject}
-                          onChange={e => setSubject(e.target.value)}
-                          required
-                          style={{ ...inputBase, padding: '12px 40px 12px 16px', appearance: 'none', cursor: 'pointer' }}
+                          onChange={e => { setSubject(e.target.value); if (touched.subject) validateField('subject', e.target.value) }}
+                          onBlur={() => handleBlur('subject', subject)}
+                          data-invalid={touched.subject && !!errors.subject ? 'true' : undefined}
+                          style={{ ...inputBase, padding: '12px 40px 12px 16px', appearance: 'none', cursor: 'pointer', border: `1.5px solid ${getFieldBorder('subject', subject)}` }}
                           onFocus={onFocus}
-                          onBlur={onBlur}
                         >
                           <option value="" disabled>Select a topic...</option>
                           <option value="booking">Booking Issue</option>
@@ -310,6 +360,7 @@ export function ContactPage() {
                         </select>
                         <ChevronDown size={16} color="#9ca3af" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
                       </div>
+                      <FieldError message={touched.subject ? errors.subject ?? null : null} />
                     </div>
 
                     {/* Row 3 — Message */}
@@ -318,15 +369,18 @@ export function ContactPage() {
                       <textarea
                         placeholder="Describe your issue or question in detail..."
                         value={message}
-                        onChange={e => setMessage(e.target.value.slice(0, 500))}
-                        required
+                        onChange={e => { const v = e.target.value.slice(0, 500); setMessage(v); if (touched.message) validateField('message', v) }}
+                        onBlur={() => handleBlur('message', message)}
+                        data-invalid={touched.message && !!errors.message ? 'true' : undefined}
                         rows={5}
-                        style={{ ...inputBase, padding: '14px 16px', minHeight: '140px', resize: 'vertical', fontFamily: 'inherit' }}
+                        style={{ ...inputBase, padding: '14px 16px', minHeight: '140px', resize: 'vertical', fontFamily: 'inherit', border: `1.5px solid ${getFieldBorder('message', message)}` }}
                         onFocus={onFocus}
-                        onBlur={onBlur}
                       />
-                      <div style={{ textAlign: 'right', fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
-                        {message.length} / 500
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                        <FieldError message={touched.message ? errors.message ?? null : null} />
+                        <span style={{ fontSize: '12px', color: message.length > 480 ? '#ef4444' : '#9ca3af', marginLeft: 'auto' }}>
+                          {message.length} / 500
+                        </span>
                       </div>
                     </div>
 

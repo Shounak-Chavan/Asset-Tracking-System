@@ -1,12 +1,23 @@
 import { useState, useRef, useCallback } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Package2, Plus, Pencil, Trash2, X, Check, Search, UploadCloud } from 'lucide-react'
+import { Package2, Plus, Pencil, Trash2, X, Check, Search, UploadCloud, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
 import { Input } from '../../components/ui/Input'
 import { Alert } from '../../components/ui/Alert'
 import { ConfirmDialog } from '../../components/ui/ConfirmDialog'
+import { validateAssetName, validateDescription, validatePositiveInteger } from '../../utils/validation'
+
+function FieldError({ message }: { message: string | null }) {
+  if (!message) return null
+  return (
+    <p style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#ef4444', margin: '4px 0 0 0' }}>
+      <AlertCircle size={12} color="#ef4444" style={{ flexShrink: 0 }} />
+      {message}
+    </p>
+  )
+}
 
 const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
 
@@ -21,15 +32,30 @@ const sel: React.CSSProperties = {
   outline: 'none', boxSizing: 'border-box',
 }
 
-function StatusPill({ available }: { available: boolean }) {
+// Full admin status pill — shows all internal statuses with appropriate colors
+function StatusPill({ status, isInDryCleaning }: { status: string; isInDryCleaning: boolean }) {
+  // Dry cleaning flag takes priority over DB status
+  const effective = isInDryCleaning ? 'dry_cleaning' : status
+
+  const map: Record<string, { label: string; bg: string; color: string }> = {
+    available:        { label: 'Available',    bg: '#dcfce7', color: '#15803d' },
+    booked:           { label: 'Rented',       bg: '#dbeafe', color: '#1d4ed8' },
+    allocated:        { label: 'Allocated',    bg: '#dbeafe', color: '#1d4ed8' },
+    ready_for_pickup: { label: 'Ready',        bg: '#dbeafe', color: '#1d4ed8' },
+    picked_up:        { label: 'Picked Up',    bg: '#ede9fe', color: '#6d28d9' },
+    overdue:          { label: 'Overdue',      bg: '#fee2e2', color: '#b91c1c' },
+    returned:         { label: 'Returned',     bg: '#f1f5f9', color: '#475569' },
+    dry_cleaning:     { label: 'Dry Cleaning', bg: '#fef3c7', color: '#d97706' },
+  }
+  const s = map[effective] ?? { label: effective, bg: '#f1f5f9', color: '#475569' }
   return (
     <span style={{
       display: 'inline-flex', padding: '3px 10px', borderRadius: '999px',
       fontSize: '11px', fontWeight: 600,
-      background: available ? '#dcfce7' : '#fee2e2',
-      color: available ? '#15803d' : '#b91c1c',
+      background: s.bg, color: s.color,
+      whiteSpace: 'nowrap',
     }}>
-      {available ? 'Available' : 'Unavailable'}
+      {s.label}
     </span>
   )
 }
@@ -147,6 +173,42 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
 }) {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [mediaMode, setMediaMode] = useState<'upload' | 'url'>('upload')
+  const [errors, setErrors] = useState<Record<string, string | null>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
+
+  const validateField = (field: string, value: string) => {
+    let err: string | null = null
+    if (field === 'name') err = validateAssetName(value)
+    if (field === 'description' && value.trim()) err = validateDescription(value, 10)
+    if (field === 'quantity') err = validatePositiveInteger(value, 'Quantity')
+    if (field === 'category_id') err = !value ? 'Category is required' : null
+    setErrors(prev => ({ ...prev, [field]: err }))
+    return err
+  }
+
+  const handleBlur = (field: string, value: string) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+    validateField(field, value)
+  }
+
+  const getFieldBorder = (field: string, value: string) => {
+    if (!touched[field]) return undefined
+    return errors[field] ? '#ef4444' : value ? '#22c55e' : undefined
+  }
+
+  const handleSubmit = () => {
+    const newErrors = {
+      name: validateAssetName(form.name),
+      description: form.description.trim() ? validateDescription(form.description, 10) : null,
+      quantity: validatePositiveInteger(form.quantity, 'Quantity'),
+      category_id: !form.category_id ? 'Category is required' : null,
+    }
+    setErrors(newErrors)
+    setTouched({ name: true, description: true, quantity: true, category_id: true })
+    if (Object.values(newErrors).some(Boolean)) return
+    onSubmit()
+  }
+
   const canSubmit = Boolean(form.name.trim() && form.category_id && !isPending)
 
   const handleFile = (file: File) => {
@@ -212,9 +274,12 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
             <Input
               placeholder="e.g. MacBook Pro 14"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              onChange={(e) => { setForm({ ...form, name: e.target.value }); if (touched.name) validateField('name', e.target.value) }}
+              onBlur={() => handleBlur('name', form.name)}
+              style={{ borderColor: getFieldBorder('name', form.name) }}
               className="h-10"
             />
+            <FieldError message={touched.name ? errors.name ?? null : null} />
           </div>
 
           {/* Category + Quantity */}
@@ -222,28 +287,33 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
             <div>
               <label style={lbl}>Category *</label>
               <select
-                style={sel}
+                style={{ ...sel, borderColor: getFieldBorder('category_id', form.category_id) ?? '#d1d5db' }}
                 value={form.category_id}
-                onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+                onChange={(e) => { setForm({ ...form, category_id: e.target.value }); if (touched.category_id) validateField('category_id', e.target.value) }}
+                onBlur={() => handleBlur('category_id', form.category_id)}
               >
                 <option value="">Select category</option>
                 {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
+              <FieldError message={touched.category_id ? errors.category_id ?? null : null} />
             </div>
             <div>
               <label style={lbl}>Quantity</label>
               <input
                 type="number" placeholder="1"
                 value={form.quantity}
-                onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+                onChange={(e) => { setForm({ ...form, quantity: e.target.value }); if (touched.quantity) validateField('quantity', e.target.value) }}
+                onBlur={() => handleBlur('quantity', form.quantity)}
                 style={{
                   width: '100%', height: '40px', borderRadius: '8px',
-                  border: '1px solid #d1d5db', background: '#fff',
+                  border: `1px solid ${getFieldBorder('quantity', form.quantity) ?? '#d1d5db'}`,
+                  background: '#fff',
                   padding: '0 12px', fontSize: '13.5px', color: '#111827',
                   outline: 'none', boxSizing: 'border-box',
                   WebkitAppearance: 'none', MozAppearance: 'textfield',
                 } as React.CSSProperties}
               />
+              <FieldError message={touched.quantity ? errors.quantity ?? null : null} />
             </div>
           </div>
 
@@ -251,11 +321,14 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
           <div>
             <label style={lbl}>Description</label>
             <Input
-              placeholder="Optional description"
+              placeholder="Optional description (min 10 chars if provided)"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) => { setForm({ ...form, description: e.target.value }); if (touched.description) validateField('description', e.target.value) }}
+              onBlur={() => handleBlur('description', form.description)}
+              style={{ borderColor: getFieldBorder('description', form.description) }}
               className="h-10"
             />
+            <FieldError message={touched.description ? errors.description ?? null : null} />
           </div>
 
           {/* Photo section */}
@@ -302,7 +375,7 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
             Cancel
           </button>
           <button
-            onClick={onSubmit}
+            onClick={handleSubmit}
             disabled={!canSubmit}
             style={{ height: '40px', padding: '0 20px', background: canSubmit ? '#1d4ed8' : '#93c5fd', border: 'none', borderRadius: '8px', fontSize: '13.5px', fontWeight: 600, color: '#fff', cursor: canSubmit ? 'pointer' : 'not-allowed', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
             onMouseEnter={(e) => { if (canSubmit) e.currentTarget.style.background = '#1e40af' }}
@@ -553,7 +626,7 @@ export function AdminAssetsPage() {
                     {getCategoryName(a.category_id)}
                   </td>
                   <td style={{ padding: '14px 20px' }}>
-                    <StatusPill available={a.status === 'available'} />
+                    <StatusPill status={a.status} isInDryCleaning={a.is_in_dry_cleaning} />
                   </td>
                   <td style={{ padding: '14px 20px' }}>
                     <ActivePill

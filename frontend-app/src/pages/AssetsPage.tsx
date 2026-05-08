@@ -6,6 +6,7 @@ import { api } from '../api'
 import { useAuth } from '../auth-context'
 import { AssetBookingModal } from '../components/AssetBookingModal'
 import type { Asset } from '../types'
+import { getCatalogAvailabilityLabel } from '../lib/assetStatus'
 
 // ─── Asset Card ────────────────────────────────────────────────────────────
 
@@ -26,6 +27,7 @@ function AssetCard({
   minDailyRate: number | null
   onRent: (asset: Asset | null, isAvailable: boolean) => void
 }) {
+  const navigate = useNavigate()
   const [hovered, setHovered] = useState(false)
   const [imgError, setImgError] = useState(false)
   const isAvailable = available > 0
@@ -78,6 +80,7 @@ function AssetCard({
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => navigate(`/assets/${asset.id}`)}
     >
       {/* ── Image ── */}
       <div style={containerStyle}>
@@ -120,7 +123,7 @@ function AssetCard({
 
         {/* RENT NOW — slides up on hover */}
         <button
-          onClick={() => onRent(availableAsset, isAvailable)}
+          onClick={(e) => { e.stopPropagation(); onRent(availableAsset, isAvailable) }}
           disabled={!isAvailable}
           style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
@@ -170,12 +173,14 @@ function AssetCard({
         </div>
 
         {/* Availability */}
-        <p style={{
-          fontSize: '11px', fontWeight: 500, margin: '4px 0 0 0',
-          color: isAvailable ? '#03a685' : '#ff6161',
-        }}>
-          ● {isAvailable ? 'In Stock' : 'Out of Stock'}
-        </p>
+        {(() => {
+          const { label, color } = getCatalogAvailabilityLabel(isAvailable, asset.is_in_dry_cleaning, asset.status)
+          return (
+            <p style={{ fontSize: '11px', fontWeight: 500, margin: '4px 0 0 0', color }}>
+              ● {label}
+            </p>
+          )
+        })()}
       </div>
     </div>
   )

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Package2, RotateCcw, Wrench, ClipboardList, Inbox } from 'lucide-react'
+import { Package2, RotateCcw, Wrench, ClipboardList, Inbox, MapPin } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../../api'
 import { useAuth } from '../../auth-context'
 import { Input } from '../../components/ui/Input'
@@ -12,6 +13,7 @@ import type { Booking } from '../../types'
 export function AdminOperationsPage() {
   const { token } = useAuth()
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
 
@@ -40,6 +42,7 @@ export function AdminOperationsPage() {
       setNotice('Asset allocated successfully!')
       setError('')
       await queryClient.invalidateQueries({ queryKey: ['admin-bookings'] })
+      await queryClient.invalidateQueries({ queryKey: ['admin-assets'] })
       setTimeout(() => setNotice(''), 3000)
     },
     onError: (err: Error) => setError(err.message),
@@ -74,7 +77,19 @@ export function AdminOperationsPage() {
       setDamageNotes('')
       setDryCleaning(false)
       await queryClient.invalidateQueries({ queryKey: ['admin-bookings'] })
+      await queryClient.invalidateQueries({ queryKey: ['admin-assets'] })
       setTimeout(() => setNotice(''), 3000)
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const refreshStatusesMutation = useMutation({
+    mutationFn: () => api.refreshBookingStatuses(token!),
+    onSuccess: (data) => {
+      setNotice(`Statuses refreshed — ${data.picked_up_count} picked up, ${data.overdue_count} overdue.`)
+      setError('')
+      void queryClient.invalidateQueries({ queryKey: ['admin-bookings'] })
+      setTimeout(() => setNotice(''), 4000)
     },
     onError: (err: Error) => setError(err.message),
   })
@@ -85,7 +100,7 @@ export function AdminOperationsPage() {
   const pending = bookings.filter((b) => b.status === 'pending')
   const toAllocate = bookings.filter((b) => b.status === 'booked')
   const returnRequests = bookings.filter((b) => b.status === 'ready_for_pickup')
-  const active = bookings.filter((b) => ['allocated', 'picked_up', 'overdue'].includes(b.status))
+  const active = bookings.filter((b) => ['allocated', 'rent_paid', 'picked_up', 'overdue'].includes(b.status))
 
   function EmptyState({ message }: { message: string }) {
     return (
@@ -99,8 +114,26 @@ export function AdminOperationsPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', borderLeft: '4px solid #00c9a7', padding: '20px 0', marginBottom: '8px' }}>
-        <h1 className="text-2xl font-semibold text-gray-900">Operations Center</h1>
-        <p className="text-sm text-gray-500 mt-1">Allocate assets, process returns, and manage bookings.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">Operations Center</h1>
+            <p className="text-sm text-gray-500 mt-1">Allocate assets, process returns, and manage bookings.</p>
+          </div>
+          <button
+            onClick={() => refreshStatusesMutation.mutate()}
+            disabled={refreshStatusesMutation.isPending}
+            style={{
+              padding: '8px 16px', fontSize: '13px', fontWeight: 600,
+              borderRadius: '8px', background: '#f0fdf4', color: '#16a34a',
+              border: '1px solid #bbf7d0', cursor: 'pointer', transition: 'background 0.15s',
+              opacity: refreshStatusesMutation.isPending ? 0.6 : 1,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#dcfce7')}
+            onMouseLeave={e => (e.currentTarget.style.background = '#f0fdf4')}
+          >
+            {refreshStatusesMutation.isPending ? 'Refreshing...' : '↻ Refresh Statuses'}
+          </button>
+        </div>
       </div>
 
       <AnimatePresence>
@@ -262,14 +295,30 @@ export function AdminOperationsPage() {
                     <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0' }}>{b.rental_plan?.name ?? `Plan #${b.rental_plan_id}`}</p>
                   </div>
                   {returnBookingId !== b.id && (
-                    <button
-                      style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', background: '#059669', color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0, marginLeft: '12px', transition: 'background 0.15s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = '#047857')}
-                      onMouseLeave={e => (e.currentTarget.style.background = '#059669')}
-                      onClick={() => setReturnBookingId(b.id)}
-                    >
-                      Process Return
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexShrink: 0, marginLeft: '12px' }}>
+                      <button
+                        style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', background: '#059669', color: '#fff', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#047857')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#059669')}
+                        onClick={() => setReturnBookingId(b.id)}
+                      >
+                        Process Return
+                      </button>
+                      <button
+                        onClick={() => navigate(`/admin/tracking/${b.id}`)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '5px',
+                          padding: '6px 12px', fontSize: '12px', fontWeight: 600,
+                          borderRadius: '8px', background: '#f0fdf9', color: '#00c9a7',
+                          border: '1px solid #99f6e4', cursor: 'pointer', transition: 'background 0.15s',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#ccfbf1')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#f0fdf9')}
+                      >
+                        <MapPin size={12} />
+                        Track
+                      </button>
+                    </div>
                   )}
                 </div>
                 {returnBookingId === b.id && (
@@ -342,7 +391,23 @@ export function AdminOperationsPage() {
                   <p style={{ fontSize: '11px', color: '#6b7280', margin: '2px 0 0' }}>{b.rental_plan?.name ?? `Plan #${b.rental_plan_id}`}</p>
                   <p style={{ fontSize: '11px', color: '#9ca3af', margin: '2px 0 0' }}>Pickup: {new Date(b.pickup_date).toLocaleDateString()} · Due: {new Date(b.due_date).toLocaleDateString()}</p>
                 </div>
-                <StatusBadge status={b.status} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                  <StatusBadge status={b.status} />
+                  <button
+                    onClick={() => navigate(`/admin/tracking/${b.id}`)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '5px 12px', fontSize: '12px', fontWeight: 600,
+                      borderRadius: '8px', background: '#f0fdf9', color: '#00c9a7',
+                      border: '1px solid #99f6e4', cursor: 'pointer', transition: 'background 0.15s',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = '#ccfbf1')}
+                    onMouseLeave={e => (e.currentTarget.style.background = '#f0fdf9')}
+                  >
+                    <MapPin size={12} />
+                    Track
+                  </button>
+                </div>
               </div>
             ))}
           </div>

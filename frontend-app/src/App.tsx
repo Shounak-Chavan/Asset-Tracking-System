@@ -10,6 +10,7 @@ import { HomePage } from "./pages/HomePage";
 const LoginPage = lazy(() => import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
 const AssetsPage = lazy(() => import("./pages/AssetsPage").then((m) => ({ default: m.AssetsPage })));
+const AssetDetailPage = lazy(() => import("./pages/AssetDetailPage").then((m) => ({ default: m.AssetDetailPage })));
 const BookingsPage = lazy(() => import("./pages/BookingsPage").then((m) => ({ default: m.BookingsPage })));
 const ProfilePage = lazy(() => import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage })));
 const TermsPage = lazy(() => import("./pages/TermsPage").then((m) => ({ default: m.TermsPage })));
@@ -28,6 +29,11 @@ const AdminOperationsPage = lazy(() =>
 const AdminPlansPage = lazy(() => import("./pages/admin/Plans").then((m) => ({ default: m.AdminPlansPage })));
 const AdminUsersPage = lazy(() => import("./pages/admin/Users").then((m) => ({ default: m.AdminUsersPage })));
 const AdminDashboardPage = lazy(() => import("./pages/admin/Dashboard").then((m) => ({ default: m.AdminDashboardPage })));
+const AdminDryCleaningPage = lazy(() => import("./pages/admin/DryCleaning").then((m) => ({ default: m.AdminDryCleaningPage })));
+const DryCleaningPortal = lazy(() => import("./pages/DryCleaningPortal").then((m) => ({ default: m.DryCleaningPortal })));
+const DryCleaningLogin = lazy(() => import("./pages/dry-cleaning/DryCleaningLogin").then((m) => ({ default: m.DryCleaningLogin })));
+const BookingTrackingPage = lazy(() => import("./pages/BookingTrackingPage").then((m) => ({ default: m.BookingTrackingPage })));
+const BookingTrackingAdminPage = lazy(() => import("./pages/admin/BookingTrackingAdminPage").then((m) => ({ default: m.BookingTrackingAdminPage })));
 
 // Loading fallback component
 function PageLoader() {
@@ -60,12 +66,27 @@ function AdminRoute({ children }: { children: ReactElement }) {
   return children;
 }
 
+// Dry cleaning portal guard — allows dry_cleaner and admin roles
+function DryCleaningRoute({ children }: { children: ReactElement }) {
+  const { token, user, loading } = useAuth();
+  if (loading) return <PageLoader />;
+  if (!token) return <Navigate to="/dry-cleaning/login" replace />;
+  if (user?.role !== "dry_cleaner" && user?.role !== "admin") {
+    return <Navigate to="/dry-cleaning/login" replace />;
+  }
+  return children;
+}
+
 // Blocks admins from accessing public routes — redirects them to /admin
+// Blocks dry_cleaners from accessing public routes — redirects them to portal
 function AdminGuardedPublicLayout() {
   const { token, user, loading } = useAuth();
   if (loading) return <PageLoader />;
   if (token && user?.role === "admin") {
     return <Navigate to="/admin" replace />;
+  }
+  if (token && user?.role === "dry_cleaner") {
+    return <Navigate to="/dry-cleaning/portal" replace />;
   }
   return <AppLayout />;
 }
@@ -80,11 +101,20 @@ function AppRoutes() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/assets" element={<AssetsPage />} />
+          <Route path="/assets/:id" element={<AssetDetailPage />} />
           <Route
             path="/bookings"
             element={
               <ProtectedRoute>
                 <BookingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bookings/:bookingId/track"
+            element={
+              <ProtectedRoute>
+                <BookingTrackingPage />
               </ProtectedRoute>
             }
           />
@@ -117,7 +147,22 @@ function AppRoutes() {
           <Route path="plans" element={<AdminPlansPage />} />
           <Route path="users" element={<AdminUsersPage />} />
           <Route path="ops" element={<AdminOperationsPage />} />
+          <Route path="dry-cleaning" element={<AdminDryCleaningPage />} />
+          <Route path="tracking/:bookingId" element={<BookingTrackingAdminPage />} />
         </Route>
+
+        {/* Dry Cleaning Portal — separate auth flow */}
+        <Route path="/dry-cleaning/login" element={<DryCleaningLogin />} />
+        <Route
+          path="/dry-cleaning/portal"
+          element={
+            <DryCleaningRoute>
+              <DryCleaningPortal />
+            </DryCleaningRoute>
+          }
+        />
+        {/* Legacy /dry-cleaning redirect */}
+        <Route path="/dry-cleaning" element={<Navigate to="/dry-cleaning/portal" replace />} />
       </Routes>
     </Suspense>
   );

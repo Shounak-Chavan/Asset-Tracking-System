@@ -79,6 +79,22 @@ export function AppLayout() {
 
             {/* Desktop actions */}
             <div className="hidden md:flex items-center gap-3 shrink-0">
+              {(!token || user?.role === 'dry_cleaner') && (
+              <NavLink
+                to="/dry-cleaning/login"
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  padding: '7px 13px', borderRadius: '8px',
+                  border: '1.5px solid #99f6e4', background: '#f0fdfa',
+                  color: '#0d9488', fontSize: '13px', fontWeight: 500,
+                  textDecoration: 'none', transition: 'all 0.15s', flexShrink: 0,
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#ccfbf1'; e.currentTarget.style.borderColor = '#2dd4bf' }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#f0fdfa'; e.currentTarget.style.borderColor = '#99f6e4' }}
+              >
+                🧺 Staff Portal
+              </NavLink>
+              )}
               {token ? (
                 <>
                   <button
@@ -252,7 +268,17 @@ export function AppLayout() {
 
           <div style={{ marginTop: '40px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>© 2026 AssetTrack. All rights reserved.</span>
-            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Made with ♥ in India</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <NavLink
+                to="/dry-cleaning/login"
+                style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', textDecoration: 'none' }}
+                onMouseEnter={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.5)')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
+              >
+                Dry Cleaning Staff Login
+              </NavLink>
+              <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)' }}>Made with ♥ in India</span>
+            </div>
           </div>
         </div>
 

@@ -1,25 +1,35 @@
-import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import {
   Wrench, Package2, Tag, ClipboardList, Users,
-  LogOut, Bell, Briefcase,
+  LogOut, Bell, Briefcase, Shirt,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../auth-context";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "../api";
 
 const adminNav = [
-  { to: "/admin/ops",        label: "Operations Check", icon: Wrench },
-  { to: "/admin/assets",     label: "Asset Manifest",   icon: Package2 },
-  { to: "/admin/categories", label: "Categories",       icon: Tag },
-  { to: "/admin/plans",      label: "Rental Logic",     icon: ClipboardList },
-  { to: "/admin/users",      label: "User Control",     icon: Users },
+  { to: "/admin/ops",          label: "Operations Check", icon: Wrench },
+  { to: "/admin/assets",       label: "Asset Manifest",   icon: Package2 },
+  { to: "/admin/categories",   label: "Categories",       icon: Tag },
+  { to: "/admin/plans",        label: "Rental Logic",     icon: ClipboardList },
+  { to: "/admin/users",        label: "User Control",     icon: Users },
+  { to: "/admin/dry-cleaning", label: "Dry Cleaning",     icon: Shirt, badgeKey: 'dc' },
 ];
 
 export function AdminLayout() {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [hasNotif] = useState(true);
+
+  // Pending dry cleaning count for sidebar badge
+  const pendingQuery = useQuery({
+    queryKey: ['dc-pending-send', token],
+    queryFn: () => api.getDryCleaningPendingSend(token!),
+    enabled: Boolean(token),
+    refetchInterval: 60_000,
+  })
+  const pendingCount = pendingQuery.data?.length ?? 0
 
   const handleLogout = async () => {
     await logout();
@@ -77,7 +87,7 @@ export function AdminLayout() {
             Main Modules
           </p>
 
-          {adminNav.map(({ to, label, icon: Icon }) => (
+          {adminNav.map(({ to, label, icon: Icon, badgeKey }) => (
             <NavLink
               key={to}
               to={to}
@@ -115,7 +125,16 @@ export function AdminLayout() {
               {({ isActive }) => (
                 <>
                   <Icon size={16} color={isActive ? "#60a5fa" : "currentColor"} />
-                  {label}
+                  <span style={{ flex: 1 }}>{label}</span>
+                  {badgeKey === 'dc' && pendingCount > 0 && (
+                    <span style={{
+                      background: '#f59e0b', color: '#fff',
+                      fontSize: '10px', fontWeight: 700,
+                      padding: '1px 6px', borderRadius: 999, lineHeight: '16px',
+                    }}>
+                      {pendingCount}
+                    </span>
+                  )}
                 </>
               )}
             </NavLink>
@@ -208,7 +227,7 @@ export function AdminLayout() {
               }}
             >
               <Bell size={16} />
-              {hasNotif && (
+              {pendingCount > 0 && (
                 <span style={{
                   position: "absolute", top: "5px", right: "5px",
                   width: "8px", height: "8px", borderRadius: "50%",

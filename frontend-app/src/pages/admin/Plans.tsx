@@ -2,17 +2,17 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import { Clock, IndianRupee, Shield, CreditCard } from "lucide-react"
+import { Clock, IndianRupee, Shield, CreditCard, AlertCircle } from "lucide-react"
 import { api } from "../../api"
 import { useAuth } from "../../auth-context"
 
 const schema = z.object({
-  name: z.string().min(2, "Plan name required"),
-  duration_days: z.number().int().positive("Must be > 0"),
-  daily_rate: z.number().nonnegative(),
-  deposit_amount: z.number().nonnegative(),
-  daily_fine_rate: z.number().nonnegative(),
-  damage_fee: z.number().nonnegative(),
+  name: z.string().min(2, "Plan name must be at least 2 characters"),
+  duration_days: z.number({ invalid_type_error: "Duration is required" }).int("Must be a whole number").positive("Must be greater than 0"),
+  daily_rate: z.number({ invalid_type_error: "Daily rate is required" }).positive("Must be greater than 0"),
+  deposit_amount: z.number({ invalid_type_error: "Deposit amount is required" }).min(0, "Must be 0 or greater"),
+  daily_fine_rate: z.number({ invalid_type_error: "Late fine is required" }).min(0, "Must be 0 or greater"),
+  damage_fee: z.number({ invalid_type_error: "Damage fee is required" }).min(0, "Must be 0 or greater"),
 })
 
 type FormValues = z.infer<typeof schema>
@@ -109,16 +109,23 @@ export function AdminPlansPage() {
                   {label}{hint && <span style={{ color: '#9ca3af', fontWeight: 400, marginLeft: '4px' }}>({hint})</span>}
                 </label>
                 <input
-                  style={inputStyle}
+                  style={{
+                    ...inputStyle,
+                    borderColor: form.formState.errors[name] ? '#ef4444' : form.formState.touchedFields[name] && !form.formState.errors[name] ? '#22c55e' : '#d1d5db',
+                  }}
                   placeholder={placeholder}
                   type={name === 'name' ? 'text' : 'number'}
                   step={name !== 'name' && name !== 'duration_days' ? '0.01' : undefined}
                   {...form.register(name, name !== 'name' ? { valueAsNumber: true } : {})}
                   onFocus={(e) => { e.currentTarget.style.borderColor = '#2563eb' }}
-                  onBlur={(e) => { e.currentTarget.style.borderColor = '#d1d5db' }}
+                  onBlur={(e) => {
+                    form.trigger(name)
+                    e.currentTarget.style.borderColor = form.formState.errors[name] ? '#ef4444' : '#d1d5db'
+                  }}
                 />
                 {form.formState.errors[name] && (
-                  <p style={{ fontSize: '11px', color: '#dc2626', margin: '4px 0 0' }}>
+                  <p style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#ef4444', margin: '4px 0 0 0' }}>
+                    <AlertCircle size={12} color="#ef4444" style={{ flexShrink: 0 }} />
                     {form.formState.errors[name]?.message}
                   </p>
                 )}

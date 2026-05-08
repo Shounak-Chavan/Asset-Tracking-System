@@ -17,6 +17,8 @@ import {
   CreditCard,
   X,
   Tag,
+  MapPin,
+  CalendarDays,
 } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
@@ -235,6 +237,7 @@ interface BookingCardProps {
   onPayRent: (id: number) => void
   onCancel: (id: number) => void
   onReturn: (id: number) => void
+  onTrack: (id: number) => void
   isActionPending: boolean
   variant?: 'active' | 'upcoming'
 }
@@ -245,6 +248,7 @@ function BookingCard({
   onPayRent,
   onCancel,
   onReturn,
+  onTrack,
   isActionPending,
   variant = 'active',
 }: BookingCardProps) {
@@ -252,10 +256,11 @@ function BookingCard({
 
   // Status badge colours
   const statusStyle: Record<string, { bg: string; color: string; label: string }> = {
-    pending:          { bg: '#fef3c7', color: '#d97706', label: 'Pending' },
-    booked:           { bg: '#dbeafe', color: '#2563eb', label: 'Booked' },
+    pending:          { bg: '#fef3c7', color: '#d97706', label: 'Pending Approval' },
+    booked:           { bg: '#dbeafe', color: '#2563eb', label: 'Approved' },
     allocated:        { bg: '#ede9fe', color: '#7c3aed', label: 'Allocated' },
-    ready_for_pickup: { bg: '#ffedd5', color: '#ea580c', label: 'Ready' },
+    rent_paid:        { bg: '#f3e8ff', color: '#9333ea', label: `Rent Paid · Pickup on ${formatDate(b.pickup_date)}` },
+    ready_for_pickup: { bg: '#ffedd5', color: '#ea580c', label: 'Return Requested' },
     picked_up:        { bg: '#dcfce7', color: '#16a34a', label: 'Picked Up' },
     overdue:          { bg: '#fee2e2', color: '#dc2626', label: 'Overdue' },
   }
@@ -342,7 +347,7 @@ function BookingCard({
       </div>
 
       {/* ── Action buttons ── */}
-      {(b.status === 'pending' || b.status === 'allocated' || b.status === 'picked_up') && (
+      {(b.status === 'pending' || b.status === 'allocated' || b.status === 'picked_up' || b.status === 'overdue' || b.status === 'rent_paid') && (
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: '10px',
           marginTop: '16px', paddingTop: '14px',
@@ -410,7 +415,13 @@ function BookingCard({
               Pay Rent
             </button>
           )}
-          {b.status === 'picked_up' && (
+          {b.status === 'rent_paid' && (
+            <p style={{ fontSize: '13px', color: '#7c3aed', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CalendarDays style={{ width: 15, height: 15 }} />
+              Your pickup is scheduled for {formatDate(b.pickup_date)}
+            </p>
+          )}
+          {(b.status === 'picked_up' || b.status === 'overdue') && (
             <button
               onClick={() => onReturn(b.id)}
               disabled={isActionPending}
@@ -432,12 +443,30 @@ function BookingCard({
           )}
         </div>
       )}
+      {/* ── Track button — always visible for non-cancelled bookings ── */}
+      {b.status !== 'cancelled' && (
+        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid #f1f5f9' }}>
+          <button
+            onClick={() => onTrack(b.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'transparent', color: '#00c9a7',
+              border: '1.5px solid #00c9a7', borderRadius: '8px',
+              padding: '8px 16px', fontSize: '13px', fontWeight: 600,
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf9'; e.currentTarget.style.borderColor = '#00b396' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#00c9a7' }}
+          >
+            <MapPin style={{ width: 14, height: 14 }} />
+            Track
+          </button>
+        </div>
+      )}
     </div>
   )
 }
-
-// ── Past Booking Card ─────────────────────────────────────────────────────────
-function PastBookingRow({ booking: b, onRebook }: { booking: Booking; onRebook: () => void }) {
+function PastBookingRow({ booking: b, onRebook, onTrack }: { booking: Booking; onRebook: () => void; onTrack: () => void }) {
   const statusBadge: Record<string, { bg: string; color: string; label: string }> = {
     returned:  { bg: '#dcfce7', color: '#16a34a', label: 'Returned' },
     cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'Cancelled' },
@@ -505,6 +534,24 @@ function PastBookingRow({ booking: b, onRebook }: { booking: Booking; onRebook: 
           <RefreshCw style={{ width: 13, height: 13 }} />
           Rebook
         </button>
+        {b.status === 'returned' && (
+          <button
+            onClick={onTrack}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              border: '1.5px solid #00c9a7', color: '#00c9a7',
+              borderRadius: '8px', padding: '6px 14px',
+              fontSize: '13px', fontWeight: 500,
+              background: 'transparent', cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#f0fdf9')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          >
+            <MapPin style={{ width: 13, height: 13 }} />
+            Track
+          </button>
+        )}
       </div>
     </div>
   )
@@ -579,9 +626,9 @@ export function BookingsPage() {
     returnMutation.isPending
 
   const bookings = bookingsQuery.data ?? []
-  const activeBookings = bookings.filter((b) => ['picked_up', 'overdue'].includes(b.status))
+  const activeBookings = bookings.filter((b) => ['picked_up', 'overdue', 'ready_for_pickup'].includes(b.status))
   const upcomingBookings = bookings.filter((b) =>
-    ['pending', 'booked', 'allocated', 'ready_for_pickup'].includes(b.status)
+    ['pending', 'booked', 'allocated', 'rent_paid'].includes(b.status)
   )
   const pastBookings = bookings.filter((b) => ['returned', 'cancelled'].includes(b.status))
 
@@ -590,6 +637,7 @@ export function BookingsPage() {
     onPayRent: (id: number) => payRentMutation.mutate(id),
     onCancel: (id: number) => cancelMutation.mutate(id),
     onReturn: (id: number) => returnMutation.mutate(id),
+    onTrack: (id: number) => navigate(`/bookings/${id}/track`),
     isActionPending,
   }
 
@@ -790,7 +838,7 @@ export function BookingsPage() {
                   <>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {pastBookings.slice(0, pastVisible).map((b) => (
-                        <PastBookingRow key={b.id} booking={b} onRebook={() => navigate('/assets')} />
+                        <PastBookingRow key={b.id} booking={b} onRebook={() => navigate('/assets')} onTrack={() => navigate(`/bookings/${b.id}/track`)} />
                       ))}
                     </div>
                     {pastVisible < pastBookings.length && (
