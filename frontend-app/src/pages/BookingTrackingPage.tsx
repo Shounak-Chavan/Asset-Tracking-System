@@ -100,9 +100,9 @@ function StepCircle({ state }: { state: StepState }) {
     return (
       <div style={{
         width: 40, height: 40, borderRadius: '50%',
-        background: '#00c9a7',
+        background: 'linear-gradient(135deg, #00c9a7 0%, #0d9488 100%)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0, boxShadow: '0 0 0 4px rgba(0,201,167,0.15)',
+        flexShrink: 0, boxShadow: '0 0 0 4px rgba(0,201,167,0.15), 0 4px 12px rgba(0,201,167,0.25)',
       }}>
         <CheckCircle2 size={20} color="#fff" strokeWidth={2.5} />
       </div>
@@ -272,7 +272,7 @@ export function BookingTrackingPage() {
   const statusInfo = STATUS_LABELS[data.current_status] ?? { label: data.current_status, bg: '#f3f4f6', color: '#374151' }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #eef6ff 0%, #f0f4f8 100%)' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg, #eef6ff 0%, #f0f4f8 50%, #f0fdf9 100%)' }}>
       <style>{`
         @keyframes pulse { 0%,100%{box-shadow:0 0 0 4px rgba(26,58,107,0.2)} 50%{box-shadow:0 0 0 8px rgba(26,58,107,0.08)} }
         @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
@@ -298,10 +298,11 @@ export function BookingTrackingPage() {
 
         {/* Header card */}
         <div style={{
-          background: '#fff', borderRadius: '16px',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          borderRadius: '16px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.8) inset',
           padding: '24px', marginBottom: '20px',
-          border: '1px solid #e2e8f0',
+          border: '1px solid rgba(226,232,240,0.8)',
         }}>
           <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
             {/* Asset thumbnail */}
@@ -358,10 +359,11 @@ export function BookingTrackingPage() {
 
         {/* Timeline card */}
         <div style={{
-          background: '#fff', borderRadius: '16px',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
+          background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+          borderRadius: '16px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.8) inset',
           padding: '28px 24px',
-          border: '1px solid #e2e8f0',
+          border: '1px solid rgba(226,232,240,0.8)',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px' }}>
             <Sparkles size={18} color="#00c9a7" />

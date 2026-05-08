@@ -249,7 +249,7 @@ export function DryCleaningPortal() {
     <div style={{ minHeight: '100vh', background: '#f0f4f8', fontFamily: 'inherit' }}>
 
       {/* Header */}
-      <header style={{ background: 'linear-gradient(135deg, #0f172a 0%, #134e4a 100%)', padding: '0 32px', height: 70, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
+      <header style={{ background: 'linear-gradient(135deg, #0f172a 0%, #134e4a 80%, #0d9488 100%)', padding: '0 32px', height: 70, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100, boxShadow: '0 2px 16px rgba(0,0,0,0.2)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#00c9a7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>🧺</div>
           <div>

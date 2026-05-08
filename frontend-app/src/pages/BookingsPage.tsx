@@ -71,7 +71,7 @@ function StatCard({
       className="bg-white rounded-xl hover:shadow-md transition-all duration-200 cursor-default"
       style={{
         padding: '20px 24px',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
         borderTop: `4px solid ${topBorderColor}`,
         borderRadius: '12px',
       }}
@@ -182,8 +182,8 @@ function Section({
         background: '#fff',
         borderRadius: '14px',
         padding: '20px 24px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        border: '1px solid #e2e8f0',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(226,232,240,0.8)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
@@ -275,13 +275,13 @@ function BookingCard({
       style={{
         background: '#fff',
         borderRadius: '14px',
-        border: '1px solid #e2e8f0',
+        border: '1px solid rgba(226,232,240,0.8)',
         boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
         padding: '20px 24px',
-        transition: 'box-shadow 0.2s',
+        transition: 'box-shadow 0.25s, transform 0.25s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)')}
-      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)')}
+      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'; e.currentTarget.style.transform = 'translateY(0)' }}
     >
       {/* ── Top row ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
@@ -646,7 +646,7 @@ export function BookingsPage() {
   const showPast = activeTab === 'all' || activeTab === 'past'
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 4rem)', background: 'linear-gradient(180deg, #eef6ff 0%, #f0f4f8 100%)' }}>
+    <div style={{ minHeight: 'calc(100vh - 4rem)', background: 'linear-gradient(160deg, #eef6ff 0%, #f0f4f8 50%, #f0fdf9 100%)' }}>
       {/* Centered container — max 1200px, full bleed padding */}
       <div
         style={{
@@ -668,7 +668,7 @@ export function BookingsPage() {
           <button
             onClick={() => navigate('/assets')}
             style={{
-              background: '#00c9a7', color: '#fff', border: 'none',
+              background: 'linear-gradient(135deg, #00c9a7 0%, #0d9488 100%)', color: '#fff', border: 'none',
               borderRadius: '10px', padding: '10px 20px',
               fontSize: '14px', fontWeight: 600,
               display: 'flex', alignItems: 'center', gap: '8px',

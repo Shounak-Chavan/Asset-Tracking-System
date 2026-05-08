@@ -186,15 +186,17 @@ export function AdminDashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
         {stats.map(({ label, value, icon: Icon, trend }) => (
           <div key={label} style={{
-            background: '#ffffff', border: '1px solid #e2e8f0',
+            background: '#ffffff', border: '1px solid rgba(226,232,240,0.8)',
             borderRadius: '16px', padding: '20px 22px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+            boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+            transition: 'box-shadow 0.2s ease, transform 0.2s ease',
+            cursor: 'default',
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <p style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.8px', textTransform: 'uppercase', color: '#6b7280', margin: 0 }}>
                 {label}
               </p>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Icon size={15} />
               </div>
             </div>
@@ -231,7 +233,7 @@ export function AdminDashboardPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
 
         {/* Recent Bookings table */}
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden' }}>
+        <div style={{ background: '#ffffff', border: '1px solid rgba(226,232,240,0.8)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
           <div style={{ padding: '18px 22px', borderBottom: '1px solid #f3f4f6', fontSize: '15px', fontWeight: 600, color: '#111827' }}>
             Recent Bookings
           </div>
@@ -273,7 +275,7 @@ export function AdminDashboardPage() {
         </div>
 
         {/* Recent Activity Feed */}
-        <div style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden' }}>
+        <div style={{ background: '#ffffff', border: '1px solid rgba(226,232,240,0.8)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
           <div style={{ padding: '18px 22px', borderBottom: '1px solid #f3f4f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Activity size={16} color="#00c9a7" />
             <span style={{ fontSize: '15px', fontWeight: 600, color: '#111827' }}>Recent Activity</span>

@@ -12,7 +12,8 @@ export function StatusBadge({ status, colorMap = bookingStatusColor, className }
   return (
     <span
       className={cn(
-        'inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border capitalize',
+        'inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full border capitalize tracking-wide',
+        'shadow-sm transition-all duration-150',
         colors,
         className
       )}

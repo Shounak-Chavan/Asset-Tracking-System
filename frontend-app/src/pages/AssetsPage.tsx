@@ -67,16 +67,16 @@ function AssetCard({
     <div
       style={{
         background: '#fff',
-        borderRadius: '8px',
+        borderRadius: '12px',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
         cursor: 'pointer',
         position: 'relative',
-        boxShadow: hovered ? '0 8px 24px rgba(0,0,0,0.12)' : '0 2px 8px rgba(0,0,0,0.06)',
-        transform: hovered ? 'translateY(-3px)' : 'translateY(0)',
-        transition: 'box-shadow 0.2s ease, transform 0.2s ease',
-        opacity: isAvailable ? 1 : 0.75,
+        boxShadow: hovered ? '0 12px 32px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06)' : '0 2px 8px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,0,0,0.04)',
+        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+        transition: 'box-shadow 0.25s ease, transform 0.25s ease',
+        opacity: isAvailable ? 1 : 0.72,
       }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -127,17 +127,18 @@ function AssetCard({
           disabled={!isAvailable}
           style={{
             position: 'absolute', bottom: 0, left: 0, right: 0,
-            background: isAvailable ? '#0d9488' : '#9ca3af',
+            background: isAvailable ? 'linear-gradient(135deg, #00c9a7 0%, #0d9488 100%)' : '#9ca3af',
             color: '#fff',
             border: 'none',
-            padding: '11px',
+            padding: '12px',
             fontSize: '13px',
-            fontWeight: 600,
-            letterSpacing: '0.5px',
+            fontWeight: 700,
+            letterSpacing: '0.8px',
             cursor: isAvailable ? 'pointer' : 'not-allowed',
             opacity: hovered ? 1 : 0,
             transform: hovered ? 'translateY(0)' : 'translateY(100%)',
             transition: 'opacity 0.25s ease, transform 0.25s ease',
+            textTransform: 'uppercase',
           }}
         >
           {isAvailable ? 'RENT NOW' : 'OUT OF STOCK'}
@@ -278,13 +279,15 @@ function AssetsPage() {
   }
 
   return (
-    <div style={{ background: '#f5f5f6', minHeight: '100vh' }}>
+    <div style={{ background: 'linear-gradient(180deg, #f5f5f6 0%, #f0f4f8 100%)', minHeight: '100vh' }}>
 
       {/* ── Category Tab Bar ── */}
       <div style={{
-        background: '#fff',
-        borderBottom: '2px solid #f0f0f0',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+        background: 'rgba(255,255,255,0.95)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderBottom: '1px solid #e9e9eb',
+        boxShadow: '0 2px 12px rgba(0,0,0,0.05)',
         overflowX: 'auto',
         WebkitOverflowScrolling: 'touch',
         position: 'sticky',
@@ -356,16 +359,20 @@ function AssetsPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 style={{
-                  padding: '7px 10px 7px 30px',
-                  border: '1px solid #d4d5d9',
-                  borderRadius: '2px',
+                  padding: '8px 10px 8px 30px',
+                  border: '1.5px solid #e2e8f0',
+                  borderRadius: '8px',
                   fontSize: '13px',
                   color: '#3e4152',
                   outline: 'none',
-                  width: '160px',
+                  width: '180px',
                   boxSizing: 'border-box',
                   background: '#fff',
+                  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                 }}
+                onFocus={(e) => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(0,201,167,0.1)' }}
+                onBlur={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)' }}
               />
             </div>
             {/* Sort */}
@@ -373,14 +380,16 @@ function AssetsPage() {
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as 'featured' | 'name')}
               style={{
-                border: '1px solid #d4d5d9',
-                borderRadius: '2px',
-                padding: '7px 12px',
+                border: '1.5px solid #e2e8f0',
+                borderRadius: '8px',
+                padding: '8px 12px',
                 fontSize: '13px',
                 color: '#3e4152',
                 outline: 'none',
                 cursor: 'pointer',
                 background: '#fff',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                transition: 'border-color 0.2s ease',
               }}
             >
               <option value="featured">Recommended</option>
@@ -449,11 +458,11 @@ function AssetsPage() {
       {/* ── Login Prompt Modal ── */}
       {loginPromptAsset && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '24px' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '24px' }}
           onClick={() => setLoginPromptAsset(null)}
         >
           <div
-            style={{ background: '#fff', borderRadius: '8px', padding: '28px 32px', maxWidth: '380px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.15)', position: 'relative' }}
+            style={{ background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: '16px', padding: '32px', maxWidth: '380px', width: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.8) inset', position: 'relative', border: '1px solid rgba(255,255,255,0.7)' }}
             onClick={(e) => e.stopPropagation()}
           >
             <button

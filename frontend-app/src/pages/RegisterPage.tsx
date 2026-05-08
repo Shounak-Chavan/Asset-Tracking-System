@@ -189,7 +189,12 @@ export function RegisterPage() {
   return (
     <div style={{
       minHeight: 'calc(100vh - 64px)',
-      background: 'linear-gradient(135deg, #e8f4fd 0%, #eef6ff 50%, #f0fdf9 100%)',
+      background: `
+        radial-gradient(ellipse at 20% 20%, rgba(0,201,167,0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(26,58,107,0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.06) 0%, transparent 70%),
+        linear-gradient(135deg, #e8f4fd 0%, #eef6ff 50%, #f0fdf9 100%)
+      `,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       padding: '40px 20px',
@@ -205,10 +210,12 @@ export function RegisterPage() {
       <div style={{
         position: 'relative', zIndex: 1,
         width: '100%', maxWidth: '460px',
-        background: 'rgba(255,255,255,0.95)',
-        borderRadius: '20px',
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderRadius: '24px',
         border: '1px solid rgba(255,255,255,0.8)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.1), 0 1px 0 rgba(255,255,255,0.6) inset',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.9) inset',
         padding: '40px 44px',
       }}>
 
@@ -376,7 +383,7 @@ export function RegisterPage() {
             style={{
               width: '100%', marginTop: '20px',
               padding: '14px', borderRadius: '10px',
-              background: '#1a3a6b', color: '#fff', border: 'none',
+              background: 'linear-gradient(135deg, #1a3a6b 0%, #1d4ed8 100%)', color: '#fff', border: 'none',
               fontSize: '15px', fontWeight: 600,
               cursor: canSubmit ? 'pointer' : 'not-allowed',
               opacity: canSubmit ? 1 : 0.5,

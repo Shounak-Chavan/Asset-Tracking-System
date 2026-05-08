@@ -50,7 +50,7 @@ export function AdminLayout() {
         height: "100vh",
         position: "sticky",
         top: 0,
-        background: "linear-gradient(180deg, #0f172a 0%, #111827 100%)",
+        background: "linear-gradient(180deg, #0f172a 0%, #0d1526 100%)",
         display: "flex",
         flexDirection: "column",
         zIndex: 40,
@@ -68,7 +68,7 @@ export function AdminLayout() {
         }}>
           <div style={{
             width: "32px", height: "32px", borderRadius: "8px",
-            background: "#2563eb", display: "flex",
+            background: "linear-gradient(135deg, #1a3a6b 0%, #2563eb 100%)", display: "flex",
             alignItems: "center", justifyContent: "center", flexShrink: 0,
           }}>
             <Briefcase size={16} color="white" />
@@ -152,7 +152,7 @@ export function AdminLayout() {
           <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
             <div style={{
               width: "36px", height: "36px", borderRadius: "50%",
-              background: "#2563eb", color: "white",
+              background: "linear-gradient(135deg, #1a3a6b 0%, #2563eb 100%)", color: "white",
               display: "flex", alignItems: "center", justifyContent: "center",
               fontSize: "14px", fontWeight: 600, flexShrink: 0,
             }}>
@@ -197,8 +197,11 @@ export function AdminLayout() {
         {/* TOPBAR */}
         <header style={{
           height: "56px",
-          background: "#ffffff",
-          borderBottom: "2px solid #00c9a7",
+          background: "rgba(255,255,255,0.95)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          borderBottom: "1px solid rgba(0,201,167,0.3)",
+          boxShadow: "0 1px 20px rgba(0,0,0,0.06), 0 0 0 1px rgba(0,201,167,0.1)",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",

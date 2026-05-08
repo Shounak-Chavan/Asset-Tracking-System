@@ -39,7 +39,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen flex flex-col font-sans text-gray-900 overflow-x-hidden" style={{ background: '#f0f4f8' }}>
-      <header style={{ background: '#ffffff', borderBottom: '2px solid #00c9a7', boxShadow: '0 1px 8px rgba(0,0,0,0.06)', position: 'sticky', top: 0, zIndex: 100, width: '100%' }}>
+      <header className="header-glass" style={{ position: 'sticky', top: 0, zIndex: 100, width: '100%' }}>
         <div className="page-container">
           <div className="h-[64px] flex items-center justify-between gap-4">
 

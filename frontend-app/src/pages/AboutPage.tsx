@@ -123,14 +123,14 @@ export function AboutPage() {
         }
         .about-what-card {
           background: white; border-radius: 14px; padding: 24px;
-          border: 1px solid #e2e8f0;
+          border: 1px solid rgba(226,232,240,0.8);
           box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-          transition: all 0.2s ease;
+          transition: all 0.25s ease;
         }
         .about-what-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0,201,167,0.1);
-          border-color: #00c9a7;
+          transform: translateY(-3px);
+          box-shadow: 0 12px 32px rgba(0,201,167,0.12);
+          border-color: rgba(0,201,167,0.3);
         }
         @media (max-width: 768px) {
           .about-mission-grid { grid-template-columns: 1fr !important; }
@@ -145,11 +145,15 @@ export function AboutPage() {
 
       {/* ── 1. Hero ── */}
       <section style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%)',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1a3a6b 40%, #1d4ed8 80%, #2563eb 100%)',
         padding: '80px 24px',
         textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+        <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, borderRadius: '50%', background: 'rgba(0,201,167,0.08)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -80, left: -80, width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+        <div style={{ maxWidth: 1200, margin: '0 auto', position: 'relative', zIndex: 1 }}>
           {/* Pill */}
           <div style={{
             display: 'inline-flex', alignItems: 'center',
@@ -335,9 +339,10 @@ export function AboutPage() {
       {/* ── 6. CTA Banner ── */}
       <section ref={ctaRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, padding: '60px 24px 80px' }}>
         <div className="about-cta" style={{
-          background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
+          background: 'linear-gradient(135deg, #0f172a 0%, #1a3a6b 40%, #1d4ed8 80%, #2563eb 100%)',
           borderRadius: '24px', padding: '64px 40px', textAlign: 'center',
           position: 'relative', overflow: 'hidden',
+          boxShadow: '0 24px 64px rgba(26,58,107,0.3)',
         }}>
           <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', top: -80, right: -80, pointerEvents: 'none' }} />
           <div style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', bottom: -60, left: -60, pointerEvents: 'none' }} />

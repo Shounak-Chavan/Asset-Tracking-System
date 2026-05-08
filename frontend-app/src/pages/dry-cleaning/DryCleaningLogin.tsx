@@ -38,7 +38,11 @@ export function DryCleaningLogin() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%)',
+      background: `
+        radial-gradient(ellipse at 20% 20%, rgba(0,201,167,0.15) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(13,148,136,0.1) 0%, transparent 50%),
+        linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdfa 100%)
+      `,
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -50,18 +54,21 @@ export function DryCleaningLogin() {
       <div style={{
         width: '100%',
         maxWidth: '420px',
-        background: '#ffffff',
-        borderRadius: '20px',
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderRadius: '24px',
         padding: '44px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.1)',
-        border: '1px solid #e2e8f0',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.9) inset',
+        border: '1px solid rgba(255,255,255,0.8)',
       }}>
         {/* Icon + Title */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
             width: '80px', height: '80px', borderRadius: '50%',
-            background: '#ccfbf1', display: 'flex', alignItems: 'center',
+            background: 'linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%)', display: 'flex', alignItems: 'center',
             justifyContent: 'center', margin: '0 auto 16px', fontSize: '40px',
+            boxShadow: '0 8px 24px rgba(0,201,167,0.2)',
           }}>
             🧺
           </div>
@@ -169,7 +176,7 @@ export function DryCleaningLogin() {
             disabled={loading}
             style={{
               width: '100%', padding: '13px',
-              background: loading ? '#99f6e4' : '#00c9a7',
+              background: loading ? '#99f6e4' : 'linear-gradient(135deg, #00c9a7 0%, #0d9488 100%)',
               color: '#ffffff', border: 'none', borderRadius: '10px',
               fontSize: '15px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer',
               transition: 'background 0.15s, box-shadow 0.15s',

@@ -234,7 +234,7 @@ export function ProfilePage() {
         }
       `}</style>
 
-      <div style={{ background: 'linear-gradient(180deg, #eef6ff 0%, #f0f4f8 100%)', minHeight: 'calc(100vh - 4rem)', padding: '32px 24px' }}>
+      <div style={{ background: 'linear-gradient(160deg, #eef6ff 0%, #f0f4f8 50%, #f0fdf9 100%)', minHeight: 'calc(100vh - 4rem)', padding: '32px 24px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
           {/* ── Page header ── */}
@@ -248,18 +248,19 @@ export function ProfilePage() {
             {/* ══ LEFT SIDEBAR ══ */}
             <div style={{
               background: '#fff', borderRadius: '16px', padding: '32px 24px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.07)', textAlign: 'center',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.07)', textAlign: 'center',
               borderTop: '3px solid #00c9a7',
+              border: '1px solid rgba(226,232,240,0.8)',
             }}>
               {/* Avatar */}
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <div style={{
                   width: 96, height: 96, borderRadius: '50%',
-                  background: '#2563eb', color: '#fff',
+                  background: 'linear-gradient(135deg, #1a3a6b 0%, #2563eb 100%)', color: '#fff',
                   fontSize: '36px', fontWeight: 700,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   border: '4px solid #fff',
-                  boxShadow: '0 0 0 3px #dbeafe',
+                  boxShadow: '0 0 0 3px #dbeafe, 0 8px 24px rgba(26,58,107,0.2)',
                   margin: '0 auto',
                 }}>
                   {getInitials(user?.full_name)}
@@ -328,14 +329,15 @@ export function ProfilePage() {
               {/* ── Personal Information Card ── */}
               <div style={{
                 background: '#fff', borderRadius: '16px', padding: '28px 32px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.07)',
+                border: '1px solid rgba(226,232,240,0.8)',
               }}>
                 {/* Card header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%',
-                      background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       <User size={16} color="#2563eb" />
                     </div>
@@ -434,9 +436,7 @@ export function ProfilePage() {
                     display: 'flex', alignItems: 'center', gap: '8px',
                     marginLeft: 'auto',
                     padding: '12px 28px', borderRadius: '10px',
-                    background: '#2563eb', color: '#fff', border: 'none',
-                    fontSize: '14px', fontWeight: 500,
-                    cursor: profileMutation.isPending ? 'not-allowed' : 'pointer',
+                    background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)', color: '#fff', border: 'none',
                     opacity: profileMutation.isPending ? 0.7 : 1,
                     transition: 'all 0.2s ease',
                   }}
@@ -451,13 +451,14 @@ export function ProfilePage() {
               {/* ── Change Password Card ── */}
               <div style={{
                 background: '#fff', borderRadius: '16px', padding: '28px 32px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.07)',
+                border: '1px solid rgba(226,232,240,0.8)',
               }}>
                 {/* Card header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: '50%',
-                    background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     <Lock size={16} color="#d97706" />
                   </div>
@@ -532,7 +533,7 @@ export function ProfilePage() {
                       display: 'flex', alignItems: 'center', gap: '8px',
                       marginLeft: 'auto',
                       padding: '12px 28px', borderRadius: '10px',
-                      background: '#7c3aed',
+                      background: 'linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%)',
                       color: '#fff',
                       border: 'none', fontSize: '14px', fontWeight: 500,
                       cursor: passwordMutation.isPending ? 'not-allowed' : 'pointer',

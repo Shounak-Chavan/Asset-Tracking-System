@@ -204,11 +204,14 @@ export function ContactPage() {
 
       {/* ── 1. Hero ── */}
       <section style={{
-        background: 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%)',
+        background: 'linear-gradient(135deg, #0f172a 0%, #1a3a6b 40%, #1d4ed8 80%, #2563eb 100%)',
         padding: '64px 24px',
         textAlign: 'center',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ position: 'absolute', top: -80, right: -80, width: 300, height: 300, borderRadius: '50%', background: 'rgba(0,201,167,0.08)', pointerEvents: 'none' }} />
+        <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center',
             background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
@@ -238,7 +241,7 @@ export function ContactPage() {
           <div className="contact-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1.6fr', gap: '28px', alignItems: 'start' }}>
 
             {/* LEFT — Contact Info */}
-            <div style={{ background: '#fff', borderRadius: '20px', padding: '32px 28px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
+            <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '20px', padding: '32px 28px', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid rgba(226,232,240,0.8)' }}>
               <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: 0 }}>Contact information</h2>
               <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>Reach us through any of these channels</p>
               <div style={{ borderTop: '1px solid #f1f5f9', margin: '20px 0' }} />
@@ -278,7 +281,7 @@ export function ContactPage() {
             </div>
 
             {/* RIGHT — Contact Form */}
-            <div style={{ background: '#fff', borderRadius: '20px', padding: '36px 32px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '1px solid #e2e8f0' }}>
+            <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '20px', padding: '36px 32px', boxShadow: '0 8px 32px rgba(0,0,0,0.08)', border: '1px solid rgba(226,232,240,0.8)' }}>
               <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a', margin: 0 }}>Send us a message</h2>
               <p style={{ fontSize: '14px', color: '#64748b', marginTop: '6px' }}>Fill out the form and we'll get back to you shortly.</p>
               <div style={{ borderTop: '1px solid #f1f5f9', margin: '20px 0' }} />
@@ -410,7 +413,7 @@ export function ContactPage() {
                       type="submit"
                       style={{
                         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                        background: '#2563eb', color: '#fff', border: 'none',
+                        background: 'linear-gradient(135deg, #1a3a6b 0%, #2563eb 100%)', color: '#fff', border: 'none',
                         borderRadius: '10px', padding: '14px',
                         fontSize: '15px', fontWeight: 600, cursor: 'pointer',
                         transition: 'all 0.2s ease',

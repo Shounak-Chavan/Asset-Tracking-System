@@ -92,30 +92,42 @@ export function HomePage() {
         }
         .btn-hero-primary {
           display: inline-flex; align-items: center; gap: 8px;
-          background: #1a3a6b; color: #fff; border: none;
+          background: linear-gradient(135deg, #1a3a6b 0%, #1d4ed8 100%);
+          color: #fff; border: none;
           border-radius: 100px; padding: 14px 32px;
           font-size: 15px; font-weight: 600; cursor: pointer;
-          box-shadow: 0 4px 20px rgba(26,58,107,0.25);
-          transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+          box-shadow: 0 4px 20px rgba(26,58,107,0.3), 0 1px 0 rgba(255,255,255,0.1) inset;
+          transition: all 0.25s ease;
+          position: relative; overflow: hidden;
         }
-        .btn-hero-primary:hover { background: #16325e; box-shadow: 0 8px 28px rgba(26,58,107,0.35); transform: translateY(-2px); }
+        .btn-hero-primary::after {
+          content: ''; position: absolute; inset: 0;
+          background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 100%);
+          opacity: 0; transition: opacity 0.2s ease;
+        }
+        .btn-hero-primary:hover { box-shadow: 0 10px 32px rgba(26,58,107,0.4); transform: translateY(-2px); }
+        .btn-hero-primary:hover::after { opacity: 1; }
+        .btn-hero-primary:active { transform: translateY(0); }
         .btn-hero-outline {
           display: inline-flex; align-items: center; gap: 8px;
-          background: white; color: #374151; border: 1.5px solid #e5e7eb;
+          background: rgba(255,255,255,0.9); color: #374151; border: 1.5px solid #e5e7eb;
           border-radius: 100px; padding: 14px 28px;
           font-size: 15px; font-weight: 500; cursor: pointer;
           box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-          transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+          backdrop-filter: blur(8px);
+          transition: all 0.25s ease;
         }
-        .btn-hero-outline:hover { border-color: #1a3a6b; color: #1a3a6b; box-shadow: 0 4px 16px rgba(26,58,107,0.12); }
+        .btn-hero-outline:hover { border-color: #1a3a6b; color: #1a3a6b; box-shadow: 0 6px 20px rgba(26,58,107,0.15); transform: translateY(-1px); }
         @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
         .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
         @keyframes bounce-down { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
         .bounce-arrow { animation: bounce-down 1.5s ease-in-out infinite; }
-        .step-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e5e7eb; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .feature-card { border-radius: 16px; padding: 28px 24px; border: 1px solid #f1f5f9; transition: all 0.2s ease; cursor: default; }
-        .feature-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); transform: translateY(-2px); border-color: #e0e7ff; }
-        .testimonial-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 28px; }
+        .step-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e5e7eb; box-shadow: 0 4px 16px rgba(0,0,0,0.06); transition: all 0.25s ease; }
+        .step-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.1); transform: translateY(-3px); border-color: rgba(0,201,167,0.3); }
+        .feature-card { border-radius: 16px; padding: 28px 24px; border: 1px solid #f1f5f9; transition: all 0.25s ease; cursor: default; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+        .feature-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.1); transform: translateY(-3px); border-color: rgba(0,201,167,0.25); background: linear-gradient(135deg, #f0fdf9 0%, #fff 100%); }
+        .testimonial-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 28px; transition: all 0.25s ease; }
+        .testimonial-card:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
         @media (max-width: 768px) {
           .hero-headline { font-size: 36px !important; letter-spacing: -1px !important; }
           .steps-grid { grid-template-columns: 1fr !important; }
@@ -139,8 +151,13 @@ export function HomePage() {
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          background: 'linear-gradient(160deg, #e8f4fd 0%, #eef6ff 40%, #f0fdf9 100%)',
-          borderBottom: '1px solid rgba(26,58,107,0.08)',
+          background: `
+            radial-gradient(ellipse at 15% 15%, rgba(0,201,167,0.1) 0%, transparent 45%),
+            radial-gradient(ellipse at 85% 85%, rgba(26,58,107,0.08) 0%, transparent 45%),
+            radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.06) 0%, transparent 60%),
+            linear-gradient(160deg, #e8f4fd 0%, #eef6ff 40%, #f0fdf9 100%)
+          `,
+          borderBottom: '1px solid rgba(26,58,107,0.06)',
           willChange: 'auto',
         }}
       >
@@ -235,11 +252,13 @@ export function HomePage() {
           {/* Stats bar — static */}
           <div ref={statsRef} className="stats-bar" style={{
             display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-            background: 'white',
-            border: '1px solid #e2e8f0',
+            background: 'rgba(255,255,255,0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(255,255,255,0.7)',
             borderRadius: '20px', padding: '24px 48px',
             marginTop: '48px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.9) inset',
           }}>
             {[
               { value: '500+', label: 'Assets Managed', icon: <Package size={16} color="#1a3a6b" />, iconBg: '#e8eef7' },
@@ -271,7 +290,7 @@ export function HomePage() {
       </section>
 
       {/* ── SECTION 2: How It Works ── */}
-      <section ref={howRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#f8fafc', padding: '80px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
+      <section ref={howRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: 'linear-gradient(180deg, #f8fafc 0%, #f0f4f8 100%)', padding: '80px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
         <div className="home-wrap">
           <p className="section-label">HOW IT WORKS</p>
           <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>
@@ -279,7 +298,7 @@ export function HomePage() {
           </h2>
           <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', marginTop: '48px' }}>
             {steps.map((s) => (
-              <div key={s.num} className="step-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderTop: '3px solid #00c9a7', borderRadius: '16px', padding: '28px', boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>
+              <div key={s.num} className="step-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderTop: '3px solid transparent', backgroundImage: 'linear-gradient(white, white), linear-gradient(90deg, #00c9a7, #1a3a6b)', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderRadius: '16px', padding: '28px', boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>
                 <div style={{ fontSize: '48px', fontWeight: 800, color: '#dbeafe', lineHeight: 1 }}>{s.num}</div>
                 <div style={{ width: 48, height: 48, background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '8px' }}>
                   {s.icon}
@@ -346,12 +365,14 @@ export function HomePage() {
       {!token && (
         <section ref={ctaRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, padding: '60px 24px 80px' }}>
           <div className="cta-banner" style={{
-            background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 60%, #3b82f6 100%)',
+            background: 'linear-gradient(135deg, #0f172a 0%, #1a3a6b 40%, #1d4ed8 80%, #2563eb 100%)',
             padding: '80px 40px', textAlign: 'center', borderRadius: '24px',
             position: 'relative', overflow: 'hidden',
+            boxShadow: '0 24px 64px rgba(26,58,107,0.3)',
           }}>
             <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', top: -80, right: -80, pointerEvents: 'none' }} />
             <div style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', bottom: -60, left: -60, pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', width: 150, height: 150, borderRadius: '50%', background: 'rgba(0,201,167,0.15)', top: '50%', left: '10%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
               <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.7)', fontWeight: 700, margin: 0 }}>GET STARTED TODAY</p>
               <h2 style={{ fontSize: '40px', fontWeight: 800, color: '#fff', marginTop: '12px', marginBottom: 0 }}>Ready to get started?</h2>

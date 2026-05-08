@@ -59,9 +59,10 @@ function PlanCard({ plan, selected, onSelect }: { plan: RentalPlan; selected: bo
       onClick={onSelect}
       style={{
         border: `2px solid ${selected ? '#00c9a7' : '#e5e7eb'}`,
-        borderRadius: '10px', padding: '14px 16px', cursor: 'pointer',
-        background: selected ? 'rgba(0,201,167,0.04)' : '#fff',
-        transition: 'border-color 0.15s, background 0.15s', position: 'relative',
+        borderRadius: '12px', padding: '14px 16px', cursor: 'pointer',
+        background: selected ? 'linear-gradient(135deg, rgba(0,201,167,0.06) 0%, rgba(0,201,167,0.02) 100%)' : '#fff',
+        transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s', position: 'relative',
+        boxShadow: selected ? '0 4px 16px rgba(0,201,167,0.15)' : '0 1px 4px rgba(0,0,0,0.04)',
       }}
     >
       {selected && (
@@ -209,7 +210,7 @@ export function AssetDetailPage() {
           </button>
 
           {/* Content card */}
-          <div style={{ background: '#fff', borderRadius: '20px', padding: '32px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+          <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '20px', padding: '32px', boxShadow: '0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)', border: '1px solid rgba(226,232,240,0.8)' }}>
             <div className="detail-grid">
 
               {/* ══ LEFT — Image ══ */}
@@ -409,15 +410,15 @@ export function AssetDetailPage() {
                       onClick={handleRentNow}
                       style={{
                         width: '100%', padding: '16px',
-                        background: ctaBg,
+                        background: canBook ? 'linear-gradient(135deg, #00c9a7 0%, #0d9488 100%)' : '#94a3b8',
                         color: '#fff', border: 'none', borderRadius: '10px',
                         fontSize: '16px', fontWeight: 700, cursor: 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                         transition: 'background 0.15s, transform 0.15s',
-                        letterSpacing: '0.3px',
+                        boxShadow: canBook ? '0 4px 16px rgba(0,201,167,0.3)' : 'none',
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = '#0aab8e'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = ctaBg; e.currentTarget.style.transform = 'translateY(0)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #00d4b0 0%, #00c9a7 100%)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,201,167,0.4)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #00c9a7 0%, #0d9488 100%)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,201,167,0.3)' }}
                     >
                       <CalendarDays size={18} />
                       {ctaLabel}
@@ -467,11 +468,11 @@ export function AssetDetailPage() {
       {/* Login prompt */}
       {showLoginPrompt && (
         <div
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '24px' }}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: '24px' }}
           onClick={() => setShowLoginPrompt(false)}
         >
           <div
-            style={{ background: '#fff', borderRadius: '12px', padding: '28px 32px', maxWidth: '380px', width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}
+            style={{ background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRadius: '16px', padding: '28px 32px', maxWidth: '380px', width: '100%', boxShadow: '0 24px 64px rgba(0,0,0,0.15), 0 1px 0 rgba(255,255,255,0.8) inset', border: '1px solid rgba(255,255,255,0.7)' }}
             onClick={e => e.stopPropagation()}
           >
             <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#0f172a', margin: '0 0 8px 0' }}>Sign in to rent</h3>

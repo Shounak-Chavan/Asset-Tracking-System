@@ -89,7 +89,12 @@ export function LoginPage() {
   return (
     <div style={{
       minHeight: 'calc(100vh - 64px)',
-      background: 'linear-gradient(135deg, #e8f4fd 0%, #eef6ff 50%, #f0fdf9 100%)',
+      background: `
+        radial-gradient(ellipse at 20% 20%, rgba(0,201,167,0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(26,58,107,0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(59,130,246,0.06) 0%, transparent 70%),
+        linear-gradient(135deg, #e8f4fd 0%, #eef6ff 50%, #f0fdf9 100%)
+      `,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -107,10 +112,12 @@ export function LoginPage() {
       <div style={{
         position: 'relative', zIndex: 1,
         width: '100%', maxWidth: '460px',
-        background: 'rgba(255,255,255,0.95)',
-        borderRadius: '20px',
+        background: 'rgba(255,255,255,0.92)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderRadius: '24px',
         border: '1px solid rgba(255,255,255,0.8)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.1), 0 1px 0 rgba(255,255,255,0.6) inset',
+        boxShadow: '0 24px 64px rgba(0,0,0,0.1), 0 8px 24px rgba(0,0,0,0.06), 0 1px 0 rgba(255,255,255,0.9) inset',
         padding: '44px',
       }}>
 
@@ -220,7 +227,7 @@ export function LoginPage() {
             style={{
               width: '100%', marginTop: '24px',
               padding: '14px', borderRadius: '10px',
-              background: loading ? '#7fa8d4' : '#1a3a6b',
+              background: loading ? '#7fa8d4' : 'linear-gradient(135deg, #1a3a6b 0%, #1d4ed8 100%)',
               color: '#fff', border: 'none',
               fontSize: '15px', fontWeight: 600,
               cursor: loading ? 'not-allowed' : 'pointer',
