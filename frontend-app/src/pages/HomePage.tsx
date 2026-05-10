@@ -1,358 +1,378 @@
-import { useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Search, Calendar, PackageCheck, Store, Clock, ShieldCheck, Settings, Package, BookOpen, Shield } from 'lucide-react'
-import { useAuth } from '../auth-context'
+﻿import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { Crown, ArrowRight } from "lucide-react";
+import { useAuth } from "../auth-context";
 
-// ── Scroll-fade hook ──────────────────────────────────────────────────────────
+// Pexels verified CDN images — Indian bridal couture
+// Hero: rich red lehenga bride (pexels-photo-13661822)
+const HERO_BG = "https://images.pexels.com/photos/13661822/pexels-photo-13661822.jpeg?auto=compress&cs=tinysrgb&w=1200&h=1400&fit=crop";
+
+const COLLECTIONS = [
+  { label: "Lehengas", count: "45 Pieces", img: "https://images.pexels.com/photos/5673602/pexels-photo-5673602.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop" },
+  { label: "Sarees", count: "32 Pieces", img: "https://images.pexels.com/photos/9344398/pexels-photo-9344398.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop" },
+  { label: "Anarkalis", count: "28 Pieces", img: "https://images.pexels.com/photos/12047433/pexels-photo-12047433.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop" },
+  { label: "Gowns", count: "18 Pieces", img: "https://images.pexels.com/photos/9344528/pexels-photo-9344528.jpeg?auto=compress&cs=tinysrgb&w=600&h=800&fit=crop" },
+];
+const FEATURED = [
+  { name: "Royal Maroon Bridal Lehenga", price: "₹4,500/day", rating: "4.9", left: "Only 2 left", img: "https://images.pexels.com/photos/5673602/pexels-photo-5673602.jpeg?auto=compress&cs=tinysrgb&w=500&h=667&fit=crop" },
+  { name: "Golden Embroidered Saree", price: "₹2,800/day", rating: "4.7", left: null, img: "https://images.pexels.com/photos/9344398/pexels-photo-9344398.jpeg?auto=compress&cs=tinysrgb&w=500&h=667&fit=crop" },
+  { name: "Dusty Rose Anarkali Suite", price: "₹3,200/day", rating: "4.8", left: null, img: "https://images.pexels.com/photos/12047433/pexels-photo-12047433.jpeg?auto=compress&cs=tinysrgb&w=500&h=667&fit=crop" },
+  { name: "Ivory Bridal Gown", price: "₹5,000/day", rating: "4.9", left: "Only 3 left", img: "https://images.pexels.com/photos/8908596/pexels-photo-8908596.jpeg?auto=compress&cs=tinysrgb&w=500&h=667&fit=crop" },
+];
+const TRENDING = [
+  { label: "TRENDING", name: "Royal Velvet Lehenga", sub: "Most rented this season", img: "https://images.pexels.com/photos/13661822/pexels-photo-13661822.jpeg?auto=compress&cs=tinysrgb&w=700&h=875&fit=crop" },
+  { label: "NEW ARRIVALS", name: "Designer Sarees", sub: "Perfect for reception", img: "https://images.pexels.com/photos/9418765/pexels-photo-9418765.jpeg?auto=compress&cs=tinysrgb&w=700&h=875&fit=crop" },
+  { label: "EDITOR'S PICK", name: "Indo-Western Gowns", sub: "Modern bride's choice", img: "https://images.pexels.com/photos/12730873/pexels-photo-12730873.jpeg?auto=compress&cs=tinysrgb&w=700&h=875&fit=crop" },
+];
+const PROMISE_IMGS = [
+  "https://images.pexels.com/photos/26860225/pexels-photo-26860225.jpeg?auto=compress&cs=tinysrgb&w=500&h=700&fit=crop",
+  "https://images.pexels.com/photos/5673602/pexels-photo-5673602.jpeg?auto=compress&cs=tinysrgb&w=250&h=250&fit=crop",
+  "https://images.pexels.com/photos/9344398/pexels-photo-9344398.jpeg?auto=compress&cs=tinysrgb&w=250&h=250&fit=crop",
+  "https://images.pexels.com/photos/8908596/pexels-photo-8908596.jpeg?auto=compress&cs=tinysrgb&w=250&h=250&fit=crop",
+];
+
 function useFadeIn() {
-  const ref = useRef<HTMLElement>(null)
+  const ref = useRef<HTMLElement>(null);
   useEffect(() => {
-    const el = ref.current
-    if (!el) return
+    const el = ref.current;
+    if (!el) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
-          el.style.opacity = '1'
-          el.style.transform = 'translateY(0)'
-          observer.disconnect()
+          el.style.opacity = "1";
+          el.style.transform = "translateY(0)";
+          observer.disconnect();
         }
       },
-      { threshold: 0.1 }
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
-  return ref
+      { threshold: 0.06 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return ref;
 }
 
-const fadeInit: React.CSSProperties = {
+const fi: React.CSSProperties = {
   opacity: 0,
-  transform: 'translateY(20px)',
-  transition: 'opacity 0.5s ease, transform 0.5s ease',
-}
+  transform: "translateY(28px)",
+  transition: "opacity 0.7s ease, transform 0.7s ease",
+};
 
 export function HomePage() {
-  const navigate = useNavigate()
-  const { token } = useAuth()
+  const navigate = useNavigate();
+  const { token } = useAuth();
 
-  const heroRef = useRef<HTMLElement>(null)
-  const howRef = useFadeIn()
-  const featRef = useFadeIn()
-  const testRef = useFadeIn()
-  const ctaRef = useFadeIn()
-  const statsRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const el = heroRef.current
-    if (!el) return
-    requestAnimationFrame(() => {
-      el.style.opacity = '1'
-      el.style.transform = 'translateY(0)'
-    })
-  }, [])
-
-  const features = [
-    { icon: <Store size={22} color="#2563eb" />, iconBg: '#eff6ff', title: 'Asset Catalog', desc: 'Browse and book from a curated catalog of shared assets across categories.' },
-    { icon: <Clock size={22} color="#d97706" />, iconBg: '#fef3c7', title: 'Flexible Plans', desc: 'Choose from multiple rental durations with transparent pricing and deposit terms.' },
-    { icon: <ShieldCheck size={22} color="#16a34a" />, iconBg: '#dcfce7', title: 'Secure Tracking', desc: 'Every booking, payment, and return is tracked end-to-end with full audit history.' },
-    { icon: <Settings size={22} color="#9333ea" />, iconBg: '#f3e8ff', title: 'Admin Operations', desc: 'Admins can allocate assets, process returns, and manage the full lifecycle.' },
-  ]
-
-  const steps = [
-    { num: '01', icon: <Search size={22} color="#2563eb" />, title: 'Browse the Catalog', desc: 'Find available assets by category, search, or filter to match your needs.' },
-    { num: '02', icon: <Calendar size={22} color="#2563eb" />, title: 'Book & Pay Deposit', desc: 'Choose your rental plan, pickup date, and secure your booking with a deposit.' },
-    { num: '03', icon: <PackageCheck size={22} color="#2563eb" />, title: 'Pick Up & Return', desc: 'Admin allocates your asset. Return it when done — simple and accountable.' },
-  ]
-
-  const testimonials = [
-    { initials: 'HW', color: '#2563eb', name: 'Hoshang W.', role: 'Operations Lead', quote: 'AssetTrack completely changed how we manage shared equipment. No more confusion about who has what.' },
-    { initials: 'RK', color: '#16a34a', name: 'Rahul K.', role: 'Facility Manager', quote: "The deposit and tracking system gives us full accountability. We've reduced losses by 80%." },
-    { initials: 'PS', color: '#9333ea', name: 'Priya S.', role: 'Team Lead', quote: 'Booking an asset takes 30 seconds. The whole team adopted it immediately.' },
-  ]
+  const collectionsRef = useFadeIn();
+  const featuredRef = useFadeIn();
+  const trendingRef = useFadeIn();
+  const promiseRef = useFadeIn();
+  const howRef = useFadeIn();
+  const ctaRef = useFadeIn();
 
   return (
-    <div style={{ background: '#f0f4f8', width: '100%' }}>
+    <div style={{ background: "var(--color-bg-primary)", width: "100%" }}>
       <style>{`
-        html { scroll-behavior: smooth; }
-        .home-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
-        .section-label { font-size: 11px; letter-spacing: 0.1em; color: #2563eb; font-weight: 700; text-align: center; text-transform: uppercase; }
-        @keyframes meshDrift {
-          0%,100% { background-position: 0% 0%, 100% 0%, 50% 100%, 100% 50%, 0% 50%; }
-          33%      { background-position: 5% 10%, 95% 5%, 55% 95%, 95% 55%, 5% 45%; }
-          66%      { background-position: -5% 5%, 105% -5%, 45% 105%, 105% 45%, -5% 55%; }
+        .hw { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+        @media (max-width: 768px) { .hw { padding: 0 16px; } }
+
+        /* ── Hero: full-bleed background image ── */
+        .hero-section {
+          height: 100vh;
+          min-height: 600px;
+          position: relative;
+          overflow: hidden;
+          background-color: #1a0a0a;
         }
-        .hero-mesh {
-          background: linear-gradient(180deg, #eef2ff 0%, #ffffff 60%);
+
+        /* Full-bleed background image */
+        .hero-bg-img {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          object-position: center top;
         }
-        .hero-gradient-text {
-          background: linear-gradient(135deg, #1a3a6b 0%, #00c9a7 100%);
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
+
+        /* Dark overlay — heavier on left, lighter on right */
+        .hero-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            to right,
+            rgba(15, 4, 8, 0.88) 0%,
+            rgba(15, 4, 8, 0.65) 45%,
+            rgba(15, 4, 8, 0.15) 100%
+          );
         }
-        .btn-hero-primary {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: linear-gradient(135deg, #1a3a6b 0%, #1d4ed8 100%);
-          color: #fff; border: none;
-          border-radius: 100px; padding: 14px 32px;
-          font-size: 15px; font-weight: 600; cursor: pointer;
-          box-shadow: 0 4px 20px rgba(26,58,107,0.3), 0 1px 0 rgba(255,255,255,0.1) inset;
-          transition: all 0.25s ease;
-          position: relative; overflow: hidden;
+
+        /* Text content sits above overlay */
+        .hero-left {
+          position: relative;
+          z-index: 2;
+          height: 100%;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          padding: 80px 64px;
+          max-width: 600px;
         }
-        .btn-hero-primary::after {
-          content: ''; position: absolute; inset: 0;
-          background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 100%);
-          opacity: 0; transition: opacity 0.2s ease;
-        }
-        .btn-hero-primary:hover { box-shadow: 0 10px 32px rgba(26,58,107,0.4); transform: translateY(-2px); }
-        .btn-hero-primary:hover::after { opacity: 1; }
-        .btn-hero-primary:active { transform: translateY(0); }
-        .btn-hero-outline {
-          display: inline-flex; align-items: center; gap: 8px;
-          background: rgba(255,255,255,0.9); color: #374151; border: 1.5px solid #e5e7eb;
-          border-radius: 100px; padding: 14px 28px;
-          font-size: 15px; font-weight: 500; cursor: pointer;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-          backdrop-filter: blur(8px);
-          transition: all 0.25s ease;
-        }
-        .btn-hero-outline:hover { border-color: #1a3a6b; color: #1a3a6b; box-shadow: 0 6px 20px rgba(26,58,107,0.15); transform: translateY(-1px); }
-        @keyframes pulse-dot { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(0.8); } }
-        .pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
-        @keyframes bounce-down { 0%,100% { transform: translateY(0); } 50% { transform: translateY(4px); } }
-        .bounce-arrow { animation: bounce-down 1.5s ease-in-out infinite; }
-        .step-card { background: white; border-radius: 16px; padding: 28px; border: 1px solid #e5e7eb; box-shadow: 0 4px 16px rgba(0,0,0,0.06); transition: all 0.25s ease; }
-        .step-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.1); transform: translateY(-3px); border-color: rgba(0,201,167,0.3); }
-        .feature-card { border-radius: 16px; padding: 28px 24px; border: 1px solid #f1f5f9; transition: all 0.25s ease; cursor: default; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-        .feature-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.1); transform: translateY(-3px); border-color: rgba(0,201,167,0.25); background: linear-gradient(135deg, #f0fdf9 0%, #fff 100%); }
-        .testimonial-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 28px; transition: all 0.25s ease; }
-        .testimonial-card:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); transform: translateY(-2px); }
         @media (max-width: 768px) {
-          .hero-headline { font-size: 36px !important; letter-spacing: -1px !important; }
-          .steps-grid { grid-template-columns: 1fr !important; }
-          .features-grid { grid-template-columns: 1fr !important; }
-          .testimonials-grid { grid-template-columns: 1fr !important; }
-          .stats-bar { flex-direction: column !important; gap: 24px !important; }
-          .stats-divider { display: none !important; }
-          .social-proof-row { flex-direction: column !important; gap: 12px !important; }
-          .cta-banner { margin: 0 0 60px 0 !important; border-radius: 16px !important; }
+          .hero-left {
+            padding: 80px 24px 60px;
+            max-width: 100%;
+          }
+          .hero-overlay {
+            background: rgba(15, 4, 8, 0.72);
+          }
+        }
+
+        /* Collections grid */
+        .collections-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+        }
+        @media (max-width: 900px) { .collections-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .collections-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+        .collection-card {
+          position: relative;
+          border-radius: 12px;
+          overflow: hidden;
+          cursor: pointer;
+          aspect-ratio: 3/4;
+        }
+        .collection-card img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          transition: transform 0.5s ease;
+        }
+        .collection-card:hover img { transform: scale(1.06); }
+        .collection-card-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(20,5,12,0.85) 0%, transparent 55%);
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          padding: 20px 16px;
+        }
+
+        /* Featured grid */
+        .featured-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 16px;
+        }
+        @media (max-width: 1024px) { .featured-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .featured-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+
+        .featured-card {
+          border-radius: 12px;
+          overflow: hidden;
+          background: var(--color-bg-card);
+          border: 1px solid var(--color-border);
+          cursor: pointer;
+          transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .featured-card:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+          border-color: var(--color-border-strong);
+        }
+        .featured-card-img {
+          width: 100%;
+          aspect-ratio: 3/4;
+          object-fit: cover;
+          display: block;
+        }
+
+        /* Trending grid */
+        .trending-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 16px;
+        }
+        @media (max-width: 768px) { .trending-grid { grid-template-columns: 1fr; } }
+
+        .trending-card {
+          position: relative;
+          border-radius: 12px;
+          overflow: hidden;
+          cursor: pointer;
+          aspect-ratio: 4/5;
+        }
+        .trending-card img {
+          width: 100%; height: 100%;
+          object-fit: cover;
+          transition: transform 0.5s ease;
+        }
+        .trending-card:hover img { transform: scale(1.05); }
+        .trending-card-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(20,5,12,0.9) 0%, rgba(20,5,12,0.1) 60%);
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-end;
+          padding: 24px 20px;
+        }
+
+        /* Promise section */
+        .promise-section {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 64px;
+          align-items: center;
+        }
+        @media (max-width: 768px) { .promise-section { grid-template-columns: 1fr; gap: 40px; } }
+
+        .promise-img-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr 1fr;
+          grid-template-rows: auto auto;
+          gap: 8px;
+        }
+        .promise-img-main {
+          grid-column: 1 / 3;
+          grid-row: 1 / 3;
+          border-radius: 10px;
+          overflow: hidden;
+          aspect-ratio: 3/4;
+        }
+        .promise-img-main img { width: 100%; height: 100%; object-fit: cover; }
+        .promise-img-thumb {
+          border-radius: 8px;
+          overflow: hidden;
+          aspect-ratio: 1;
+        }
+        .promise-img-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* How it works */
+        .how-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 24px;
+        }
+        @media (max-width: 768px) { .how-grid { grid-template-columns: 1fr; } }
+
+        .how-card {
+          background: var(--color-bg-card);
+          border: 1px solid var(--color-border);
+          border-radius: 12px;
+          padding: 36px 28px;
+          transition: border-color 0.25s ease, transform 0.25s ease;
+        }
+        .how-card:hover {
+          border-color: var(--color-border-strong);
+          transform: translateY(-4px);
+        }
+
+        /* Stat row */
+        .stat-row {
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 32px;
         }
       `}</style>
 
-      {/* ── SECTION 1: Hero ── */}
-      <section
-        ref={heroRef}
-        style={{
-          ...fadeInit,
-          width: '100%',
-          minHeight: '90vh',
-          position: 'relative',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          background: `
-            radial-gradient(ellipse at 15% 15%, rgba(0,201,167,0.1) 0%, transparent 45%),
-            radial-gradient(ellipse at 85% 85%, rgba(26,58,107,0.08) 0%, transparent 45%),
-            radial-gradient(ellipse at 50% 0%, rgba(59,130,246,0.06) 0%, transparent 60%),
-            linear-gradient(160deg, #e8f4fd 0%, #eef6ff 40%, #f0fdf9 100%)
-          `,
-          borderBottom: '1px solid rgba(26,58,107,0.06)',
-          willChange: 'auto',
-        }}
-      >
-        {/* Decorative background shapes */}
-        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 0 }}>
-          <div style={{ position: 'absolute', top: -120, right: -120, width: 500, height: 500, borderRadius: '50%', background: 'rgba(0,201,167,0.06)' }} />
-          <div style={{ position: 'absolute', bottom: -80, left: -80, width: 350, height: 350, borderRadius: '50%', background: 'rgba(26,58,107,0.05)' }} />
-          <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)', backgroundSize: '32px 32px', opacity: 0.4 }} />
-        </div>
-        {/* Hero content */}
-        <div style={{
-          position: 'relative', zIndex: 1,
-          flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          maxWidth: '780px', margin: '0 auto', padding: '100px 24px 60px', textAlign: 'center',
-        }}>          {/* Badge pill */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            background: 'white', border: '1px solid #e5e7eb',
-            borderRadius: '100px', padding: '7px 16px 7px 12px',
-            fontSize: '13px', fontWeight: 500,
-            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-            margin: '0 auto',
-          }}>
-            <div className="pulse-dot" style={{ width: 6, height: 6, borderRadius: '50%', background: '#00c9a7', flexShrink: 0 }} />
-            <span style={{ color: '#16a34a', fontWeight: 700 }}>Now live</span>
-            <span style={{ color: '#374151' }}> — Asset Rental Management Platform</span>
-          </div>
-
-          {/* Hero logo mark — removed, navbar logo is sufficient */}
-
-          {/* Headline */}
-          <h1 className="hero-headline" style={{
-            fontSize: '58px', fontWeight: 800, color: '#0f172a',
-            lineHeight: 1.05, letterSpacing: '-2px',
-            marginTop: '24px', marginBottom: 0,
-          }}>
-            Manage shared assets
-            <br />
-            <span className="hero-gradient-text">with full accountability</span>
+      {/* ── HERO ── */}
+      <section className="hero-section">
+        {/* Full-bleed background image */}
+        <img
+          src={HERO_BG}
+          alt=""
+          className="hero-bg-img"
+          aria-hidden="true"
+        />
+        {/* Dark gradient overlay */}
+        <div className="hero-overlay" />
+        {/* Text content */}
+        <div className="hero-left">
+          <p style={{ fontFamily: "var(--font-sans)", fontSize: "0.65rem", letterSpacing: "0.25em", textTransform: "uppercase", color: "var(--color-accent-gold)", marginBottom: 16 }}>
+            Premium Bridal Couture · Pune
+          </p>
+          <h1 style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(56px, 7vw, 96px)", fontWeight: 700, color: "var(--color-text-primary)", lineHeight: 1, marginBottom: 20, letterSpacing: "0.04em" }}>
+            RIWAAYAT
           </h1>
-
-          {/* Subheadline */}
-          <p style={{ fontSize: '18px', color: '#64748b', lineHeight: 1.7, marginTop: '20px', maxWidth: '540px', marginInline: 'auto' }}>
-            AssetTrack streamlines the entire rental lifecycle — from booking and allocation to payment and return — in one transparent platform.
+          <p style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: "clamp(16px, 1.8vw, 22px)", color: "rgba(245,236,215,0.75)", marginBottom: 36, lineHeight: 1.5 }}>
+            Where Tradition Meets Timeless Elegance.
           </p>
-
-          {/* CTA buttons */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginTop: '36px' }}>
-            {token ? (
-              <button className="btn-hero-primary" onClick={() => navigate('/assets')}>
-                Browse Catalog
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-              </button>
-            ) : (
-              <>
-                <button className="btn-hero-primary" onClick={() => navigate('/register')}>
-                  Get Started
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
-                <button className="btn-hero-outline" onClick={() => navigate('/login')}>
-                  Sign In
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                </button>
-              </>
-            )}
-          </div>
-
-          {/* Social proof */}
-          <div className="social-proof-row" style={{ display: 'flex', gap: '20px', justifyContent: 'center', alignItems: 'center', marginTop: '40px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                {[{ bg: '#2563eb', label: 'HW' }, { bg: '#16a34a', label: 'RK' }, { bg: '#9333ea', label: 'PS' }].map((a, i) => (
-                  <div key={i} style={{
-                    width: 32, height: 32, borderRadius: '50%',
-                    background: a.bg, color: '#fff', fontSize: '11px', fontWeight: 700,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    boxShadow: '0 0 0 2px white',
-                    marginLeft: i === 0 ? 0 : -10, zIndex: 3 - i, position: 'relative',
-                  }}>{a.label}</div>
-                ))}
-              </div>
-              <span style={{ fontSize: '14px', color: '#64748b' }}>Trusted by 50+ teams</span>
-            </div>
-            <div style={{ width: 1, height: 20, background: '#e5e7eb' }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ color: '#f59e0b', fontSize: '15px', letterSpacing: '1px' }}>★★★★★</span>
-              <span style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a' }}>4.9 / 5.0</span>
-              <span style={{ fontSize: '13px', color: '#9ca3af' }}>(48 reviews)</span>
-            </div>
-          </div>
-
-          {/* Stats bar — static */}
-          <div ref={statsRef} className="stats-bar" style={{
-            display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-            background: 'rgba(255,255,255,0.85)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: '1px solid rgba(255,255,255,0.7)',
-            borderRadius: '20px', padding: '24px 48px',
-            marginTop: '48px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.08), 0 1px 0 rgba(255,255,255,0.9) inset',
-          }}>
+          <div style={{ display: "flex", gap: 32, marginBottom: 40, flexWrap: "wrap" }}>
             {[
-              { value: '500+', label: 'Assets Managed', icon: <Package size={16} color="#1a3a6b" />, iconBg: '#e8eef7' },
-              { value: '1,200+', label: 'Bookings Processed', icon: <BookOpen size={16} color="#00c9a7" />, iconBg: '#e0faf5' },
-              { value: '99.9%', label: 'Uptime Guaranteed', icon: <Shield size={16} color="#1a3a6b" />, iconBg: '#e8eef7' },
-            ].map((s, i) => (
-              <>
-                <div key={i} style={{ textAlign: 'center' }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: s.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>{s.icon}</div>
-                  <div style={{ fontSize: '32px', fontWeight: 800, color: '#0f172a', lineHeight: 1, letterSpacing: '-1px' }}>{s.value}</div>
-                  <div style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>{s.label}</div>
-                </div>
-                {i < 2 && <div className="stats-divider" key={`div-${i}`} style={{ width: 1, height: 40, background: '#e5e7eb' }} />}
-              </>
+              { icon: "♛", label: "RENT" },
+              { icon: "✦", label: "FLAUNT" },
+              { icon: "↩", label: "RETURN" },
+            ].map((item) => (
+              <div key={item.label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ color: "var(--color-accent-gold)", fontSize: 12 }}>{item.icon}</span>
+                <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.65rem", letterSpacing: "0.2em", color: "rgba(245,236,215,0.7)" }}>{item.label}</span>
+              </div>
             ))}
           </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, paddingBottom: 32 }}>
-          <span style={{ fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94a3b8' }}>Scroll to explore</span>
-          <div className="bounce-arrow">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M4 5l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M4 9l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.5"/>
-            </svg>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <button
+              className="btn-gold"
+              style={{ padding: "14px 32px", fontSize: "0.7rem", letterSpacing: "0.18em" }}
+              onClick={() => navigate("/assets")}
+            >
+              EXPLORE COLLECTION
+            </button>
+            <button
+              className="btn-ghost"
+              style={{ padding: "14px 24px", fontSize: "0.7rem", letterSpacing: "0.18em", border: "1px solid rgba(245,236,215,0.3)", color: "rgba(245,236,215,0.8)" }}
+              onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              HOW IT WORKS
+            </button>
           </div>
         </div>
       </section>
 
-      {/* ── SECTION 2: How It Works ── */}
-      <section ref={howRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: 'linear-gradient(180deg, #f8fafc 0%, #f0f4f8 100%)', padding: '80px 0', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0' }}>
-        <div className="home-wrap">
-          <p className="section-label">HOW IT WORKS</p>
-          <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>
-            Rent in 3 simple steps
-          </h2>
-          <div className="steps-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', marginTop: '48px' }}>
-            {steps.map((s) => (
-              <div key={s.num} className="step-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderTop: '3px solid transparent', backgroundImage: 'linear-gradient(white, white), linear-gradient(90deg, #00c9a7, #1a3a6b)', backgroundOrigin: 'border-box', backgroundClip: 'padding-box, border-box', borderRadius: '16px', padding: '28px', boxShadow: '0 4px 16px rgba(0,0,0,0.05)' }}>
-                <div style={{ fontSize: '48px', fontWeight: 800, color: '#dbeafe', lineHeight: 1 }}>{s.num}</div>
-                <div style={{ width: 48, height: 48, background: '#eff6ff', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: '8px' }}>
-                  {s.icon}
+      {/* ── COLLECTIONS ── */}
+      <section ref={collectionsRef as React.RefObject<HTMLElement>} style={{ ...fi, padding: "80px 0", background: "var(--color-bg-primary)" }}>
+        <div className="hw">
+          <p className="section-eyebrow" style={{ textAlign: "center", marginBottom: 10 }}>Curated Selection</p>
+          <h2 className="heading-display" style={{ fontSize: "clamp(32px, 4vw, 48px)", textAlign: "center", marginBottom: 40 }}>Our Collections</h2>
+          <div className="collections-grid">
+            {COLLECTIONS.map((c) => (
+              <div key={c.label} className="collection-card" onClick={() => navigate("/assets")}>
+                <img src={c.img} alt={c.label} loading="lazy" />
+                <div className="collection-card-overlay">
+                  <p style={{ fontFamily: "var(--font-serif)", fontSize: 20, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 4 }}>{c.label}</p>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "rgba(245,236,215,0.6)", letterSpacing: "0.1em" }}>{c.count}</p>
                 </div>
-                <h3 style={{ fontSize: '17px', fontWeight: 600, color: '#0f172a', marginTop: '16px', marginBottom: 0 }}>{s.title}</h3>
-                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginTop: '8px' }}>{s.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── SECTION 3: Features ── */}
-      <section ref={featRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#ffffff', padding: '80px 0' }}>
-        <div className="home-wrap">
-          <p className="section-label">FEATURES</p>
-          <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#0f172a', textAlign: 'center', marginTop: '8px', marginBottom: 0 }}>
-            Everything you need
-          </h2>
-          <p style={{ fontSize: '16px', color: '#64748b', textAlign: 'center', maxWidth: '500px', margin: '12px auto 0' }}>
-            A complete system for teams that share physical assets and need transparent, accountable operations.
-          </p>
-          <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '48px' }}>
-            {features.map((f) => (
-              <div key={f.title} className="feature-card" style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '28px 24px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', transition: 'all 0.2s ease', cursor: 'default' }}>
-                <div style={{ width: 48, height: 48, borderRadius: '12px', background: f.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {f.icon}
+      {/* ── FEATURED PIECES ── */}
+      <section ref={featuredRef as React.RefObject<HTMLElement>} style={{ ...fi, padding: "80px 0", background: "var(--color-bg-secondary)", borderTop: "1px solid var(--color-border)" }}>
+        <div className="hw">
+          <p className="section-eyebrow" style={{ textAlign: "center", marginBottom: 10 }}>Bestsellers</p>
+          <h2 className="heading-display" style={{ fontSize: "clamp(32px, 4vw, 48px)", textAlign: "center", marginBottom: 40 }}>Featured Pieces</h2>
+          <hr className="gold-divider" style={{ marginBottom: 48, maxWidth: 80, marginInline: "auto" }} />
+          <div className="featured-grid">
+            {FEATURED.map((item) => (
+              <div key={item.name} className="featured-card" onClick={() => navigate("/assets")}>
+                <div style={{ position: "relative" }}>
+                  <img src={item.img} alt={item.name} className="featured-card-img" loading="lazy" />
+                  {item.left && (
+                    <span style={{ position: "absolute", top: 12, left: 12, background: "rgba(20,5,12,0.85)", border: "1px solid var(--color-border)", borderRadius: 100, padding: "4px 10px", fontSize: 10, fontFamily: "var(--font-sans)", color: "var(--color-text-muted)", letterSpacing: "0.08em" }}>
+                      ● {item.left}
+                    </span>
+                  )}
                 </div>
-                <h3 style={{ fontSize: '16px', fontWeight: 600, color: '#0f172a', marginTop: '16px', marginBottom: 0 }}>{f.title}</h3>
-                <p style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.6, marginTop: '8px' }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── SECTION 4: Testimonials ── */}
-      <section ref={testRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, background: '#0f172a', padding: '80px 0' }}>
-        <div className="home-wrap">
-          <h2 style={{ fontSize: '36px', fontWeight: 700, color: '#fff', textAlign: 'center', marginBottom: 0 }}>
-            Why teams choose AssetTrack
-          </h2>
-          <div className="testimonials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginTop: '48px' }}>
-            {testimonials.map((t) => (
-              <div key={t.name} className="testimonial-card">
-                <div style={{ color: '#fbbf24', fontSize: '14px' }}>★★★★★</div>
-                <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', lineHeight: 1.7, marginTop: '12px', fontStyle: 'italic' }}>"{t.quote}"</p>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginTop: '20px' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: t.color, color: '#fff', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {t.initials}
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '14px', fontWeight: 600, color: '#fff' }}>{t.name}</div>
-                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{t.role}</div>
+                <div style={{ padding: "14px 16px 18px" }}>
+                  <p style={{ fontFamily: "var(--font-serif)", fontSize: 15, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 6, lineHeight: 1.3 }}>{item.name}</p>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--color-accent-gold)", fontWeight: 600 }}>{item.price}</span>
+                    <span style={{ fontSize: 11, color: "var(--color-text-faint)" }}>★ {item.rating}</span>
                   </div>
                 </div>
               </div>
@@ -361,35 +381,120 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* ── SECTION 5: CTA Banner ── */}
+      {/* ── TRENDING ── */}
+      <section ref={trendingRef as React.RefObject<HTMLElement>} style={{ ...fi, padding: "80px 0", background: "var(--color-bg-primary)" }}>
+        <div className="hw">
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 32 }}>
+            <h2 className="heading-display" style={{ fontSize: "clamp(28px, 3.5vw, 42px)" }}>Trending This Season</h2>
+            <button
+              className="btn-ghost"
+              style={{ fontSize: "0.65rem", letterSpacing: "0.15em", display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}
+              onClick={() => navigate("/assets")}
+            >
+              View All <ArrowRight size={13} />
+            </button>
+          </div>
+          <div className="trending-grid">
+            {TRENDING.map((item) => (
+              <div key={item.name} className="trending-card" onClick={() => navigate("/assets")}>
+                <img src={item.img} alt={item.name} loading="lazy" />
+                <div className="trending-card-overlay">
+                  <span style={{ display: "inline-block", background: "var(--color-accent-gold)", color: "var(--color-bg-primary)", fontFamily: "var(--font-sans)", fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", padding: "3px 10px", borderRadius: 100, marginBottom: 10 }}>
+                    {item.label}
+                  </span>
+                  <p style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 4 }}>{item.name}</p>
+                  <p style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "rgba(245,236,215,0.6)" }}>{item.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── OUR PROMISE ── */}
+      <section ref={promiseRef as React.RefObject<HTMLElement>} style={{ ...fi, padding: "80px 0", background: "var(--color-bg-secondary)", borderTop: "1px solid var(--color-border)" }}>
+        <div className="hw">
+          <div className="promise-section">
+            {/* Image collage */}
+            <div className="promise-img-grid">
+              <div className="promise-img-main">
+                <img src={PROMISE_IMGS[0]} alt="Bridal couture" loading="lazy" />
+              </div>
+              {PROMISE_IMGS.slice(1).map((src, i) => (
+                <div key={i} className="promise-img-thumb">
+                  <img src={src} alt={`Look ${i + 1}`} loading="lazy" />
+                </div>
+              ))}
+            </div>
+            {/* Text */}
+            <div>
+              <p className="section-eyebrow" style={{ marginBottom: 14 }}>Our Promise</p>
+              <h2 className="heading-display" style={{ fontSize: "clamp(28px, 3.5vw, 44px)", marginBottom: 20, lineHeight: 1.2 }}>
+                Crafted for <span style={{ color: "var(--color-accent-gold)" }}>Queens,</span><br />
+                Affordable for All
+              </h2>
+              <p style={{ fontSize: 15, color: "var(--color-text-muted)", lineHeight: 1.8, marginBottom: 36 }}>
+                At Riwaayat, we believe every bride deserves to wear a masterpiece on her special day. Our curated collection features designer outfits valued at ₹30,000–₹2,00,000, available for rent at a fraction of the cost.
+              </p>
+              {[
+                { label: "Designer Partnerships", value: "50+ premium designers" },
+                { label: "Outfit Value Range", value: "₹30K – ₹2L" },
+                { label: "Average Savings", value: "Up to 85%" },
+                { label: "Repeat Customers", value: "72%" },
+              ].map((stat) => (
+                <div key={stat.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 0", borderBottom: "1px solid var(--color-border)" }}>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--color-text-muted)" }}>{stat.label}</span>
+                  <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 600, color: "var(--color-text-primary)" }}>{stat.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── HOW IT WORKS ── */}
+      <section id="how-it-works" ref={howRef as React.RefObject<HTMLElement>} style={{ ...fi, padding: "80px 0", background: "var(--color-bg-primary)" }}>
+        <div className="hw">
+          <p className="section-eyebrow" style={{ textAlign: "center", marginBottom: 10 }}>Simple Process</p>
+          <h2 className="heading-display" style={{ fontSize: "clamp(32px, 4vw, 48px)", textAlign: "center", marginBottom: 48 }}>Rent in 3 Simple Steps</h2>
+          <div className="how-grid">
+            {[
+              { num: "01", icon: "🔍", title: "Browse the Catalog", desc: "Find available assets by category, search, or filter to match your needs." },
+              { num: "02", icon: "📅", title: "Book & Pay Deposit", desc: "Choose your rental plan, pickup date, and secure your booking with a deposit." },
+              { num: "03", icon: "📦", title: "Pick Up & Return", desc: "Admin allocates your asset. Return it when done — simple and accountable." },
+            ].map((s) => (
+              <div key={s.num} className="how-card">
+                <p style={{ fontFamily: "var(--font-serif)", fontSize: 48, fontWeight: 700, color: "rgba(201,169,110,0.15)", lineHeight: 1, marginBottom: 12 }}>{s.num}</p>
+                <div style={{ fontSize: 28, marginBottom: 16 }}>{s.icon}</div>
+                <h3 style={{ fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 600, color: "var(--color-text-primary)", marginBottom: 10, letterSpacing: "0.02em" }}>{s.title}</h3>
+                <p style={{ fontSize: 13, color: "var(--color-text-muted)", lineHeight: 1.7, margin: 0 }}>{s.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
       {!token && (
-        <section ref={ctaRef as React.RefObject<HTMLElement>} style={{ ...fadeInit, padding: '60px 24px 80px' }}>
-          <div className="cta-banner" style={{
-            background: 'linear-gradient(135deg, #0f172a 0%, #1a3a6b 40%, #1d4ed8 80%, #2563eb 100%)',
-            padding: '80px 40px', textAlign: 'center', borderRadius: '24px',
-            position: 'relative', overflow: 'hidden',
-            boxShadow: '0 24px 64px rgba(26,58,107,0.3)',
-          }}>
-            <div style={{ position: 'absolute', width: 300, height: 300, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', top: -80, right: -80, pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', bottom: -60, left: -60, pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', width: 150, height: 150, borderRadius: '50%', background: 'rgba(0,201,167,0.15)', top: '50%', left: '10%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              <p style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(255,255,255,0.7)', fontWeight: 700, margin: 0 }}>GET STARTED TODAY</p>
-              <h2 style={{ fontSize: '40px', fontWeight: 800, color: '#fff', marginTop: '12px', marginBottom: 0 }}>Ready to get started?</h2>
-              <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.8)', marginTop: '12px' }}>Create an account and start booking assets in minutes.</p>
-              <button
-                onClick={() => navigate('/register')}
-                style={{ marginTop: '28px', background: '#fff', color: '#2563eb', border: 'none', borderRadius: '10px', padding: '14px 32px', fontSize: '15px', fontWeight: 600, cursor: 'pointer', transition: 'background 0.2s ease' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#f0f9ff')}
-                onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
-              >
-                Create Free Account →
+        <section ref={ctaRef as React.RefObject<HTMLElement>} style={{ ...fi, padding: "60px 0 80px", background: "var(--color-bg-secondary)", borderTop: "1px solid var(--color-border)" }}>
+          <div className="hw" style={{ textAlign: "center" }}>
+            <Crown size={28} color="var(--color-accent-gold)" strokeWidth={1.5} style={{ margin: "0 auto 20px" }} />
+            <p className="section-eyebrow" style={{ marginBottom: 12 }}>Begin Your Journey</p>
+            <h2 className="heading-display" style={{ fontSize: "clamp(32px, 4vw, 52px)", marginBottom: 16 }}>Wear the Legacy</h2>
+            <p style={{ fontSize: 15, color: "var(--color-text-muted)", maxWidth: 440, marginInline: "auto", lineHeight: 1.7, marginBottom: 36 }}>
+              Create an account and start exploring our curated collection of heritage bridal pieces.
+            </p>
+            <div style={{ display: "flex", gap: 14, justifyContent: "center", flexWrap: "wrap" }}>
+              <button className="btn-gold-filled" style={{ padding: "14px 36px" }} onClick={() => navigate("/register")}>
+                Create Account <ArrowRight size={14} />
+              </button>
+              <button className="btn-ghost" style={{ border: "1px solid var(--color-border)", padding: "14px 28px" }} onClick={() => navigate("/assets")}>
+                Browse Catalog
               </button>
             </div>
           </div>
         </section>
       )}
     </div>
-  )
+  );
 }
-

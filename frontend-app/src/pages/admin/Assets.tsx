@@ -22,39 +22,36 @@ function FieldError({ message }: { message: string | null }) {
 const fallbackImage = 'https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?auto=format&fit=crop&w=600&q=80'
 
 const lbl: React.CSSProperties = {
-  fontSize: '12px', fontWeight: 600, color: '#374151',
-  display: 'block', marginBottom: '6px',
+  fontFamily: 'var(--font-sans)',
+  fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.12em',
+  textTransform: 'uppercase', color: 'var(--color-text-muted)',
+  display: 'block', marginBottom: '8px',
 }
 const sel: React.CSSProperties = {
-  width: '100%', height: '40px', borderRadius: '8px',
-  border: '1px solid #d1d5db', background: '#fff',
-  padding: '0 12px', fontSize: '13.5px', color: '#111827',
+  width: '100%', height: '40px', borderRadius: 'var(--radius-md)',
+  border: '1.5px solid var(--color-border)',
+  background: 'var(--color-bg-secondary)',
+  padding: '0 12px', fontSize: '13.5px', color: 'var(--color-text-primary)',
   outline: 'none', boxSizing: 'border-box',
+  fontFamily: 'var(--font-sans)',
 }
 
 // Full admin status pill — shows all internal statuses with appropriate colors
 function StatusPill({ status, isInDryCleaning }: { status: string; isInDryCleaning: boolean }) {
-  // Dry cleaning flag takes priority over DB status
   const effective = isInDryCleaning ? 'dry_cleaning' : status
-
   const map: Record<string, { label: string; bg: string; color: string }> = {
-    available:        { label: 'Available',    bg: '#dcfce7', color: '#15803d' },
-    booked:           { label: 'Rented',       bg: '#dbeafe', color: '#1d4ed8' },
-    allocated:        { label: 'Allocated',    bg: '#dbeafe', color: '#1d4ed8' },
-    ready_for_pickup: { label: 'Ready',        bg: '#dbeafe', color: '#1d4ed8' },
-    picked_up:        { label: 'Picked Up',    bg: '#ede9fe', color: '#6d28d9' },
-    overdue:          { label: 'Overdue',      bg: '#fee2e2', color: '#b91c1c' },
-    returned:         { label: 'Returned',     bg: '#f1f5f9', color: '#475569' },
-    dry_cleaning:     { label: 'Dry Cleaning', bg: '#fef3c7', color: '#d97706' },
+    available:        { label: 'Available',    bg: 'rgba(126,200,160,0.15)', color: '#7EC8A0' },
+    booked:           { label: 'Rented',       bg: 'rgba(100,160,220,0.15)', color: '#90B8E0' },
+    allocated:        { label: 'Allocated',    bg: 'rgba(100,160,220,0.15)', color: '#90B8E0' },
+    ready_for_pickup: { label: 'Ready',        bg: 'rgba(100,160,220,0.15)', color: '#90B8E0' },
+    picked_up:        { label: 'Picked Up',    bg: 'rgba(180,140,200,0.15)', color: '#C8A0D8' },
+    overdue:          { label: 'Overdue',      bg: 'rgba(224,112,112,0.15)', color: '#E07070' },
+    returned:         { label: 'Returned',     bg: 'rgba(158,128,112,0.15)', color: '#9E8070' },
+    dry_cleaning:     { label: 'Dry Cleaning', bg: 'rgba(201,169,110,0.15)', color: '#C9A96E' },
   }
-  const s = map[effective] ?? { label: effective, bg: '#f1f5f9', color: '#475569' }
+  const s = map[effective] ?? { label: effective, bg: 'rgba(158,128,112,0.15)', color: 'var(--color-text-muted)' }
   return (
-    <span style={{
-      display: 'inline-flex', padding: '3px 10px', borderRadius: '999px',
-      fontSize: '11px', fontWeight: 600,
-      background: s.bg, color: s.color,
-      whiteSpace: 'nowrap',
-    }}>
+    <span style={{ display: 'inline-flex', padding: '3px 10px', borderRadius: '999px', fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 600, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
       {s.label}
     </span>
   )
@@ -62,13 +59,7 @@ function StatusPill({ status, isInDryCleaning }: { status: string; isInDryCleani
 
 function ActivePill({ active, onClick }: { active: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} style={{
-      display: 'inline-flex', padding: '3px 10px', borderRadius: '999px',
-      fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: 'none',
-      background: active ? '#dcfce7' : '#f3f4f6',
-      color: active ? '#15803d' : '#6b7280',
-      transition: 'all 0.15s',
-    }}>
+    <button onClick={onClick} style={{ display: 'inline-flex', padding: '3px 10px', borderRadius: '999px', fontFamily: 'var(--font-sans)', fontSize: '11px', fontWeight: 600, cursor: 'pointer', border: 'none', background: active ? 'rgba(126,200,160,0.15)' : 'rgba(158,128,112,0.1)', color: active ? '#7EC8A0' : 'var(--color-text-faint)', transition: 'all 0.15s' }}>
       {active ? 'Active' : 'Inactive'}
     </button>
   )
@@ -128,29 +119,29 @@ function UploadZone({ preview, onFile }: {
         onDrop={handleDrop}
         style={{
           flex: 1, minHeight: '96px', borderRadius: '10px', cursor: 'pointer',
-          border: `2px dashed ${active ? '#60a5fa' : '#d1d5db'}`,
-          background: active ? 'rgba(239,246,255,0.6)' : '#f9fafb',
+          border: `2px dashed ${active ? 'var(--color-accent-gold)' : 'var(--color-border)'}`,
+          background: active ? 'rgba(201,169,110,0.05)' : 'var(--color-bg-secondary)',
           display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: '5px',
           transition: 'border-color 0.15s, background 0.15s', padding: '18px 16px',
         }}
       >
-        <UploadCloud size={20} color={active ? '#2563eb' : '#9ca3af'} strokeWidth={1.8} />
-        <span style={{ fontSize: '12.5px', fontWeight: 500, color: '#374151', textAlign: 'center', lineHeight: 1.4 }}>
+        <UploadCloud size={20} color={active ? 'var(--color-accent-gold)' : 'var(--color-text-faint)'} strokeWidth={1.8} />
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12.5px', fontWeight: 500, color: 'var(--color-text-muted)', textAlign: 'center', lineHeight: 1.4 }}>
           Drag & drop here, or{' '}
-          <span style={{ color: '#2563eb', textDecoration: 'underline', textUnderlineOffset: '2px' }}>browse</span>
+          <span style={{ color: 'var(--color-accent-gold)', textDecoration: 'underline', textUnderlineOffset: '2px' }}>browse</span>
         </span>
-        <span style={{ fontSize: '11px', color: '#9ca3af' }}>PNG, JPG, GIF — max 5 MB</span>
+        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '11px', color: 'var(--color-text-faint)' }}>PNG, JPG, GIF — max 5 MB</span>
       </div>
 
       {/* Preview / placeholder */}
       {preview ? (
-        <div style={{ width: '96px', height: '96px', borderRadius: '10px', overflow: 'hidden', border: '1px solid #e5e7eb', flexShrink: 0 }}>
+        <div style={{ width: '96px', height: '96px', borderRadius: '10px', overflow: 'hidden', border: '1px solid var(--color-border)', flexShrink: 0 }}>
           <img src={preview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
       ) : (
-        <div style={{ width: '96px', height: '96px', borderRadius: '10px', border: '1px dashed #e5e7eb', background: '#f9fafb', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <span style={{ fontSize: '10px', color: '#d1d5db', textAlign: 'center', lineHeight: 1.5 }}>No{'\n'}preview</span>
+        <div style={{ width: '96px', height: '96px', borderRadius: '10px', border: '1px dashed var(--color-border)', background: 'var(--color-bg-secondary)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '10px', color: 'var(--color-text-faint)', textAlign: 'center', lineHeight: 1.5 }}>No{'\n'}preview</span>
         </div>
       )}
 
@@ -233,12 +224,7 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
   return (
     <div
       onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(0,0,0,0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '24px',
-      }}
+      style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(10,2,8,0.8)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}
     >
       <motion.div
         onClick={(e) => e.stopPropagation()}
@@ -246,20 +232,14 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.97, y: 10 }}
         transition={{ duration: 0.18, ease: 'easeOut' }}
-        style={{
-          background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '540px',
-          boxShadow: '0 32px 80px rgba(0,0,0,0.22), 0 0 0 1px rgba(0,0,0,0.04)',
-          overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column',
-        }}
+        style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px', width: '100%', maxWidth: '540px', boxShadow: 'var(--shadow-lg)', overflow: 'hidden', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
       >
         {/* Header */}
-        <div style={{ padding: '18px 24px', borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-          <span style={{ fontSize: '15px', fontWeight: 700, color: '#111827' }}>New Asset</span>
-          <button
-            onClick={onClose}
-            style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9ca3af', transition: 'background 0.12s, color 0.12s' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6'; e.currentTarget.style.color = '#374151' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9ca3af' }}
+        <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0, background: 'var(--color-bg-secondary)' }}>
+          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--color-accent-gold)' }}>New Asset</span>
+          <button onClick={onClose} style={{ width: '28px', height: '28px', borderRadius: '6px', border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-faint)', transition: 'background 0.12s, color 0.12s' }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(201,169,110,0.08)'; e.currentTarget.style.color = 'var(--color-text-primary)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-faint)' }}
           >
             <X size={15} />
           </button>
@@ -336,17 +316,11 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
             <label style={{ ...lbl, marginBottom: '10px' }}>Photo</label>
 
             {/* Segmented toggle */}
-            <div style={{ display: 'flex', gap: '4px', background: '#f3f4f6', borderRadius: '8px', padding: '3px', marginBottom: '12px' }}>
-              <button
-                onClick={() => setMediaMode('upload')}
-                style={{ ...tabBase, background: mediaMode === 'upload' ? '#fff' : 'transparent', color: mediaMode === 'upload' ? '#111827' : '#6b7280', boxShadow: mediaMode === 'upload' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
-              >
+            <div style={{ display: 'flex', gap: '4px', background: 'var(--color-bg-secondary)', borderRadius: '8px', padding: '3px', marginBottom: '12px' }}>
+              <button onClick={() => setMediaMode('upload')} style={{ ...tabBase, background: mediaMode === 'upload' ? 'var(--color-bg-elevated)' : 'transparent', color: mediaMode === 'upload' ? 'var(--color-text-primary)' : 'var(--color-text-muted)', boxShadow: mediaMode === 'upload' ? '0 1px 3px rgba(0,0,0,0.3)' : 'none' }}>
                 Upload File
               </button>
-              <button
-                onClick={() => setMediaMode('url')}
-                style={{ ...tabBase, background: mediaMode === 'url' ? '#fff' : 'transparent', color: mediaMode === 'url' ? '#111827' : '#6b7280', boxShadow: mediaMode === 'url' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}
-              >
+              <button onClick={() => setMediaMode('url')} style={{ ...tabBase, background: mediaMode === 'url' ? 'var(--color-bg-elevated)' : 'transparent', color: mediaMode === 'url' ? 'var(--color-text-primary)' : 'var(--color-text-muted)', boxShadow: mediaMode === 'url' ? '0 1px 3px rgba(0,0,0,0.3)' : 'none' }}>
                 Use URL
               </button>
             </div>
@@ -365,22 +339,11 @@ function AssetModal({ onClose, categories, form, setForm, onSubmit, isPending }:
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 24px', borderTop: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', flexShrink: 0 }}>
-          <button
-            onClick={onClose}
-            style={{ height: '40px', padding: '0 20px', background: '#fff', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500, color: '#6b7280', cursor: 'pointer', transition: 'background 0.12s', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#f3f4f6' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#fff' }}
-          >
+        <div style={{ padding: '16px 24px', borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', flexShrink: 0, background: 'var(--color-bg-secondary)' }}>
+          <button onClick={onClose} className="btn-ghost" style={{ height: '40px', padding: '0 20px', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-sm)' }}>
             Cancel
           </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!canSubmit}
-            style={{ height: '40px', padding: '0 20px', background: canSubmit ? '#1d4ed8' : '#93c5fd', border: 'none', borderRadius: '8px', fontSize: '13.5px', fontWeight: 600, color: '#fff', cursor: canSubmit ? 'pointer' : 'not-allowed', transition: 'background 0.15s', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}
-            onMouseEnter={(e) => { if (canSubmit) e.currentTarget.style.background = '#1e40af' }}
-            onMouseLeave={(e) => { if (canSubmit) e.currentTarget.style.background = '#1d4ed8' }}
-          >
+          <button onClick={handleSubmit} disabled={!canSubmit} className={canSubmit ? 'btn-gold' : ''} style={{ height: '40px', padding: '0 20px', background: canSubmit ? undefined : 'var(--color-bg-elevated)', border: canSubmit ? undefined : 'none', borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-sans)', fontSize: '0.7rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: canSubmit ? undefined : 'var(--color-text-faint)', cursor: canSubmit ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', boxSizing: 'border-box' }}>
             {isPending ? 'Creating...' : 'Create Asset'}
           </button>
         </div>
@@ -474,33 +437,22 @@ export function AdminAssetsPage() {
       {/* Page header */}
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
         <div>
-          <h1 style={{ fontSize: '22px', fontWeight: 700, color: '#111827', margin: 0 }}>Asset Manifest</h1>
-          <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}>
+          <h1 style={{ fontFamily: 'var(--font-sans)', fontSize: '22px', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>Asset Manifest</h1>
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--color-text-muted)', marginTop: '4px', marginBottom: 0 }}>
             Manage all physical assets in the system.
           </p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{ position: 'relative' }}>
-            <Search
-              size={14}
-              style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }}
-            />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search assets..."
-              style={{ height: '38px', paddingLeft: '32px', paddingRight: '12px', width: '220px', border: '1px solid #e5e7eb', borderRadius: '8px', fontSize: '13.5px', color: '#111827', background: '#fff', outline: 'none', transition: 'border-color 0.15s, box-shadow 0.15s' }}
-              onFocus={(e) => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)' }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = '#e5e7eb'; e.currentTarget.style.boxShadow = 'none' }}
+            <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-faint)', pointerEvents: 'none' }} />
+            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search assets..."
+              style={{ height: '38px', paddingLeft: '32px', paddingRight: '12px', width: '220px', border: '1.5px solid var(--color-border)', borderRadius: 'var(--radius-md)', fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--color-text-primary)', background: 'var(--color-bg-secondary)', outline: 'none', transition: 'border-color 0.15s' }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--color-accent-gold)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(201,169,110,0.1)' }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--color-border)'; e.currentTarget.style.boxShadow = 'none' }}
             />
           </div>
-          <button
-            onClick={() => setShowModal(true)}
-            style={{ height: '38px', padding: '0 16px', background: '#1d4ed8', color: '#fff', border: 'none', borderRadius: '8px', fontSize: '13.5px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', userSelect: 'none', transition: 'background 0.15s', whiteSpace: 'nowrap' }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = '#1e40af' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = '#1d4ed8' }}
-          >
-            <Plus size={15} /> Add Asset
+          <button onClick={() => setShowModal(true)} className="btn-gold" style={{ height: '38px', padding: '0 16px', display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}>
+            <Plus size={14} /> Add Asset
           </button>
         </div>
       </div>
@@ -547,13 +499,13 @@ export function AdminAssetsPage() {
       />
 
       {/* Assets table */}
-      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px', overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '700px' }}>
             <thead>
-              <tr style={{ background: '#f8fafc' }}>
+              <tr style={{ background: 'var(--color-bg-secondary)' }}>
                 {['Asset', 'Code', 'Category', 'Status', 'Active', 'Actions'].map((h) => (
-                  <th key={h} style={{ padding: '12px 20px', fontSize: '11px', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#64748b', textAlign: 'left', borderBottom: '2px solid #e2e8f0', whiteSpace: 'nowrap' }}>
+                  <th key={h} style={{ padding: '12px 20px', fontFamily: 'var(--font-sans)', fontSize: '10px', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'var(--color-accent-gold)', textAlign: 'left', borderBottom: '1px solid var(--color-border)', whiteSpace: 'nowrap' }}>
                     {h}
                   </th>
                 ))}
@@ -564,7 +516,7 @@ export function AdminAssetsPage() {
                 <tr key={i}>
                   {Array.from({ length: 6 }).map((_, j) => (
                     <td key={j} style={{ padding: '16px 20px' }}>
-                      <div style={{ height: '14px', background: '#f3f4f6', borderRadius: '4px' }} />
+                      <div style={{ height: '14px', borderRadius: '4px' }} className="skeleton-shimmer" />
                     </td>
                   ))}
                 </tr>
@@ -572,19 +524,17 @@ export function AdminAssetsPage() {
 
               {!assetsQuery.isLoading && assets.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: '56px', textAlign: 'center', color: '#9ca3af', fontSize: '13px' }}>
-                    <Package2 size={28} style={{ margin: '0 auto 8px', display: 'block', color: '#d1d5db' }} />
+                  <td colSpan={6} style={{ padding: '56px', textAlign: 'center', fontFamily: 'var(--font-sans)', color: 'var(--color-text-faint)', fontSize: '13px' }}>
+                    <Package2 size={28} style={{ margin: '0 auto 8px', display: 'block', color: 'var(--color-text-faint)' }} />
                     {search ? `No assets matching "${search}"` : 'No assets found'}
                   </td>
                 </tr>
               )}
 
               {assets.map((a, rowIdx) => (
-                <tr
-                  key={a.id}
-                  style={{ borderBottom: '1px solid #f3f4f6', transition: 'background 0.1s', background: rowIdx % 2 === 0 ? '#ffffff' : '#fafafa' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#f0fdf9' }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = rowIdx % 2 === 0 ? '#ffffff' : '#fafafa' }}
+                <tr key={a.id} style={{ borderBottom: '1px solid rgba(201,169,110,0.06)', transition: 'background 0.1s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(201,169,110,0.04)' }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
                 >
                   <td style={{ padding: '14px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -615,14 +565,14 @@ export function AdminAssetsPage() {
                           </button>
                         </div>
                       ) : (
-                        <span style={{ fontSize: '13.5px', fontWeight: 600, color: '#111827' }}>{a.name}</span>
+                        <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13.5px', fontWeight: 600, color: 'var(--color-text-primary)' }}>{a.name}</span>
                       )}
                     </div>
                   </td>
-                  <td style={{ padding: '14px 20px', fontSize: '12px', color: '#6b7280', fontFamily: 'monospace' }}>
+                  <td style={{ padding: '14px 20px', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-text-faint)', fontFamily: 'monospace' }}>
                     {a.asset_code}
                   </td>
-                  <td style={{ padding: '14px 20px', fontSize: '13.5px', color: '#374151' }}>
+                  <td style={{ padding: '14px 20px', fontFamily: 'var(--font-sans)', fontSize: '13.5px', color: 'var(--color-text-muted)' }}>
                     {getCategoryName(a.category_id)}
                   </td>
                   <td style={{ padding: '14px 20px' }}>

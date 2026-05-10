@@ -1,20 +1,20 @@
-import { Input, type InputProps } from './Input'
+import { Input, type InputProps } from "./Input";
 
 interface FormFieldProps extends InputProps {
-  label: string
-  required?: boolean
-  hint?: string
+  label: string;
+  required?: boolean;
+  hint?: string;
 }
 
 export function FormField({ label, required, hint, error, ...inputProps }: FormFieldProps) {
   return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-semibold text-gray-700 flex items-center gap-1">
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      <label style={{ fontFamily: "var(--font-sans)", fontSize: "0.65rem", fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: "var(--color-text-muted)", display: "flex", alignItems: "center", gap: 4 }}>
         {label}
-        {required && <span className="text-red-500">*</span>}
-        {hint && <span className="text-gray-400 font-normal">({hint})</span>}
+        {required && <span style={{ color: "var(--color-error)" }}>*</span>}
+        {hint && <span style={{ color: "var(--color-text-faint)", fontWeight: 400 }}>({hint})</span>}
       </label>
       <Input error={error} {...inputProps} />
     </div>
-  )
+  );
 }

@@ -58,31 +58,31 @@ function PlanCard({ plan, selected, onSelect }: { plan: RentalPlan; selected: bo
     <div
       onClick={onSelect}
       style={{
-        border: `2px solid ${selected ? '#00c9a7' : '#e5e7eb'}`,
-        borderRadius: '12px', padding: '14px 16px', cursor: 'pointer',
-        background: selected ? 'linear-gradient(135deg, rgba(0,201,167,0.06) 0%, rgba(0,201,167,0.02) 100%)' : '#fff',
+        border: `1.5px solid ${selected ? 'var(--color-accent-gold)' : 'var(--color-border)'}`,
+        borderRadius: 'var(--radius-md)', padding: '14px 16px', cursor: 'pointer',
+        background: selected ? 'rgba(201,169,110,0.06)' : 'var(--color-bg-secondary)',
         transition: 'border-color 0.2s, background 0.2s, box-shadow 0.2s', position: 'relative',
-        boxShadow: selected ? '0 4px 16px rgba(0,201,167,0.15)' : '0 1px 4px rgba(0,0,0,0.04)',
+        boxShadow: selected ? '0 4px 16px rgba(201,169,110,0.15)' : 'none',
       }}
     >
       {selected && (
         <div style={{
           position: 'absolute', top: 10, right: 10,
           width: 20, height: 20, borderRadius: '50%',
-          background: '#00c9a7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: 'var(--color-accent-gold)', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
-          <Check size={12} color="#fff" strokeWidth={3} />
+          <Check size={12} color="var(--color-bg-primary)" strokeWidth={3} />
         </div>
       )}
-      <p style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', margin: '0 0 8px 0' }}>{plan.name}</p>
+      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 700, color: 'var(--color-text-primary)', margin: '0 0 8px 0' }}>{plan.name}</p>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
         {[
           { icon: Clock,       label: `${plan.duration_days} days` },
           { icon: IndianRupee, label: `₹${plan.daily_rate}/day` },
           { icon: ShieldCheck, label: `₹${plan.deposit_amount} deposit` },
         ].map(({ icon: Icon, label }) => (
-          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#64748b' }}>
-            <Icon size={12} color="#94a3b8" />{label}
+          <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-text-muted)' }}>
+            <Icon size={12} color="var(--color-text-faint)" />{label}
           </span>
         ))}
       </div>
@@ -190,7 +190,7 @@ export function AssetDetailPage() {
         }
       `}</style>
 
-      <div style={{ background: '#f0f4f8', minHeight: 'calc(100vh - 64px)', padding: '24px' }}>
+      <div style={{ background: 'var(--color-bg-primary)', minHeight: 'calc(100vh - 64px)', padding: '24px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
           {/* Back */}
@@ -199,18 +199,20 @@ export function AssetDetailPage() {
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               background: 'none', border: 'none', cursor: 'pointer',
-              fontSize: '14px', fontWeight: 500, color: '#64748b',
+              fontFamily: 'var(--font-sans)',
+              fontSize: '13px', fontWeight: 500, color: 'var(--color-text-muted)',
               padding: '0 0 20px 0', transition: 'color 0.15s',
+              letterSpacing: '0.06em',
             }}
-            onMouseEnter={e => e.currentTarget.style.color = '#0f172a'}
-            onMouseLeave={e => e.currentTarget.style.color = '#64748b'}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-text-primary)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--color-text-muted)'}
           >
             <ArrowLeft size={16} />
             Back to Catalog
           </button>
 
           {/* Content card */}
-          <div style={{ background: 'rgba(255,255,255,0.97)', borderRadius: '20px', padding: '32px', boxShadow: '0 8px 32px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)', border: '1px solid rgba(226,232,240,0.8)' }}>
+          <div style={{ background: 'var(--color-bg-card)', borderRadius: '16px', padding: '32px', boxShadow: 'var(--shadow-md)', border: '1px solid var(--color-border)' }}>
             <div className="detail-grid">
 
               {/* ══ LEFT — Image ══ */}
@@ -218,10 +220,10 @@ export function AssetDetailPage() {
                 <div style={{
                   width: '100%',
                   aspectRatio: isElectronics ? '4 / 3' : '3 / 4',
-                  borderRadius: '16px', overflow: 'hidden',
-                  background: isElectronics ? '#f1f5f9' : '#f8fafc',
+                  borderRadius: '12px', overflow: 'hidden',
+                  background: 'var(--color-bg-secondary)',
                   position: 'relative',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                  boxShadow: 'var(--shadow-sm)',
                 }}>
                   {assetQuery.isLoading ? (
                     <div style={{ width: '100%', height: '100%', background: '#f1f5f9' }} />
@@ -288,13 +290,9 @@ export function AssetDetailPage() {
                         <Tag size={11} />{categoryName}
                       </span>
 
-                      <h1 style={{ fontSize: '28px', fontWeight: 800, color: '#0f172a', margin: '10px 0 4px 0', lineHeight: 1.2 }}>
+                      <h1 style={{ fontSize: '28px', fontWeight: 800, color: 'var(--color-text-primary)', margin: '10px 0 4px 0', lineHeight: 1.2 }}>
                         {asset?.name}
                       </h1>
-
-                      <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 10px 0', fontFamily: 'monospace' }}>
-                        {asset?.asset_code}
-                      </p>
 
                       {/* Availability badge — user-facing only */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -381,8 +379,8 @@ export function AssetDetailPage() {
 
                 {/* Pricing summary */}
                 {activePlan && (
-                  <div style={{ background: '#f8fafc', borderRadius: '10px', border: '1px solid #e2e8f0', padding: '16px' }}>
-                    <p style={{ fontSize: '11px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px 0' }}>
+                  <div style={{ background: 'var(--color-bg-secondary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', padding: '16px' }}>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', fontWeight: 600, color: 'var(--color-accent-gold)', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 12px 0' }}>
                       Pricing Summary
                     </p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -393,8 +391,8 @@ export function AssetDetailPage() {
                         { label: 'Security Deposit', value: `₹${activePlan.deposit_amount.toLocaleString('en-IN')}` },
                       ].map(({ label, value, bold }) => (
                         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '13px', color: '#64748b' }}>{label}</span>
-                          <span style={{ fontSize: bold ? '15px' : '13px', fontWeight: bold ? 700 : 500, color: bold ? '#0f172a' : '#374151' }}>
+                          <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--color-text-muted)' }}>{label}</span>
+                          <span style={{ fontFamily: bold ? 'var(--font-serif)' : 'var(--font-sans)', fontSize: bold ? '16px' : '13px', fontWeight: bold ? 600 : 500, color: bold ? 'var(--color-accent-gold)' : 'var(--color-text-primary)' }}>
                             {value}
                           </span>
                         </div>
@@ -410,15 +408,18 @@ export function AssetDetailPage() {
                       onClick={handleRentNow}
                       style={{
                         width: '100%', padding: '16px',
-                        background: canBook ? 'linear-gradient(135deg, #00c9a7 0%, #0d9488 100%)' : '#94a3b8',
-                        color: '#fff', border: 'none', borderRadius: '10px',
-                        fontSize: '16px', fontWeight: 700, cursor: 'pointer',
+                        background: canBook ? 'var(--color-accent-gold)' : 'var(--color-text-faint)',
+                        color: canBook ? 'var(--color-bg-primary)' : 'var(--color-bg-secondary)',
+                        border: 'none', borderRadius: 'var(--radius-sm)',
+                        fontFamily: 'var(--font-sans)',
+                        fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase',
+                        cursor: 'pointer',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
                         transition: 'background 0.15s, transform 0.15s',
-                        boxShadow: canBook ? '0 4px 16px rgba(0,201,167,0.3)' : 'none',
+                        boxShadow: canBook ? 'var(--shadow-gold)' : 'none',
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #00d4b0 0%, #00c9a7 100%)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,201,167,0.4)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'linear-gradient(135deg, #00c9a7 0%, #0d9488 100%)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,201,167,0.3)' }}
+                      onMouseEnter={e => { if (canBook) { e.currentTarget.style.background = 'var(--color-accent-gold-light)'; e.currentTarget.style.transform = 'translateY(-2px)'; } }}
+                      onMouseLeave={e => { if (canBook) { e.currentTarget.style.background = 'var(--color-accent-gold)'; e.currentTarget.style.transform = 'translateY(0)'; } }}
                     >
                       <CalendarDays size={18} />
                       {ctaLabel}

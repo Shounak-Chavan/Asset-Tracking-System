@@ -60,10 +60,10 @@ export function AdminCategoriesPage() {
 
       {/* ── Page header ── */}
       <div>
-        <h1 style={{ fontSize: "22px", fontWeight: 700, color: "#111827", margin: 0 }}>
+        <h1 style={{ fontSize: "22px", fontWeight: 700, color: "var(--color-text-primary)", margin: 0 }}>
           Categories
         </h1>
-        <p style={{ fontSize: "13px", color: "#6b7280", marginTop: "4px", marginBottom: 0 }}>
+        <p style={{ fontSize: "13px", color: "var(--color-text-muted)", marginTop: "4px", marginBottom: 0 }}>
           Organize and manage classification groups for assets.
         </p>
       </div>
@@ -78,8 +78,8 @@ export function AdminCategoriesPage() {
 
       {/* ── Create category card ── */}
       <div style={{
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
+        background: "#2D1020",
+        border: "1px solid rgba(201,169,110,0.15)",
         borderRadius: "16px",
         padding: "24px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
@@ -89,7 +89,7 @@ export function AdminCategoriesPage() {
           display: "block",
           fontSize: "13px",
           fontWeight: 600,
-          color: "#374151",
+          color: "#C9A96E",
           marginBottom: "8px",
         }}>
           Create Category
@@ -110,31 +110,59 @@ export function AdminCategoriesPage() {
               height: "40px",
               padding: "0 12px",
               fontSize: "13.5px",
-              color: "#111827",
-              background: "#ffffff",
-              border: "1px solid #d1d5db",
+              color: "#F5ECD7",
+              background: "#1A0A12",
+              border: "1px solid rgba(201,169,110,0.3)",
               borderRadius: "8px",
               outline: "none",
               boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
               transition: "border-color 0.15s, box-shadow 0.15s",
             }}
             onFocus={(e) => {
-              e.currentTarget.style.borderColor = "#3b82f6";
-              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.12)";
+              e.currentTarget.style.borderColor = "#C9A96E";
+              e.currentTarget.style.boxShadow = "0 0 0 3px rgba(201,169,110,0.15)";
             }}
             onBlur={(e) => {
-              e.currentTarget.style.borderColor = "#d1d5db";
+              e.currentTarget.style.borderColor = "rgba(201,169,110,0.3)";
               e.currentTarget.style.boxShadow = "0 1px 2px rgba(0,0,0,0.04)";
             }}
           />
-          <Button
+          <button
             onClick={() => createMutation.mutate()}
             disabled={!name.trim() || createMutation.isPending}
-            style={{ height: "40px", paddingLeft: "16px", paddingRight: "16px", whiteSpace: "nowrap", flexShrink: 0 }}
+            style={{
+              background: "transparent",
+              border: "1.5px solid #C9A96E",
+              color: "#C9A96E",
+              borderRadius: "4px",
+              padding: "0 16px",
+              height: "40px",
+              fontSize: "0.75rem",
+              letterSpacing: "0.1em",
+              textTransform: "uppercase",
+              cursor: !name.trim() || createMutation.isPending ? "not-allowed" : "pointer",
+              opacity: !name.trim() || createMutation.isPending ? 0.5 : 1,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              whiteSpace: "nowrap",
+              flexShrink: 0,
+              transition: "background 0.15s, color 0.15s",
+            }}
+            onMouseEnter={(e) => {
+              if (!(!name.trim() || createMutation.isPending)) {
+                e.currentTarget.style.background = "#C9A96E";
+                e.currentTarget.style.color = "#1E0A14";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+              e.currentTarget.style.color = "#C9A96E";
+            }}
           >
             <Plus size={15} />
             Add
-          </Button>
+          </button>
         </div>
 
         {createMutation.error && (
@@ -146,8 +174,8 @@ export function AdminCategoriesPage() {
 
       {/* ── Category list card ── */}
       <div style={{
-        background: "#ffffff",
-        border: "1px solid #e2e8f0",
+        background: "#2D1020",
+        border: "1px solid rgba(201,169,110,0.15)",
         borderRadius: "16px",
         boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
         overflow: "hidden",
@@ -155,19 +183,20 @@ export function AdminCategoriesPage() {
         {/* List header */}
         <div style={{
           padding: "16px 24px",
-          borderBottom: "1px solid #f3f4f6",
+          borderBottom: "1px solid rgba(201,169,110,0.1)",
           display: "flex",
           alignItems: "center",
           gap: "8px",
         }}>
-          <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#111827" }}>
+          <span style={{ fontSize: "13.5px", fontWeight: 600, color: "#F5ECD7" }}>
             All Categories
           </span>
           {categories.length > 0 && (
             <span style={{
               fontSize: "11px", fontWeight: 600,
-              color: "#6b7280", background: "#f3f4f6",
+              color: "#C9A96E", background: "rgba(201,169,110,0.1)",
               padding: "2px 8px", borderRadius: "999px",
+              border: "1px solid rgba(201,169,110,0.2)",
             }}>
               {categories.length}
             </span>
@@ -196,11 +225,11 @@ export function AdminCategoriesPage() {
             }}>
               <div style={{
                 width: "44px", height: "44px", borderRadius: "10px",
-                background: "#f3f4f6", display: "flex", alignItems: "center", justifyContent: "center",
+                background: "rgba(201,169,110,0.08)", display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <FolderKanban size={20} color="#9ca3af" />
+                <FolderKanban size={20} color="#6B5548" />
               </div>
-              <p style={{ fontSize: "13px", color: "#9ca3af", margin: 0 }}>
+              <p style={{ fontSize: "13px", color: "#9E8070", margin: 0 }}>
                 No categories yet. Add one above.
               </p>
             </div>
@@ -217,18 +246,18 @@ export function AdminCategoriesPage() {
                   justifyContent: "space-between",
                   /* 24px padding on all sides — right edge has full 24px clearance */
                   padding: "14px 24px",
-                  borderBottom: i < categories.length - 1 ? "1px solid #f3f4f6" : "none",
+                  borderBottom: i < categories.length - 1 ? "1px solid rgba(201,169,110,0.1)" : "none",
                   transition: "background 0.12s",
                 }}
-                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#f9fafb"; }}
+                onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.background = "#3A1528"; }}
                 onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.background = "transparent"; }}
               >
                 {/* Left: index badge + name */}
                 <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1, minWidth: 0 }}>
                   <span style={{
                     width: "28px", height: "28px", borderRadius: "6px",
-                    background: "#eff6ff", border: "1px solid #bfdbfe",
-                    color: "#2563eb", fontSize: "11px", fontWeight: 700,
+                    background: "#3A1528", border: "1px solid rgba(201,169,110,0.3)",
+                    color: "#C9A96E", fontSize: "11px", fontWeight: 700,
                     fontFamily: "monospace",
                     display: "flex", alignItems: "center", justifyContent: "center",
                     flexShrink: 0,
@@ -250,19 +279,19 @@ export function AdminCategoriesPage() {
                         height: "36px",
                         padding: "0 10px",
                         fontSize: "13.5px",
-                        color: "#111827",
-                        background: "#ffffff",
-                        border: "1px solid #3b82f6",
+                        color: "#F5ECD7",
+                        background: "#1A0A12",
+                        border: "1px solid #C9A96E",
                         borderRadius: "8px",
                         outline: "none",
-                        boxShadow: "0 0 0 3px rgba(59,130,246,0.12)",
+                        boxShadow: "0 0 0 3px rgba(201,169,110,0.12)",
                         maxWidth: "280px",
                         width: "100%",
                       }}
                     />
                   ) : (
                     <span style={{
-                      fontSize: "13.5px", fontWeight: 500, color: "#111827",
+                      fontSize: "13.5px", fontWeight: 500, color: "#F5ECD7",
                       overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
                     }}>
                       {cat.name}
@@ -298,11 +327,11 @@ export function AdminCategoriesPage() {
                         style={{
                           display: "inline-flex", alignItems: "center", gap: "5px",
                           padding: "6px 10px", borderRadius: "6px",
-                          fontSize: "12px", fontWeight: 500, color: "#2563eb",
+                          fontSize: "12px", fontWeight: 500, color: "#C9A96E",
                           background: "transparent", border: "none", cursor: "pointer",
                           transition: "background 0.12s, color 0.12s",
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#eff6ff"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(201,169,110,0.08)"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                       >
                         <Pencil size={13} />
@@ -317,13 +346,13 @@ export function AdminCategoriesPage() {
                         style={{
                           display: "inline-flex", alignItems: "center", gap: "5px",
                           padding: "6px 10px", borderRadius: "6px",
-                          fontSize: "12px", fontWeight: 500, color: "#dc2626",
+                          fontSize: "12px", fontWeight: 500, color: "#E07070",
                           background: "transparent", border: "none", cursor: "pointer",
                           transition: "background 0.12s",
                           opacity: deleteMutation.isPending ? 0.5 : 1,
                           pointerEvents: deleteMutation.isPending ? "none" : "auto",
                         }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#fef2f2"; }}
+                        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(224,112,112,0.08)"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
                       >
                         <Trash2 size={13} />

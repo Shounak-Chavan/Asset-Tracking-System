@@ -234,7 +234,7 @@ export function ProfilePage() {
         }
       `}</style>
 
-      <div style={{ background: 'linear-gradient(160deg, #eef6ff 0%, #f0f4f8 50%, #f0fdf9 100%)', minHeight: 'calc(100vh - 4rem)', padding: '32px 24px' }}>
+      <div style={{ minHeight: 'calc(100vh - 4rem)', background: 'var(--color-bg-primary)', padding: '32px 24px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
           {/* ── Page header ── */}
@@ -247,10 +247,10 @@ export function ProfilePage() {
 
             {/* ══ LEFT SIDEBAR ══ */}
             <div style={{
-              background: '#fff', borderRadius: '16px', padding: '32px 24px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.07)', textAlign: 'center',
-              borderTop: '3px solid #00c9a7',
-              border: '1px solid rgba(226,232,240,0.8)',
+              background: 'var(--color-bg-card)', borderRadius: '16px', padding: '32px 24px',
+              boxShadow: 'var(--shadow-sm)', textAlign: 'center',
+              borderTop: '2px solid var(--color-accent-gold)',
+              border: '1px solid var(--color-border)',
             }}>
               {/* Avatar */}
               <div style={{ position: 'relative', display: 'inline-block' }}>
@@ -328,20 +328,20 @@ export function ProfilePage() {
 
               {/* ── Personal Information Card ── */}
               <div style={{
-                background: '#fff', borderRadius: '16px', padding: '28px 32px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.07)',
-                border: '1px solid rgba(226,232,240,0.8)',
+                background: 'var(--color-bg-card)', borderRadius: '16px', padding: '28px 32px',
+                boxShadow: 'var(--shadow-sm)',
+                border: '1px solid var(--color-border)',
               }}>
                 {/* Card header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%',
-                      background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(201,169,110,0.1)', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <User size={16} color="#2563eb" />
+                      <User size={16} color="var(--color-accent-gold)" />
                     </div>
-                    <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                    <h2 style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-primary)', margin: 0 }}>
                       Personal information
                     </h2>
                   </div>
@@ -450,19 +450,19 @@ export function ProfilePage() {
 
               {/* ── Change Password Card ── */}
               <div style={{
-                background: '#fff', borderRadius: '16px', padding: '28px 32px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.07)',
-                border: '1px solid rgba(226,232,240,0.8)',
+                background: 'var(--color-bg-card)', borderRadius: '16px', padding: '28px 32px',
+                boxShadow: 'var(--shadow-sm)',
+                border: '1px solid var(--color-border)',
               }}>
                 {/* Card header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: '50%',
-                    background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(201,169,110,0.1)', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Lock size={16} color="#d97706" />
+                    <Lock size={16} color="var(--color-accent-gold)" />
                   </div>
-                  <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                  <h2 style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-primary)', margin: 0 }}>
                     Change password
                   </h2>
                 </div>

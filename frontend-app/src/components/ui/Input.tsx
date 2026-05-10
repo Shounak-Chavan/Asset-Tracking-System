@@ -1,30 +1,42 @@
 import * as React from "react";
 import { cn } from "../../lib/cn";
 
-export interface InputProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   error?: string;
 }
 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, error, ...props }, ref) => {
+  ({ className, error, style, ...props }, ref) => {
     return (
       <div className="w-full">
         <input
           ref={ref}
           className={cn(
-            "flex w-full px-3 py-2.5 text-sm bg-white border border-gray-200 rounded-lg shadow-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500/15 focus:border-blue-500 focus:bg-blue-50/20 placeholder:text-gray-400 hover:border-gray-300 disabled:pointer-events-none disabled:opacity-50 disabled:bg-gray-50",
-            error && "border-red-300 focus:border-red-500 focus:ring-red-500/15 bg-red-50/30",
+            "flex w-full px-3 py-2.5 text-sm rounded-lg transition-all duration-200 focus:outline-none placeholder:opacity-50 disabled:pointer-events-none disabled:opacity-50",
+            error && "border-red-400",
             className
           )}
+          style={{
+            background: "var(--color-bg-secondary)",
+            color: "var(--color-text-primary)",
+            border: `1.5px solid ${error ? "var(--color-error)" : "var(--color-border)"}`,
+            fontFamily: "var(--font-sans)",
+            ...style,
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.borderColor = "var(--color-accent-gold)";
+            e.currentTarget.style.boxShadow = "0 0 0 3px rgba(201,169,110,0.12)";
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = error ? "var(--color-error)" : "var(--color-border)";
+            e.currentTarget.style.boxShadow = "none";
+            props.onBlur?.(e);
+          }}
           {...props}
         />
         {error && (
-          <p className="mt-1.5 text-[0.8rem] font-medium text-red-500 flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="shrink-0">
-              <circle cx="6" cy="6" r="5.5" stroke="currentColor"/>
-              <path d="M6 4v3M6 8.5v.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-            </svg>
+          <p style={{ marginTop: 4, fontSize: 12, color: "var(--color-error)", fontFamily: "var(--font-sans)", display: "flex", alignItems: "center", gap: 4 }}>
             {error}
           </p>
         )}

@@ -141,16 +141,17 @@ function AddCleanerModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
 
   const fieldStyle: React.CSSProperties = {
     width: '100%', boxSizing: 'border-box', height: 44,
-    border: '1.5px solid #e2e8f0', borderRadius: 10,
+    border: '1.5px solid rgba(201,169,110,0.25)', borderRadius: 10,
     padding: '0 16px 0 42px', fontSize: 14, outline: 'none', fontFamily: 'inherit',
+    background: '#2D1020', color: '#F5ECD7',
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
       <motion.div initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-        style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 520, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.18)' }}>
+        style={{ background: '#1E0A14', borderRadius: 12, width: '100%', maxWidth: 520, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', border: '1px solid rgba(201,169,110,0.2)' }}>
 
-        {/* Header */}
+        {/* Header — keep teal gradient */}
         <div style={{ background: 'linear-gradient(135deg, #134e4a, #00c9a7)', padding: '24px 28px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
             <div>
@@ -158,94 +159,105 @@ function AddCleanerModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
               <p style={{ fontSize: 20, fontWeight: 700, color: '#fff', margin: 0 }}>Add Dry Cleaner</p>
               <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', margin: '4px 0 0' }}>Create login credentials for the cleaning staff</p>
             </div>
-            <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#fff', padding: '6px 8px', marginTop: 2 }}>
+            <button onClick={onClose}
+              style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#fff', padding: '6px 8px', marginTop: 2, transition: 'background 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(201,169,110,0.3)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.15)' }}
+            >
               <X size={16} />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div style={{ padding: 28, maxHeight: '65vh', overflowY: 'auto' }}>
-          {err && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, padding: '10px 12px', marginBottom: 16, fontSize: 13, color: '#dc2626' }}>{err}</div>}
+        <div style={{ padding: 28, maxHeight: '65vh', overflowY: 'auto', background: '#1E0A14' }}>
+          {err && <div style={{ background: 'rgba(224,112,112,0.1)', border: '1px solid rgba(224,112,112,0.3)', borderRadius: 8, padding: '10px 12px', marginBottom: 16, fontSize: 13, color: '#E07070' }}>{err}</div>}
 
           {/* Account Details */}
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 14px' }}>Account Details</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#C9A96E', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 14px' }}>Account Details</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Full Name */}
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Full Name</label>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#F5ECD7', marginBottom: 6 }}>Full Name</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, pointerEvents: 'none' }}>👤</span>
                 <input value={form.full_name} onChange={e => setForm(p => ({ ...p, full_name: e.target.value }))}
                   placeholder="e.g. Ravi Kumar" style={fieldStyle}
-                  onFocus={e => { e.target.style.borderColor = '#00c9a7'; e.target.style.boxShadow = '0 0 0 3px rgba(0,201,167,0.1)' }}
-                  onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }}
+                  onFocus={e => { e.target.style.borderColor = '#C9A96E'; e.target.style.boxShadow = '0 0 0 3px rgba(201,169,110,0.12)' }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(201,169,110,0.25)'; e.target.style.boxShadow = 'none' }}
                 />
               </div>
             </div>
 
             {/* Email */}
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Work Email</label>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#F5ECD7', marginBottom: 6 }}>Work Email</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, pointerEvents: 'none' }}>✉️</span>
                 <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
                   placeholder="ravi@cleaners.com" style={fieldStyle}
-                  onFocus={e => { e.target.style.borderColor = '#00c9a7'; e.target.style.boxShadow = '0 0 0 3px rgba(0,201,167,0.1)' }}
-                  onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }}
+                  onFocus={e => { e.target.style.borderColor = '#C9A96E'; e.target.style.boxShadow = '0 0 0 3px rgba(201,169,110,0.12)' }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(201,169,110,0.25)'; e.target.style.boxShadow = 'none' }}
                 />
               </div>
-              <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>They will use this to login at /dry-cleaning/login</p>
+              <p style={{ fontSize: 12, color: '#9E8070', margin: '4px 0 0', fontStyle: 'italic' }}>They will use this to login at /dry-cleaning/login</p>
             </div>
 
             {/* Password */}
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Temporary Password</label>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#F5ECD7', marginBottom: 6 }}>Temporary Password</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, pointerEvents: 'none' }}>🔒</span>
                 <input type={showPw ? 'text' : 'password'} value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                   placeholder="Min. 8 characters" style={{ ...fieldStyle, paddingRight: 44 }}
-                  onFocus={e => { e.target.style.borderColor = '#00c9a7'; e.target.style.boxShadow = '0 0 0 3px rgba(0,201,167,0.1)' }}
-                  onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }}
+                  onFocus={e => { e.target.style.borderColor = '#C9A96E'; e.target.style.boxShadow = '0 0 0 3px rgba(201,169,110,0.12)' }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(201,169,110,0.25)'; e.target.style.boxShadow = 'none' }}
                 />
                 <button type="button" onClick={() => setShowPw(v => !v)}
-                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 0 }}>
+                  style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9E8070', padding: 0 }}>
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
-              <p style={{ fontSize: 12, color: '#94a3b8', margin: '4px 0 0' }}>Ask them to change it after first login</p>
+              <p style={{ fontSize: 12, color: '#9E8070', margin: '4px 0 0', fontStyle: 'italic' }}>Ask them to change it after first login</p>
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid #f1f5f9', margin: '20px 0' }} />
+          <div style={{ borderTop: '1px solid rgba(201,169,110,0.15)', margin: '20px 0' }} />
 
           {/* Work Details */}
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 14px' }}>Work Details</p>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#C9A96E', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 14px' }}>Work Details</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {/* Phone */}
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6 }}>Phone Number</label>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#F5ECD7', marginBottom: 6 }}>Phone Number</label>
               <div style={{ display: 'flex', gap: 8 }}>
-                <div style={{ height: 44, padding: '0 12px', border: '1.5px solid #e2e8f0', borderRadius: 10, display: 'flex', alignItems: 'center', fontSize: 14, color: '#374151', background: '#f9fafb', flexShrink: 0 }}>+91</div>
+                <div style={{ height: 44, padding: '0 12px', border: '1.5px solid rgba(201,169,110,0.25)', borderRadius: 10, display: 'flex', alignItems: 'center', fontSize: 14, color: '#F5ECD7', background: '#3A1528', flexShrink: 0 }}>+91</div>
                 <input value={form.phone} onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
                   placeholder="98765 43210"
-                  style={{ flex: 1, height: 44, border: '1.5px solid #e2e8f0', borderRadius: 10, padding: '0 16px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
-                  onFocus={e => { e.target.style.borderColor = '#00c9a7'; e.target.style.boxShadow = '0 0 0 3px rgba(0,201,167,0.1)' }}
-                  onBlur={e => { e.target.style.borderColor = '#e2e8f0'; e.target.style.boxShadow = 'none' }}
+                  style={{ flex: 1, height: 44, border: '1.5px solid rgba(201,169,110,0.25)', borderRadius: 10, padding: '0 16px', fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#2D1020', color: '#F5ECD7' }}
+                  onFocus={e => { e.target.style.borderColor = '#C9A96E'; e.target.style.boxShadow = '0 0 0 3px rgba(201,169,110,0.12)' }}
+                  onBlur={e => { e.target.style.borderColor = 'rgba(201,169,110,0.25)'; e.target.style.boxShadow = 'none' }}
                 />
               </div>
             </div>
 
             {/* Specializations */}
             <div>
-              <label style={{ display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 4 }}>Specializations</label>
-              <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 8px' }}>Select fabric types they can handle</p>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#F5ECD7', marginBottom: 4 }}>Specializations</label>
+              <p style={{ fontSize: 12, color: '#9E8070', margin: '0 0 8px', fontStyle: 'italic' }}>Select fabric types they can handle</p>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                 {SPECS.map(s => (
                   <button key={s} type="button" onClick={() => setSpecs(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s])}
-                    style={{ padding: '6px 14px', borderRadius: 100, fontSize: 13, cursor: 'pointer', border: '1.5px solid', transition: 'all 0.15s', fontFamily: 'inherit', borderColor: specs.includes(s) ? '#00c9a7' : '#e2e8f0', background: specs.includes(s) ? '#f0fdf4' : '#fff', color: specs.includes(s) ? '#065f46' : '#374151', fontWeight: specs.includes(s) ? 500 : 400 }}>
+                    style={{
+                      padding: '4px 14px', borderRadius: 999, fontSize: 13, cursor: 'pointer',
+                      border: '1.5px solid', transition: 'all 0.15s', fontFamily: 'inherit',
+                      borderColor: specs.includes(s) ? '#C9A96E' : 'rgba(201,169,110,0.3)',
+                      background: specs.includes(s) ? '#C9A96E' : '#2D1020',
+                      color: specs.includes(s) ? '#1E0A14' : '#9E8070',
+                      fontWeight: specs.includes(s) ? 600 : 400,
+                    }}>
                     {s}
                   </button>
                 ))}
@@ -255,13 +267,19 @@ function AddCleanerModal({ onClose, onSaved }: { onClose: () => void; onSaved: (
         </div>
 
         {/* Footer */}
-        <div style={{ padding: '16px 28px', borderTop: '1px solid #f1f5f9', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+        <div style={{ padding: '16px 28px', borderTop: '1px solid rgba(201,169,110,0.15)', display: 'flex', gap: 12, justifyContent: 'flex-end', background: '#1E0A14' }}>
           <button onClick={onClose}
-            style={{ padding: '10px 20px', border: '1.5px solid #e2e8f0', borderRadius: 10, background: '#fff', color: '#374151', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>
+            style={{ padding: '10px 20px', border: '1.5px solid rgba(201,169,110,0.4)', borderRadius: 6, background: 'transparent', color: '#9E8070', fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#C9A96E'; e.currentTarget.style.color = '#C9A96E' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(201,169,110,0.4)'; e.currentTarget.style.color = '#9E8070' }}
+          >
             Cancel
           </button>
           <button onClick={() => mutation.mutate()} disabled={!canSubmit || mutation.isPending}
-            style={{ padding: '10px 24px', borderRadius: 10, background: canSubmit ? '#00c9a7' : '#e5e7eb', color: canSubmit ? '#fff' : '#9ca3af', border: 'none', fontSize: 14, fontWeight: 600, cursor: canSubmit && !mutation.isPending ? 'pointer' : 'not-allowed', transition: 'background 0.15s' }}>
+            style={{ padding: '10px 24px', borderRadius: 6, background: canSubmit ? '#C9A96E' : 'rgba(201,169,110,0.2)', color: canSubmit ? '#1E0A14' : '#6B5548', border: 'none', fontSize: 14, fontWeight: 600, cursor: canSubmit && !mutation.isPending ? 'pointer' : 'not-allowed', transition: 'background 0.15s' }}
+            onMouseEnter={e => { if (canSubmit) e.currentTarget.style.background = '#E8C98A' }}
+            onMouseLeave={e => { if (canSubmit) e.currentTarget.style.background = '#C9A96E' }}
+          >
             {mutation.isPending ? 'Creating...' : 'Create Account'}
           </button>
         </div>
@@ -445,9 +463,9 @@ export function AdminDryCleaningPage() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
       {/* Page header */}
-      <div style={{ borderLeft: '4px solid #00c9a7', paddingLeft: 16 }}>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#111827', margin: 0 }}>Dry Cleaning</h1>
-        <p style={{ fontSize: 13, color: '#6b7280', marginTop: 4, marginBottom: 0 }}>Manage the full cleaning lifecycle for cloth &amp; jewellery assets.</p>
+      <div style={{ borderLeft: '4px solid #C9A96E', paddingLeft: 16 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: '#F5ECD7', margin: 0 }}>Dry Cleaning</h1>
+        <p style={{ fontSize: 13, color: '#9E8070', marginTop: 4, marginBottom: 0 }}>Manage the full cleaning lifecycle for cloth &amp; jewellery assets.</p>
       </div>
 
       <AnimatePresence>
@@ -456,72 +474,76 @@ export function AdminDryCleaningPage() {
       </AnimatePresence>
 
       {/* ── Section 1: Dry Cleaners Directory ── */}
-      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: '#2D1020', borderRadius: 16, border: '1px solid rgba(201,169,110,0.15)', padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
           <div>
-            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111827', margin: 0 }}>Dry Cleaners Directory</h2>
-            <p style={{ fontSize: 13, color: '#6b7280', margin: '2px 0 0' }}>{cleaners.length} registered cleaner{cleaners.length !== 1 ? 's' : ''}</p>
+            <h2 style={{ fontSize: 18, fontWeight: 700, color: '#F5ECD7', margin: 0 }}>Dry Cleaners Directory</h2>
+            <p style={{ fontSize: 13, color: '#9E8070', margin: '2px 0 0' }}>{cleaners.length} registered cleaner{cleaners.length !== 1 ? 's' : ''}</p>
           </div>
           <button onClick={() => setShowAddCleaner(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#00c9a7', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,201,167,0.3)' }}>
+            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: 'transparent', color: '#C9A96E', border: '1.5px solid #C9A96E', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: 'none' }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#C9A96E'; e.currentTarget.style.color = '#1E0A14' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#C9A96E' }}>
             <Plus size={14} /> Add Dry Cleaner
           </button>
         </div>
 
         {cleanersQuery.isLoading ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
-            {[1, 2, 3].map(i => <div key={i} style={{ height: 180, background: '#f3f4f6', borderRadius: 14, opacity: 0.5 }} />)}
+            {[1, 2, 3].map(i => <div key={i} style={{ height: 180, background: '#3A1528', borderRadius: 14, opacity: 0.5 }} />)}
           </div>
         ) : cleaners.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '32px 0', color: '#9ca3af' }}>
+          <div style={{ textAlign: 'center', padding: '32px 0', color: '#9E8070' }}>
             <div style={{ fontSize: 32, marginBottom: 8 }}>🧺</div>
             <p style={{ fontSize: 14, margin: '0 0 8px' }}>No dry cleaners added yet.</p>
-            <button onClick={() => setShowAddCleaner(true)} style={{ background: 'none', border: 'none', color: '#00c9a7', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+            <button onClick={() => setShowAddCleaner(true)} style={{ background: 'none', border: 'none', color: '#C9A96E', fontSize: 13, cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
               Add your first dry cleaner →
             </button>
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 16 }}>
             {cleaners.map(c => (
-              <div key={c.id} style={{ background: '#fff', borderRadius: 14, padding: 20, border: '1px solid #e2e8f0', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+              <div key={c.id} style={{ background: '#3A1528', borderRadius: 14, padding: 20, border: '1px solid rgba(201,169,110,0.2)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
                 {/* Top row */}
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div style={{ position: 'relative' }}>
                     <div style={{ width: 48, height: 48, borderRadius: '50%', background: '#00c9a7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#fff' }}>
                       {initials(c.full_name)}
                     </div>
-                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: c.is_active ? '#22c55e' : '#d1d5db', border: '2px solid #fff' }} />
+                    <div style={{ position: 'absolute', bottom: 1, right: 1, width: 10, height: 10, borderRadius: '50%', background: c.is_active ? '#22c55e' : '#d1d5db', border: '2px solid #3A1528' }} />
                   </div>
-                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 999, background: c.is_active ? '#dcfce7' : '#f3f4f6', color: c.is_active ? '#16a34a' : '#6b7280' }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 999, background: c.is_active ? 'rgba(126,200,160,0.12)' : 'rgba(158,128,112,0.12)', color: c.is_active ? '#7EC8A0' : '#9E8070', border: c.is_active ? '1px solid rgba(126,200,160,0.3)' : '1px solid rgba(158,128,112,0.25)' }}>
                     {c.is_active ? 'Active' : 'Suspended'}
                   </span>
                 </div>
 
-                <p style={{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: '0 0 2px' }}>{c.full_name}</p>
-                <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>{c.email}</p>
+                <p style={{ fontSize: 17, fontWeight: 700, color: '#F5ECD7', margin: '0 0 2px' }}>{c.full_name}</p>
+                <p style={{ fontSize: 13, color: '#9E8070', margin: 0 }}>{c.email}</p>
 
                 {/* Info row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12 }}>
                   <Calendar size={14} color="#00c9a7" />
-                  <span style={{ fontSize: 12, color: '#6b7280' }}>
+                  <span style={{ fontSize: 12, color: '#9E8070' }}>
                     Joined {new Date(c.created_at ?? '').toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                   </span>
                 </div>
                 {c.phone && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4 }}>
                     <Phone size={14} color="#00c9a7" />
-                    <span style={{ fontSize: 12, color: '#6b7280' }}>{c.phone}</span>
+                    <span style={{ fontSize: 12, color: '#9E8070' }}>{c.phone}</span>
                   </div>
                 )}
 
                 {/* Actions */}
-                <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', gap: 8, marginTop: 16, paddingTop: 16, borderTop: '1px solid rgba(201,169,110,0.1)' }}>
                   <button onClick={() => setViewJobsCleaner(c)}
-                    style={{ flex: 1, padding: '7px 0', borderRadius: 8, background: '#f0fdf4', color: '#065f46', border: 'none', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                    style={{ flex: 1, padding: '7px 0', borderRadius: 8, background: 'transparent', color: '#C9A96E', border: '1.5px solid #C9A96E', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#C9A96E'; e.currentTarget.style.color = '#1E0A14' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#C9A96E' }}>
                     View Jobs
                   </button>
                   <button onClick={() => suspendMutation.mutate(c.id)} disabled={!c.is_active}
-                    style={{ flex: 1, padding: '7px 0', borderRadius: 8, background: c.is_active ? '#fef2f2' : '#f3f4f6', color: c.is_active ? '#dc2626' : '#9ca3af', border: 'none', fontSize: 13, fontWeight: 500, cursor: c.is_active ? 'pointer' : 'not-allowed' }}>
+                    style={{ flex: 1, padding: '7px 0', borderRadius: 8, background: 'transparent', color: c.is_active ? '#E07070' : '#6B5548', border: c.is_active ? '1.5px solid #E07070' : '1.5px solid rgba(107,85,72,0.3)', fontSize: 13, fontWeight: 500, cursor: c.is_active ? 'pointer' : 'not-allowed' }}>
                     Suspend
                   </button>
                 </div>
@@ -535,23 +557,23 @@ export function AdminDryCleaningPage() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 20 }}>
 
         {/* Col 1 — Needs Cleaning */}
-        <div style={{ background: '#fffbf5', borderRadius: 16, border: '1px solid #fde68a', borderLeft: '4px solid #d97706', padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 200 }}>
+        <div style={{ background: '#2D1020', borderRadius: 16, border: '1px solid rgba(201,169,110,0.15)', borderLeft: '4px solid #C9A96E', padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 200 }}>
           {colHdr('Needs Cleaning', pending.length, '#92400e', '#fef3c7', <Send size={15} color="#d97706" />)}
-          <div style={{ height: 1, background: '#fde68a', marginBottom: 4 }} />
-          {pendingQuery.isLoading ? [1, 2].map(i => <div key={i} style={{ height: 60, background: '#fef3c7', borderRadius: 10, opacity: 0.5 }} />) :
+          <div style={{ height: 1, background: 'rgba(201,169,110,0.15)', marginBottom: 4 }} />
+          {pendingQuery.isLoading ? [1, 2].map(i => <div key={i} style={{ height: 60, background: '#3A1528', borderRadius: 10, opacity: 0.5 }} />) :
            pending.length === 0 ? <EmptyCol msg="No assets waiting to be sent" /> :
            pending.map((r: DryCleaningRequest) => (
-            <div key={`${r.asset_id}-${r.booking_id}`} style={{ background: '#fff', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px' }}>
+            <div key={`${r.asset_id}-${r.booking_id}`} style={{ background: '#3A1528', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 10, padding: '10px 14px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                 <AssetThumb url={r.asset?.image_url ?? null} name={r.asset?.name ?? ''} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asset?.name}</p>
-                  <p style={{ fontSize: 11, color: '#6b7280', margin: '2px 0 0' }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#F5ECD7', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asset?.name}</p>
+                  <p style={{ fontSize: 11, color: '#9E8070', margin: '2px 0 0' }}>
                     Returned by {r.returned_by?.full_name ?? '—'}{r.returned_at ? ` · ${fmt(r.returned_at)}` : ''}
                   </p>
                 </div>
                 <button onClick={() => setAssignRequest(r)}
-                  style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: '#d97706', color: '#fff', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
+                  style={{ padding: '6px 12px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: '#C9A96E', color: '#1E0A14', border: 'none', cursor: 'pointer', flexShrink: 0 }}>
                   Assign
                 </button>
               </div>
@@ -560,30 +582,30 @@ export function AdminDryCleaningPage() {
         </div>
 
         {/* Col 2 — At Dry Cleaner */}
-        <div style={{ background: '#eff6ff', borderRadius: 16, border: '1px solid #bfdbfe', borderLeft: '4px solid #2563eb', padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 200 }}>
+        <div style={{ background: '#2D1020', borderRadius: 16, border: '1px solid rgba(201,169,110,0.15)', borderLeft: '4px solid #4A90D9', padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 200 }}>
           {colHdr('At Dry Cleaner', active.length, '#1e40af', '#dbeafe', <Clock size={15} color="#2563eb" />)}
-          <div style={{ height: 1, background: '#bfdbfe', marginBottom: 4 }} />
-          {activeQuery.isLoading ? [1, 2].map(i => <div key={i} style={{ height: 60, background: '#dbeafe', borderRadius: 10, opacity: 0.5 }} />) :
+          <div style={{ height: 1, background: 'rgba(201,169,110,0.15)', marginBottom: 4 }} />
+          {activeQuery.isLoading ? [1, 2].map(i => <div key={i} style={{ height: 60, background: '#3A1528', borderRadius: 10, opacity: 0.5 }} />) :
            active.length === 0 ? <EmptyCol msg="No assets at dry cleaner" /> :
            active.map((r: DryCleaningRequest) => {
             const overdue = r.expected_by && new Date(r.expected_by) < new Date()
             return (
-              <div key={r.id} style={{ background: '#fff', border: `1px solid ${overdue ? '#fecaca' : '#bfdbfe'}`, borderRadius: 10, padding: '10px 14px' }}>
+              <div key={r.id} style={{ background: '#3A1528', border: `1px solid ${overdue ? 'rgba(224,112,112,0.4)' : 'rgba(201,169,110,0.2)'}`, borderRadius: 10, padding: '10px 14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <AssetThumb url={r.asset?.image_url ?? null} name={r.asset?.name ?? ''} />
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asset?.name}</p>
-                    <p style={{ fontSize: 11, color: '#6b7280', margin: '2px 0 0' }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#F5ECD7', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asset?.name}</p>
+                    <p style={{ fontSize: 11, color: '#9E8070', margin: '2px 0 0' }}>
                       {r.dry_cleaner_name ? `@ ${r.dry_cleaner_name} · ` : ''}Sent {fmt(r.sent_at)}
                     </p>
                   </div>
-                  <span style={{ padding: '3px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, background: r.status === 'in_progress' ? '#dbeafe' : '#fef3c7', color: r.status === 'in_progress' ? '#1e40af' : '#92400e', flexShrink: 0 }}>
+                  <span style={{ padding: '3px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, background: r.status === 'in_progress' ? 'rgba(37,99,235,0.2)' : 'rgba(201,169,110,0.15)', color: r.status === 'in_progress' ? '#90B8E0' : '#C9A96E', flexShrink: 0 }}>
                     {r.status === 'in_progress' ? 'Cleaning' : 'Sent'}
                   </span>
                 </div>
-                {overdue && <div style={{ marginTop: 8, background: '#fee2e2', borderRadius: 6, padding: '4px 8px', fontSize: 11, color: '#dc2626', fontWeight: 600 }}>⚠ Overdue by {daysSince(r.expected_by)} days</div>}
-                {r.priority === 'urgent' && !overdue && <div style={{ marginTop: 6, fontSize: 11, color: '#dc2626', fontWeight: 600 }}>🔴 Urgent</div>}
-                <p style={{ fontSize: 11, color: '#9ca3af', margin: '8px 0 0', fontStyle: 'italic' }}>
+                {overdue && <div style={{ marginTop: 8, background: 'rgba(224,112,112,0.15)', borderRadius: 6, padding: '4px 8px', fontSize: 11, color: '#E07070', fontWeight: 600 }}>⚠ Overdue by {daysSince(r.expected_by)} days</div>}
+                {r.priority === 'urgent' && !overdue && <div style={{ marginTop: 6, fontSize: 11, color: '#E07070', fontWeight: 600 }}>🔴 Urgent</div>}
+                <p style={{ fontSize: 11, color: '#9E8070', margin: '8px 0 0', fontStyle: 'italic' }}>
                   Awaiting completion by dry cleaner
                 </p>
               </div>
@@ -592,22 +614,22 @@ export function AdminDryCleaningPage() {
         </div>
 
         {/* Col 3 — Completed */}
-        <div style={{ background: '#f0fdf4', borderRadius: 16, border: '1px solid #a7f3d0', borderLeft: '4px solid #16a34a', padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 200 }}>
+        <div style={{ background: '#2D1020', borderRadius: 16, border: '1px solid rgba(201,169,110,0.15)', borderLeft: '4px solid #4CAF50', padding: 20, display: 'flex', flexDirection: 'column', gap: 12, minHeight: 200 }}>
           {colHdr('Completed (14d)', completed14.length, '#064e3b', '#d1fae5', <CheckCircle2 size={15} color="#16a34a" />)}
-          <div style={{ height: 1, background: '#a7f3d0', marginBottom: 4 }} />
-          {completedQuery.isLoading ? [1].map(i => <div key={i} style={{ height: 60, background: '#d1fae5', borderRadius: 10, opacity: 0.5 }} />) :
+          <div style={{ height: 1, background: 'rgba(201,169,110,0.15)', marginBottom: 4 }} />
+          {completedQuery.isLoading ? [1].map(i => <div key={i} style={{ height: 60, background: '#3A1528', borderRadius: 10, opacity: 0.5 }} />) :
            completed14.length === 0 ? <EmptyCol msg="Nothing completed in the last 14 days" /> :
            completed14.map((r: DryCleaningRequest) => (
-            <div key={r.id} style={{ background: '#fff', border: '1px solid #a7f3d0', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div key={r.id} style={{ background: '#3A1528', border: '1px solid rgba(201,169,110,0.2)', borderRadius: 10, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10 }}>
               <AssetThumb url={r.asset?.image_url ?? null} name={r.asset?.name ?? ''} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asset?.name}</p>
-                <p style={{ fontSize: 11, color: '#6b7280', margin: '2px 0 0' }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#F5ECD7', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.asset?.name}</p>
+                <p style={{ fontSize: 11, color: '#9E8070', margin: '2px 0 0' }}>
                   {r.dry_cleaner_name ? `${r.dry_cleaner_name} · ` : ''}Done {fmt(r.completed_at)}
                 </p>
-                {r.actual_cost && <p style={{ fontSize: 11, color: '#6b7280', margin: '1px 0 0' }}>₹{r.actual_cost}</p>}
+                {r.actual_cost && <p style={{ fontSize: 11, color: '#9E8070', margin: '1px 0 0' }}>₹{r.actual_cost}</p>}
               </div>
-              <span style={{ padding: '3px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, background: '#d1fae5', color: '#065f46', flexShrink: 0 }}>✓ Ready</span>
+              <span style={{ padding: '3px 8px', borderRadius: 999, fontSize: 10, fontWeight: 700, background: 'rgba(126,200,160,0.15)', color: '#7EC8A0', flexShrink: 0 }}>✓ Ready</span>
             </div>
           ))}
         </div>
@@ -615,40 +637,40 @@ export function AdminDryCleaningPage() {
 
       {/* ── Section 3: Cleaner Performance ── */}
       {cleaners.length > 0 && (
-        <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: '#2D1020', borderRadius: 16, border: '1px solid rgba(201,169,110,0.15)', padding: 24, boxShadow: '0 1px 4px rgba(0,0,0,0.05)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
             <Zap size={16} color="#00c9a7" />
-            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#111827', margin: 0 }}>Cleaner Performance</h2>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#F5ECD7', margin: 0 }}>Cleaner Performance</h2>
           </div>
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
-                <tr style={{ borderBottom: '2px solid #f1f5f9' }}>
+                <tr style={{ borderBottom: '2px solid rgba(201,169,110,0.15)', background: '#3A1528' }}>
                   {['Cleaner', 'Email', 'Status', 'Joined'].map(h => (
-                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                    <th key={h} style={{ padding: '8px 12px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#C9A96E', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {cleaners.map(c => (
-                  <tr key={c.id} style={{ borderBottom: '1px solid #f9fafb' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#f9fafb' }}
+                  <tr key={c.id} style={{ borderBottom: '1px solid rgba(201,169,110,0.08)' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#3A1528' }}
                     onMouseLeave={e => { e.currentTarget.style.background = 'transparent' }}>
                     <td style={{ padding: '10px 12px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#00c9a7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
                           {initials(c.full_name)}
                         </div>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>{c.full_name}</p>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: '#F5ECD7', margin: 0 }}>{c.full_name}</p>
                       </div>
                     </td>
-                    <td style={{ padding: '10px 12px', color: '#6b7280' }}>{c.email}</td>
+                    <td style={{ padding: '10px 12px', color: '#9E8070' }}>{c.email}</td>
                     <td style={{ padding: '10px 12px' }}>
-                      <span style={{ padding: '3px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: c.is_active ? '#dcfce7' : '#f3f4f6', color: c.is_active ? '#16a34a' : '#6b7280' }}>
+                      <span style={{ padding: '3px 8px', borderRadius: 999, fontSize: 11, fontWeight: 600, background: c.is_active ? 'rgba(126,200,160,0.12)' : 'rgba(158,128,112,0.12)', color: c.is_active ? '#7EC8A0' : '#9E8070', border: c.is_active ? '1px solid rgba(126,200,160,0.3)' : '1px solid rgba(158,128,112,0.25)' }}>
                         {c.is_active ? 'Active' : 'Suspended'}
                       </span>
                     </td>
-                    <td style={{ padding: '10px 12px', color: '#6b7280' }}>
+                    <td style={{ padding: '10px 12px', color: '#9E8070' }}>
                       {new Date(c.created_at ?? '').toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
                     </td>
                   </tr>

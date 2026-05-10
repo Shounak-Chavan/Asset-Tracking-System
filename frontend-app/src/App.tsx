@@ -38,9 +38,10 @@ const BookingTrackingAdminPage = lazy(() => import("./pages/admin/BookingTrackin
 // Loading fallback component
 function PageLoader() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
-      <div className="w-12 h-12 bg-blue-600 rounded-2xl animate-pulse"></div>
-      <div className="mt-4 text-sm font-medium text-gray-500">Loading...</div>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--color-bg-primary)", gap: 16 }}>
+      <div style={{ width: 40, height: 40, borderRadius: "50%", border: "2px solid var(--color-border)", borderTopColor: "var(--color-accent-gold)", animation: "spin 0.8s linear infinite" }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <span style={{ fontFamily: "var(--font-sans)", fontSize: "0.65rem", letterSpacing: "0.2em", textTransform: "uppercase", color: "var(--color-text-faint)" }}>Loading…</span>
     </div>
   );
 }
