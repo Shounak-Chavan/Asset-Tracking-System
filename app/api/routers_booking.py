@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.core.dependencies import get_current_user, get_current_user_optional
 from app.core.rbac import require_roles
+from app.core.rate_limiter import limiter
+from app.core.logger import booking_logger
 from app.schemas.booking import (
     BookingResponse,
     BookingCreate,
@@ -16,41 +18,61 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 # POST /bookings/ - create a new booking
 @router.post("/", response_model=BookingResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_booking(
+    request: Request,
     data: BookingCreate,
     current_user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    booking = await booking_service.create_booking(db, current_user, data)
-    return booking
+    booking_logger.info(f"Booking creation attempt - Asset: {data.asset_id}, User: {current_user.email}, Dates: {data.start_date} to {data.end_date}")
+    try:
+        booking = await booking_service.create_booking(db, current_user, data)
+        booking_logger.info(f"Booking created successfully - BookingId: {booking.id}, Asset: {data.asset_id}, User: {current_user.email}")
+        return booking
+    except Exception as e:
+        booking_logger.error(f"Booking creation failed - Asset: {data.asset_id}, User: {current_user.email}, Error: {str(e)}")
+        raise
 
 # GET /bookings/ - get all bookings for current user
 @router.get("/", response_model=list[BookingResponse])
+@limiter.limit("30/minute")
 async def get_user_bookings(
+    request: Request,
     current_user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
+    booking_logger.info(f"Retrieving bookings for user: {current_user.email}")
     bookings = await booking_service.get_user_bookings(db, current_user)
+    booking_logger.info(f"Retrieved {len(bookings)} bookings for user: {current_user.email}")
     return bookings
 
 # ── Specific routes (must come before /{booking_id}) ──────────────────────────
 
 # GET /bookings/admin/all - admin get all bookings
 @router.get("/admin/all", response_model=list[BookingResponse])
+@limiter.limit("30/minute")
 async def admin_get_all_bookings(
+    request: Request,
     current_user = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
+    booking_logger.info(f"Admin retrieving all bookings - Admin: {current_user.email}")
     bookings = await booking_service.get_all_bookings(db)
+    booking_logger.info(f"Admin retrieved {len(bookings)} total bookings - Admin: {current_user.email}")
     return bookings
 
 # POST /bookings/admin/refresh-statuses — date-driven status transitions
 @router.post("/admin/refresh-statuses")
+@limiter.limit("20/minute")
 async def refresh_booking_statuses(
+    request: Request,
     current_user = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
+    booking_logger.info(f"Refreshing booking statuses - Admin: {current_user.email}")
     result = await booking_service.refresh_booking_statuses(db)
+    booking_logger.info(f"Booking statuses refreshed - PickedUp: {len(result['picked_up'])}, Overdue: {len(result['overdue'])}, Admin: {current_user.email}")
     return {
         "message": "Booking statuses refreshed",
         "picked_up_count": len(result["picked_up"]),
@@ -78,7 +100,14 @@ async def cancel_booking(
     current_user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    return await booking_service.cancel_booking(db, current_user, booking_id)
+    booking_logger.info(f"Booking cancellation request - BookingId: {booking_id}, User: {current_user.email}")
+    try:
+        booking = await booking_service.cancel_booking(db, current_user, booking_id)
+        booking_logger.info(f"Booking cancelled successfully - BookingId: {booking_id}, User: {current_user.email}")
+        return booking
+    except Exception as e:
+        booking_logger.error(f"Booking cancellation failed - BookingId: {booking_id}, User: {current_user.email}, Error: {str(e)}")
+        raise
 
 # PATCH /bookings/{booking_id}/request-return
 @router.patch("/{booking_id}/request-return", response_model=BookingResponse)
@@ -87,4 +116,11 @@ async def request_return(
     current_user = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    return await booking_service.request_return(db, current_user, booking_id)
+    booking_logger.info(f"Return request - BookingId: {booking_id}, User: {current_user.email}")
+    try:
+        booking = await booking_service.request_return(db, current_user, booking_id)
+        booking_logger.info(f"Return requested successfully - BookingId: {booking_id}, User: {current_user.email}")
+        return booking
+    except Exception as e:
+        booking_logger.error(f"Return request failed - BookingId: {booking_id}, User: {current_user.email}, Error: {str(e)}")
+        raise

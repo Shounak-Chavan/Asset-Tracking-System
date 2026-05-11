@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 from app.core.dependencies import get_current_user
 from app.core.rbac import require_roles
+from app.core.rate_limiter import limiter
 from app.models.user import User, UserRole
 from app.models.bookings import Booking
 from app.schemas.tracking import TrackingPageResponse, RecentActivityItem
@@ -14,8 +15,10 @@ router = APIRouter(prefix="/tracking", tags=["Tracking"])
 
 
 @router.get("/bookings/{booking_id}", response_model=TrackingPageResponse)
+@limiter.limit("30/minute")
 async def get_booking_tracking(
     booking_id: int,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -32,7 +35,9 @@ async def get_booking_tracking(
 
 
 @router.get("/admin/recent-activity", response_model=list[RecentActivityItem])
+@limiter.limit("30/minute")
 async def admin_recent_activity(
+    request: Request,
     limit: int = 10,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_roles([UserRole.admin])),

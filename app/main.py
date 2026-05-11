@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routers_auth import router as auth_router
 from app.api.routers_users import router as users_router
 from app.core.exceptions import register_exception_handlers
+from app.core.rate_limiter import setup_rate_limiter
 from app.api.routers_rental_plans import router as rental_plans_router
 from app.api.routers_category import router as category_router
 from app.api.routers_assets import router as assets_router
@@ -48,6 +49,9 @@ app.add_middleware(
 
 # Exception Handlers
 register_exception_handlers(app)
+
+# Rate Limiting
+setup_rate_limiter(app)
 
 # Routers
 app.include_router(auth_router)

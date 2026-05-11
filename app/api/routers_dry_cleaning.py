@@ -1,5 +1,5 @@
 from decimal import Decimal
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 from typing import Optional
@@ -7,6 +7,7 @@ from datetime import date
 
 from app.db.session import get_db
 from app.core.rbac import require_roles
+from app.core.rate_limiter import limiter
 from app.models.user import UserRole, User
 from app.models.dry_cleaning import DryCleaningStatus
 from app.schemas.dry_cleaning import (
@@ -37,7 +38,9 @@ router = APIRouter(prefix="/dry-cleaning", tags=["Dry Cleaning"])
 # ── Dry Cleaner Directory (admin only) ───────────────────────────────────────
 
 @router.get("/cleaners", response_model=list[DryCleanerResponse])
+@limiter.limit("30/minute")
 async def get_cleaners(
+    request: Request,
     active_only: bool = False,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_roles([UserRole.admin])),

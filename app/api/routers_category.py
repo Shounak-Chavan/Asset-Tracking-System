@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.dependencies import get_current_user, get_current_user_optional
 from app.core.rbac import require_roles
+from app.core.rate_limiter import limiter
 from app.db.session import get_db
 from app.models.category import Category
 from app.models.user import User, UserRole
@@ -14,7 +15,9 @@ router = APIRouter(prefix="/categories", tags=["categories"])
 
 # POST /categories/ - admin creates a category
 @router.post("/", response_model=CategoryResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("20/minute")
 async def create_category(
+    request: Request,
     data: CategoryCreate,
     current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
@@ -33,7 +36,9 @@ async def create_category(
 
 # GET /categories/ - PUBLIC (no auth required)
 @router.get("/", response_model=list[CategoryResponse])
+@limiter.limit("30/minute")
 async def list_categories(
+    request: Request,
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
