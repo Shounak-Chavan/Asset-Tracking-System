@@ -14,6 +14,7 @@ AsyncSessionLocal = sessionmaker(
     class_=AsyncSession,
     autocommit=False,
     bind=engine,
+    expire_on_commit=False,
 )
 
 # Dependency function to get a database session
