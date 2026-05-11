@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Wrench, Package2, Tag, ClipboardList, Users, LogOut, Bell, Briefcase, Shirt, Crown } from "lucide-react";
+import { Wrench, Package2, Tag, ClipboardList, Users, LogOut, Bell, Shirt, Crown, LayoutDashboard } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAuth } from "../auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../api";
 
 const adminNav = [
+  { to: "/admin/dashboard",    label: "Dashboard",      icon: LayoutDashboard },
   { to: "/admin/ops",          label: "Operations",     icon: Wrench },
   { to: "/admin/assets",       label: "Asset Manifest", icon: Package2 },
   { to: "/admin/categories",   label: "Categories",     icon: Tag },
