@@ -42,6 +42,8 @@ async def allocate_asset(
         raise HTTPException(status_code=400, detail="Asset is inactive and cannot be allocated")
     if asset.is_in_dry_cleaning:
         raise HTTPException(status_code=400, detail="Asset is in dry cleaning and cannot be allocated")
+    if asset.status != AssetStatus.available:
+        raise HTTPException(status_code=400, detail="Asset is not available for allocation. It must be returned first before it can be allocated to another booking.")
     
     # 6. Create allocation
     allocation = Allocation(
