@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import selectinload
 from fastapi import HTTPException
 
@@ -9,12 +9,14 @@ from app.models.rental_plan import RentalPlan
 from app.models.asset import Asset
 from app.models.allocations import Allocation
 from app.models.payment import Payment, PaymentType, PaymentStatus
+from app.services.tracking_service import record_event, BOOKING_CONFIRMED, BOOKING_CANCELLED, PICKED_UP, OVERDUE, RETURN_REQUESTED
 
 
 ACTIVE_BOOKING_STATUSES = {
     BookingStatus.pending,
     BookingStatus.booked,
     BookingStatus.allocated,
+    BookingStatus.rent_paid,
     BookingStatus.ready_for_pickup,
     BookingStatus.picked_up,
     BookingStatus.overdue,
@@ -96,6 +98,14 @@ async def create_booking(db: AsyncSession, user, data):
     )
 
     db.add(booking)
+    await db.flush()  # get booking.id before commit
+
+    record_event(
+        db, booking.id, BOOKING_CONFIRMED,
+        f"Your booking #{booking.id} has been confirmed",
+        created_by=user.id,
+    )
+
     await db.commit()
 
     # IMPORTANT FIX
@@ -174,6 +184,7 @@ async def cancel_booking(db: AsyncSession, user, booking_id: int):
         raise HTTPException(status_code=400, detail="Only pending bookings can be cancelled")
 
     booking.status = BookingStatus.cancelled
+    record_event(db, booking_id, BOOKING_CANCELLED, "Booking has been cancelled", created_by=user.id)
     await db.commit()
     await db.refresh(booking, attribute_names=["rental_plan"])
 
@@ -190,15 +201,16 @@ async def request_return(db: AsyncSession, user, booking_id: int):
     if not booking or booking.user_id != user.id:
         raise HTTPException(status_code=404, detail="Booking not found")
 
-    if booking.status not in {BookingStatus.allocated, BookingStatus.picked_up, BookingStatus.overdue}:
-        raise HTTPException(status_code=400, detail="Return can be requested only for allocated, picked_up, or overdue bookings")
+    if booking.status not in {BookingStatus.picked_up, BookingStatus.overdue}:
+        raise HTTPException(status_code=400, detail="Return can be requested only after the asset has been picked up")
 
+    # Note: allocation may not exist for legacy bookings, but we can still process returns
+    # if the booking status indicates the asset was picked up
     allocation_result = await db.execute(
         select(Allocation).where(Allocation.booking_id == booking_id)
     )
     allocation = allocation_result.scalar_one_or_none()
-    if not allocation:
-        raise HTTPException(status_code=400, detail="No allocated asset found for this booking")
+    # Allow return even without allocation if booking is in picked_up/overdue state
 
     # Return request is allowed only after rent payment has been completed.
     rent_payment_result = await db.execute(
@@ -215,6 +227,7 @@ async def request_return(db: AsyncSession, user, booking_id: int):
         )
 
     booking.status = BookingStatus.ready_for_pickup
+    record_event(db, booking_id, RETURN_REQUESTED, "You requested to return the item", created_by=user.id)
     await db.commit()
     await db.refresh(booking, attribute_names=["rental_plan"])
     return booking
@@ -243,3 +256,47 @@ async def get_blocked_date_ranges_for_asset(db: AsyncSession, asset_id: int):
         }
         for booking in bookings
     ]
+
+
+async def refresh_booking_statuses(db: AsyncSession) -> dict:
+    """
+    Date-driven status transitions — meant to run daily (cron / admin trigger).
+      rent_paid  → picked_up  when pickup_date <= today
+      picked_up  → overdue    when due_date < today
+    """
+    today = date.today()
+
+    # rent_paid → picked_up
+    result1 = await db.execute(
+        update(Booking)
+        .where(
+            Booking.status == BookingStatus.rent_paid,
+            Booking.pickup_date <= today,
+        )
+        .values(status=BookingStatus.picked_up)
+        .returning(Booking.id)
+    )
+    picked_up_ids = result1.scalars().all()
+    for bid in picked_up_ids:
+        record_event(db, bid, PICKED_UP, "Asset handed over to you")
+
+    # picked_up → overdue
+    result2 = await db.execute(
+        update(Booking)
+        .where(
+            Booking.status == BookingStatus.picked_up,
+            Booking.due_date < today,
+        )
+        .values(status=BookingStatus.overdue)
+        .returning(Booking.id)
+    )
+    overdue_ids = result2.scalars().all()
+    for bid in overdue_ids:
+        record_event(db, bid, OVERDUE, "Booking is overdue — please return the item")
+
+    await db.commit()
+
+    return {
+        "picked_up": list(picked_up_ids),
+        "overdue": list(overdue_ids),
+    }

@@ -17,6 +17,8 @@ import {
   CreditCard,
   X,
   Tag,
+  MapPin,
+  CalendarDays,
 } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
@@ -69,25 +71,27 @@ function StatCard({
       className="bg-white rounded-xl hover:shadow-md transition-all duration-200 cursor-default"
       style={{
         padding: '20px 24px',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-        borderTop: `4px solid ${topBorderColor}`,
+        boxShadow: 'var(--shadow-sm)',
+        borderTop: `3px solid ${topBorderColor}`,
         borderRadius: '12px',
+        background: 'var(--color-bg-card)',
+        border: '1px solid var(--color-border)',
       }}
     >
       <div className="flex items-start justify-between gap-2">
         <div>
-          <p className={`font-bold ${valueColor}`} style={{ fontSize: '36px', lineHeight: 1.1 }}>
+          <p className="font-bold" style={{ fontSize: '36px', lineHeight: 1.1, fontFamily: 'var(--font-serif)', color: 'var(--color-accent-gold)' }}>
             {value}
           </p>
-          <p className="text-gray-500 font-medium mt-1" style={{ fontSize: '14px' }}>
+          <p style={{ fontSize: '13px', fontFamily: 'var(--font-sans)', color: 'var(--color-text-muted)', marginTop: 4 }}>
             {label}
           </p>
         </div>
         <div
-          className={`flex items-center justify-center shrink-0 ${iconBg}`}
-          style={{ width: 40, height: 40, borderRadius: '50%' }}
+          className="flex items-center justify-center shrink-0"
+          style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(201,169,110,0.1)', border: '1px solid var(--color-border)' }}
         >
-          <Icon className="w-5 h-5" />
+          <Icon className="w-5 h-5" style={{ color: 'var(--color-accent-gold)' }} />
         </div>
       </div>
     </div>
@@ -107,7 +111,7 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
   return (
     <div
       className="flex gap-1"
-      style={{ background: 'white', borderRadius: '12px', padding: '4px', boxShadow: '0 1px 4px rgba(0,0,0,0.06)' }}
+      style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '10px', padding: '4px' }}
     >
       {tabs.map((t) => (
         <button
@@ -116,12 +120,14 @@ function TabBar({ active, onChange }: { active: Tab; onChange: (t: Tab) => void 
           className="flex-1 transition-all"
           style={{
             padding: '6px 16px',
-            borderRadius: '8px',
-            fontSize: '14px',
+            borderRadius: '6px',
+            fontFamily: 'var(--font-sans)',
+            fontSize: '0.65rem',
             fontWeight: active === t.id ? 600 : 400,
-            color: active === t.id ? '#ffffff' : '#6b7280',
-            background: active === t.id ? '#0f172a' : 'transparent',
-            boxShadow: active === t.id ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            color: active === t.id ? 'var(--color-bg-primary)' : 'var(--color-text-muted)',
+            background: active === t.id ? 'var(--color-accent-gold)' : 'transparent',
             border: 'none',
             cursor: 'pointer',
           }}
@@ -150,12 +156,12 @@ function EmptyState({
     >
       <div
         className="flex items-center justify-center mb-3"
-        style={{ width: 56, height: 56, borderRadius: '50%', background: '#f4f4f5' }}
+        style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(201,169,110,0.1)', border: '1px solid var(--color-border)' }}
       >
-        <Icon className="w-6 h-6 text-gray-400" />
+        <Icon className="w-6 h-6" style={{ color: 'var(--color-text-faint)' }} />
       </div>
-      <p style={{ fontSize: '15px', fontWeight: 500, color: '#111827' }}>{title}</p>
-      <p style={{ fontSize: '13px', color: '#888', marginTop: '4px' }}>{subtitle}</p>
+      <p style={{ fontSize: '15px', fontWeight: 500, color: 'var(--color-text-primary)' }}>{title}</p>
+      <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', marginTop: '4px' }}>{subtitle}</p>
     </div>
   )
 }
@@ -170,18 +176,18 @@ function Section({
 }: {
   icon: React.ElementType
   title: string
-  iconColor: string   // hex for the circle bg
+  iconColor: string
   children: React.ReactNode
   count?: number
 }) {
   return (
     <section
       style={{
-        background: '#fff',
-        borderRadius: '14px',
+        background: 'var(--color-bg-card)',
+        borderRadius: '12px',
         padding: '20px 24px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        border: '1px solid #e2e8f0',
+        boxShadow: 'var(--shadow-sm)',
+        border: '1px solid var(--color-border)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
@@ -194,17 +200,24 @@ function Section({
         }}>
           <Icon style={{ width: 15, height: 15, color: '#fff' }} />
         </div>
-        <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#111827', margin: 0 }}>{title}</h2>
+        <h2 style={{
+          fontSize: '16px', fontWeight: 600, margin: 0,
+          fontFamily: 'var(--font-serif)', fontStyle: 'italic',
+          color: 'var(--color-accent-gold)',
+        }}>{title}</h2>
         {count !== undefined && (
           <span style={{
-            fontSize: '12px', fontWeight: 500, color: '#374151',
-            background: '#e5e7eb', padding: '2px 10px', borderRadius: '20px',
+            fontSize: '12px', fontWeight: 500,
+            color: 'var(--color-text-muted)',
+            background: 'rgba(201,169,110,0.1)',
+            border: '1px solid var(--color-border)',
+            padding: '2px 10px', borderRadius: '20px',
           }}>
             {count}
           </span>
         )}
         {count !== undefined && count > 3 && (
-          <span style={{ marginLeft: 'auto', fontSize: '13px', color: '#3b82f6', cursor: 'pointer' }}>
+          <span style={{ marginLeft: 'auto', fontSize: '13px', color: 'var(--color-accent-gold)', cursor: 'pointer' }}>
             View All
           </span>
         )}
@@ -235,6 +248,7 @@ interface BookingCardProps {
   onPayRent: (id: number) => void
   onCancel: (id: number) => void
   onReturn: (id: number) => void
+  onTrack: (id: number) => void
   isActionPending: boolean
   variant?: 'active' | 'upcoming'
 }
@@ -245,6 +259,7 @@ function BookingCard({
   onPayRent,
   onCancel,
   onReturn,
+  onTrack,
   isActionPending,
   variant = 'active',
 }: BookingCardProps) {
@@ -252,10 +267,11 @@ function BookingCard({
 
   // Status badge colours
   const statusStyle: Record<string, { bg: string; color: string; label: string }> = {
-    pending:          { bg: '#fef3c7', color: '#d97706', label: 'Pending' },
-    booked:           { bg: '#dbeafe', color: '#2563eb', label: 'Booked' },
+    pending:          { bg: '#fef3c7', color: '#d97706', label: 'Pending Approval' },
+    booked:           { bg: '#dbeafe', color: '#2563eb', label: 'Approved' },
     allocated:        { bg: '#ede9fe', color: '#7c3aed', label: 'Allocated' },
-    ready_for_pickup: { bg: '#ffedd5', color: '#ea580c', label: 'Ready' },
+    rent_paid:        { bg: '#f3e8ff', color: '#9333ea', label: `Rent Paid · Pickup on ${formatDate(b.pickup_date)}` },
+    ready_for_pickup: { bg: '#ffedd5', color: '#ea580c', label: 'Return Requested' },
     picked_up:        { bg: '#dcfce7', color: '#16a34a', label: 'Picked Up' },
     overdue:          { bg: '#fee2e2', color: '#dc2626', label: 'Overdue' },
   }
@@ -268,25 +284,25 @@ function BookingCard({
   return (
     <div
       style={{
-        background: '#fff',
-        borderRadius: '14px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+        background: 'var(--color-bg-card)',
+        borderRadius: '12px',
+        border: '1px solid var(--color-border)',
+        boxShadow: 'none',
         padding: '20px 24px',
-        transition: 'box-shadow 0.2s',
+        transition: 'box-shadow 0.25s, transform 0.25s, border-color 0.25s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)')}
-      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)')}
+      onMouseEnter={(e) => { e.currentTarget.style.boxShadow = 'var(--shadow-gold)'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.borderColor = 'var(--color-border-strong)'; }}
+      onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.borderColor = 'var(--color-border)'; }}
     >
       {/* ── Top row ── */}
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
         <BookingThumb variant={variant} />
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontSize: '15px', fontWeight: 700, color: '#111827', margin: 0 }}>
+          <p style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0 }}>
             {b.rental_plan?.name ?? `Plan #${b.rental_plan_id}`}
           </p>
-          <p style={{ fontSize: '13px', color: '#9ca3af', margin: '2px 0 0 0' }}>
+          <p style={{ fontSize: '13px', color: 'var(--color-text-muted)', margin: '2px 0 0 0' }}>
             Booking #{b.id}
           </p>
         </div>
@@ -315,15 +331,15 @@ function BookingCard({
       {/* ── Info chips ── */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '14px' }}>
         {[
-          { icon: Calendar, color: '#2563eb', text: `${formatDate(b.pickup_date)} – ${formatDate(b.due_date)}` },
-          { icon: Clock,    color: '#d97706', text: durationLabel(b.pickup_date, b.due_date) },
-          { icon: Tag,      color: '#16a34a', text: b.rental_plan?.daily_rate ? `₹${b.rental_plan.daily_rate}/day` : null },
+          { icon: Calendar, color: 'var(--color-accent-gold)', text: `${formatDate(b.pickup_date)} – ${formatDate(b.due_date)}` },
+          { icon: Clock,    color: 'var(--color-accent-gold-dim)', text: durationLabel(b.pickup_date, b.due_date) },
+          { icon: Tag,      color: 'var(--color-success)', text: b.rental_plan?.daily_rate ? `₹${b.rental_plan.daily_rate}/day` : null },
         ].filter(c => c.text).map(({ icon: Icon, color, text }) => (
           <div key={text} style={{
             display: 'flex', alignItems: 'center', gap: '6px',
-            background: '#f8fafc', border: '1px solid #e5e7eb',
+            background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)',
             borderRadius: '8px', padding: '7px 12px',
-            fontSize: '13px', color: '#374151',
+            fontSize: '13px', color: 'var(--color-text-muted)',
           }}>
             <Icon style={{ width: 14, height: 14, color, flexShrink: 0 }} />
             {text}
@@ -333,20 +349,20 @@ function BookingCard({
 
       {/* ── Cost row ── */}
       <div style={{ display: 'flex', gap: '24px', marginTop: '12px', fontSize: '13px' }}>
-        <span style={{ color: '#6b7280' }}>
-          Rent: <strong style={{ color: '#111827' }}>₹{b.rent_amount}</strong>
+        <span style={{ color: 'var(--color-text-muted)' }}>
+          Rent: <strong style={{ color: 'var(--color-accent-gold)' }}>₹{b.rent_amount}</strong>
         </span>
-        <span style={{ color: '#6b7280' }}>
-          Deposit: <strong style={{ color: '#111827' }}>₹{b.deposit_amount}</strong>
+        <span style={{ color: 'var(--color-text-muted)' }}>
+          Deposit: <strong style={{ color: 'var(--color-text-primary)' }}>₹{b.deposit_amount}</strong>
         </span>
       </div>
 
       {/* ── Action buttons ── */}
-      {(b.status === 'pending' || b.status === 'allocated' || b.status === 'picked_up') && (
+      {(b.status === 'pending' || b.status === 'allocated' || b.status === 'picked_up' || b.status === 'overdue' || b.status === 'rent_paid') && (
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: '10px',
           marginTop: '16px', paddingTop: '14px',
-          borderTop: '1px solid #f1f5f9',
+          borderTop: '1px solid var(--color-border)',
         }}>
           {b.status === 'pending' && (
             <>
@@ -355,16 +371,17 @@ function BookingCard({
                 disabled={isActionPending}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '7px',
-                  background: '#2563eb', color: '#fff',
-                  border: 'none', borderRadius: '8px',
-                  padding: '10px 20px', fontSize: '14px', fontWeight: 500,
+                  background: 'var(--color-accent-gold)', color: 'var(--color-bg-primary)',
+                  border: 'none', borderRadius: 'var(--radius-sm)',
+                  padding: '10px 20px', fontSize: '0.75rem', fontWeight: 600,
+                  letterSpacing: '0.1em', textTransform: 'uppercase',
                   cursor: isActionPending ? 'not-allowed' : 'pointer',
                   opacity: isActionPending ? 0.6 : 1,
-                  boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+                  boxShadow: 'var(--shadow-gold)',
                   transition: 'background 0.15s, transform 0.15s',
                 }}
-                onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = '#1d4ed8'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.transform = 'translateY(0)' }}
+                onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = 'var(--color-accent-gold-light)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-accent-gold)'; e.currentTarget.style.transform = 'translateY(0)' }}
               >
                 <CreditCard style={{ width: 16, height: 16 }} />
                 Pay Deposit
@@ -374,15 +391,16 @@ function BookingCard({
                 disabled={isActionPending}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '7px',
-                  background: '#fff', color: '#ef4444',
-                  border: '1.5px solid #fca5a5', borderRadius: '8px',
-                  padding: '10px 20px', fontSize: '14px', fontWeight: 500,
+                  background: 'transparent', color: 'var(--color-error)',
+                  border: '1.5px solid var(--color-error)', borderRadius: 'var(--radius-sm)',
+                  padding: '10px 20px', fontSize: '0.75rem', fontWeight: 500,
+                  letterSpacing: '0.08em', textTransform: 'uppercase',
                   cursor: isActionPending ? 'not-allowed' : 'pointer',
                   opacity: isActionPending ? 0.6 : 1,
                   transition: 'background 0.15s, border-color 0.15s',
                 }}
-                onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = '#fef2f2'; e.currentTarget.style.borderColor = '#ef4444' } }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#fca5a5' }}
+                onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = 'rgba(224,112,112,0.1)' } }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent' }}
               >
                 <X style={{ width: 16, height: 16 }} />
                 Cancel
@@ -395,36 +413,44 @@ function BookingCard({
               disabled={isActionPending}
               style={{
                 display: 'flex', alignItems: 'center', gap: '7px',
-                background: '#2563eb', color: '#fff',
-                border: 'none', borderRadius: '8px',
-                padding: '10px 20px', fontSize: '14px', fontWeight: 500,
+                background: 'var(--color-accent-gold)', color: 'var(--color-bg-primary)',
+                border: 'none', borderRadius: 'var(--radius-sm)',
+                padding: '10px 20px', fontSize: '0.75rem', fontWeight: 600,
+                letterSpacing: '0.1em', textTransform: 'uppercase',
                 cursor: isActionPending ? 'not-allowed' : 'pointer',
                 opacity: isActionPending ? 0.6 : 1,
-                boxShadow: '0 2px 6px rgba(37,99,235,0.3)',
+                boxShadow: 'var(--shadow-gold)',
                 transition: 'background 0.15s, transform 0.15s',
               }}
-              onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = '#1d4ed8'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.transform = 'translateY(0)' }}
+              onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = 'var(--color-accent-gold-light)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-accent-gold)'; e.currentTarget.style.transform = 'translateY(0)' }}
             >
               <CreditCard style={{ width: 16, height: 16 }} />
               Pay Rent
             </button>
           )}
-          {b.status === 'picked_up' && (
+          {b.status === 'rent_paid' && (
+            <p style={{ fontSize: '13px', color: 'var(--color-accent-gold)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CalendarDays style={{ width: 15, height: 15 }} />
+              Your pickup is scheduled for {formatDate(b.pickup_date)}
+            </p>
+          )}
+          {(b.status === 'picked_up' || b.status === 'overdue') && (
             <button
               onClick={() => onReturn(b.id)}
               disabled={isActionPending}
               style={{
                 display: 'flex', alignItems: 'center', gap: '7px',
-                background: '#fff', color: '#374151',
-                border: '1.5px solid #d1d5db', borderRadius: '8px',
-                padding: '10px 20px', fontSize: '14px', fontWeight: 500,
+                background: 'transparent', color: 'var(--color-text-primary)',
+                border: '1.5px solid var(--color-border-strong)', borderRadius: 'var(--radius-sm)',
+                padding: '10px 20px', fontSize: '0.75rem', fontWeight: 500,
+                letterSpacing: '0.08em', textTransform: 'uppercase',
                 cursor: isActionPending ? 'not-allowed' : 'pointer',
                 opacity: isActionPending ? 0.6 : 1,
-                transition: 'background 0.15s',
+                transition: 'background 0.15s, border-color 0.15s',
               }}
-              onMouseEnter={(e) => { if (!isActionPending) e.currentTarget.style.background = '#f9fafb' }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = '#fff' }}
+              onMouseEnter={(e) => { if (!isActionPending) { e.currentTarget.style.background = 'rgba(245,236,215,0.08)'; e.currentTarget.style.borderColor = 'var(--color-text-primary)' } }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'var(--color-border-strong)' }}
             >
               <RotateCcw style={{ width: 16, height: 16 }} />
               Request Return
@@ -432,79 +458,120 @@ function BookingCard({
           )}
         </div>
       )}
+      {/* ── Track button ── */}
+      {b.status !== 'cancelled' && (
+        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--color-border)' }}>
+          <button
+            onClick={() => onTrack(b.id)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              background: 'transparent', color: 'var(--color-accent-gold)',
+              border: '1.5px solid var(--color-accent-gold)', borderRadius: 'var(--radius-sm)',
+              padding: '7px 16px', fontSize: '0.7rem', fontWeight: 600,
+              letterSpacing: '0.1em', textTransform: 'uppercase',
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-accent-gold)'; e.currentTarget.style.color = 'var(--color-bg-primary)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-accent-gold)' }}
+          >
+            <MapPin style={{ width: 14, height: 14 }} />
+            Track
+          </button>
+        </div>
+      )}
     </div>
   )
 }
-
-// ── Past Booking Card ─────────────────────────────────────────────────────────
-function PastBookingRow({ booking: b, onRebook }: { booking: Booking; onRebook: () => void }) {
-  const statusBadge: Record<string, { bg: string; color: string; label: string }> = {
-    returned:  { bg: '#dcfce7', color: '#16a34a', label: 'Returned' },
-    cancelled: { bg: '#f3f4f6', color: '#6b7280', label: 'Cancelled' },
+function PastBookingRow({ booking: b, onRebook, onTrack }: { booking: Booking; onRebook: () => void; onTrack: () => void }) {
+  const statusBadge: Record<string, { bg: string; color: string; border: string; label: string }> = {
+    returned:  { bg: 'rgba(126,200,160,0.12)', color: '#7EC8A0', border: 'rgba(126,200,160,0.3)', label: 'Returned' },
+    cancelled: { bg: 'rgba(158,128,112,0.12)', color: '#9E8070',  border: 'rgba(158,128,112,0.25)', label: 'Cancelled' },
   }
-  const badge = statusBadge[b.status] ?? { bg: '#f3f4f6', color: '#6b7280', label: b.status }
+  const badge = statusBadge[b.status] ?? { bg: 'rgba(158,128,112,0.12)', color: '#9E8070', border: 'rgba(158,128,112,0.25)', label: b.status }
 
   return (
     <div
       style={{
-        background: '#fff',
+        background: 'var(--color-bg-secondary)',
         borderRadius: '12px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+        border: '1px solid rgba(201,169,110,0.15)',
         padding: '16px 20px',
         display: 'flex', alignItems: 'center', gap: '14px',
-        transition: 'box-shadow 0.15s',
+        transition: 'border-color 0.2s, box-shadow 0.2s',
       }}
-      onMouseEnter={(e) => (e.currentTarget.style.boxShadow = '0 3px 10px rgba(0,0,0,0.09)')}
-      onMouseLeave={(e) => (e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.05)')}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--color-border-strong)'; e.currentTarget.style.boxShadow = 'var(--shadow-gold)' }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(201,169,110,0.15)'; e.currentTarget.style.boxShadow = 'none' }}
     >
       {/* Icon */}
       <div style={{
         width: 40, height: 40, borderRadius: '8px',
-        background: '#f3f4f6', flexShrink: 0,
+        background: 'rgba(201,169,110,0.08)',
+        border: '1px solid var(--color-border)',
+        flexShrink: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <Package style={{ width: 18, height: 18, color: '#9ca3af' }} />
+        <Package style={{ width: 18, height: 18, color: 'var(--color-text-faint)' }} />
       </div>
 
       {/* Info */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: '14px', fontWeight: 700, color: '#111827', margin: 0 }}>
+        <p style={{ fontSize: '14px', fontWeight: 500, color: 'var(--color-text-primary)', margin: 0 }}>
           {b.rental_plan?.name ?? `Plan #${b.rental_plan_id}`}
         </p>
-        <p style={{ fontSize: '12px', color: '#9ca3af', margin: '2px 0 0 0' }}>
+        <p style={{ fontSize: '12px', color: 'var(--color-text-muted)', margin: '3px 0 0 0', letterSpacing: '0.01em' }}>
           {formatDate(b.pickup_date)} – {formatDate(b.due_date)} · {durationLabel(b.pickup_date, b.due_date)}
         </p>
       </div>
 
       {/* Right side */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
         <span style={{
           background: badge.bg, color: badge.color,
-          borderRadius: '20px', padding: '4px 12px',
+          border: `1px solid ${badge.border}`,
+          borderRadius: '999px', padding: '2px 12px',
           fontSize: '12px', fontWeight: 600,
         }}>
           {badge.label}
         </span>
-        <p style={{ fontSize: '16px', fontWeight: 700, color: '#111827', margin: 0 }}>
+        <p style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-accent-gold)', margin: 0 }}>
           ₹{b.rent_amount}
         </p>
         <button
           onClick={onRebook}
           style={{
             display: 'flex', alignItems: 'center', gap: '5px',
-            border: '1.5px solid #2563eb', color: '#2563eb',
-            borderRadius: '8px', padding: '6px 14px',
-            fontSize: '13px', fontWeight: 500,
+            border: '1.5px solid var(--color-accent-gold)', color: 'var(--color-accent-gold)',
+            borderRadius: 'var(--radius-sm)', padding: '6px 16px',
+            fontSize: '0.7rem', fontWeight: 500,
+            letterSpacing: '0.08em', textTransform: 'uppercase',
             background: 'transparent', cursor: 'pointer',
-            transition: 'background 0.15s',
+            transition: 'background 0.15s, color 0.15s',
           }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = '#eff6ff')}
-          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-accent-gold)'; e.currentTarget.style.color = 'var(--color-bg-primary)' }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-accent-gold)' }}
         >
-          <RefreshCw style={{ width: 13, height: 13 }} />
+          <RefreshCw style={{ width: 12, height: 12 }} />
           Rebook
         </button>
+        {b.status === 'returned' && (
+          <button
+            onClick={onTrack}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              border: '1.5px solid var(--color-border-strong)', color: 'var(--color-text-muted)',
+              borderRadius: 'var(--radius-sm)', padding: '6px 16px',
+              fontSize: '0.7rem', fontWeight: 500,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              background: 'transparent', cursor: 'pointer',
+              transition: 'background 0.15s, color 0.15s, border-color 0.15s',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(201,169,110,0.08)'; e.currentTarget.style.color = 'var(--color-accent-gold)'; e.currentTarget.style.borderColor = 'var(--color-accent-gold)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--color-text-muted)'; e.currentTarget.style.borderColor = 'var(--color-border-strong)' }}
+          >
+            <MapPin style={{ width: 12, height: 12 }} />
+            Track
+          </button>
+        )}
       </div>
     </div>
   )
@@ -579,9 +646,9 @@ export function BookingsPage() {
     returnMutation.isPending
 
   const bookings = bookingsQuery.data ?? []
-  const activeBookings = bookings.filter((b) => ['picked_up', 'overdue'].includes(b.status))
+  const activeBookings = bookings.filter((b) => ['picked_up', 'overdue', 'ready_for_pickup'].includes(b.status))
   const upcomingBookings = bookings.filter((b) =>
-    ['pending', 'booked', 'allocated', 'ready_for_pickup'].includes(b.status)
+    ['pending', 'booked', 'allocated', 'rent_paid'].includes(b.status)
   )
   const pastBookings = bookings.filter((b) => ['returned', 'cancelled'].includes(b.status))
 
@@ -590,6 +657,7 @@ export function BookingsPage() {
     onPayRent: (id: number) => payRentMutation.mutate(id),
     onCancel: (id: number) => cancelMutation.mutate(id),
     onReturn: (id: number) => returnMutation.mutate(id),
+    onTrack: (id: number) => navigate(`/bookings/${id}/track`),
     isActionPending,
   }
 
@@ -598,7 +666,7 @@ export function BookingsPage() {
   const showPast = activeTab === 'all' || activeTab === 'past'
 
   return (
-    <div style={{ minHeight: 'calc(100vh - 4rem)', background: 'linear-gradient(180deg, #eef6ff 0%, #f0f4f8 100%)' }}>
+    <div style={{ minHeight: 'calc(100vh - 4rem)', background: 'var(--color-bg-primary)' }}>
       {/* Centered container — max 1200px, full bleed padding */}
       <div
         style={{
@@ -609,35 +677,27 @@ export function BookingsPage() {
       >
         {/* ── Page Header ── */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', gap: '16px' }}>
-          <div style={{ borderLeft: '4px solid #00c9a7', paddingLeft: '12px' }}>
-            <h1 style={{ fontSize: '26px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+          <div style={{ borderLeft: '4px solid var(--color-accent-gold)', paddingLeft: '12px' }}>
+            <h1 style={{ fontSize: '26px', fontWeight: 700, color: 'var(--color-text-primary)', margin: 0, fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>
               My Bookings
             </h1>
-            <p style={{ fontSize: '14px', color: '#64748b', marginTop: '4px', marginBottom: 0 }}>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginTop: '4px', marginBottom: 0 }}>
               Track your active and past rentals
             </p>
           </div>
           <button
             onClick={() => navigate('/assets')}
             style={{
-              background: '#00c9a7', color: '#fff', border: 'none',
-              borderRadius: '10px', padding: '10px 20px',
-              fontSize: '14px', fontWeight: 600,
+              background: 'var(--color-accent-gold)', color: 'var(--color-bg-primary)', border: 'none',
+              borderRadius: 'var(--radius-sm)', padding: '10px 20px',
+              fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase',
               display: 'flex', alignItems: 'center', gap: '8px',
               cursor: 'pointer', flexShrink: 0,
-              boxShadow: '0 2px 8px rgba(0,201,167,0.3)',
+              boxShadow: 'var(--shadow-gold)',
               transition: 'all 0.15s ease',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = '#00b396'
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,201,167,0.4)'
-              e.currentTarget.style.transform = 'translateY(-1px)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = '#00c9a7'
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,201,167,0.3)'
-              e.currentTarget.style.transform = 'translateY(0)'
-            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--color-accent-gold-light)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--color-accent-gold)'; e.currentTarget.style.transform = 'translateY(0)' }}
           >
             <PlusCircle style={{ width: 16, height: 16 }} />
             Book New Asset
@@ -701,8 +761,8 @@ export function BookingsPage() {
             {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
-                className="bg-white animate-pulse"
-                style={{ borderRadius: '12px', padding: '20px 24px', height: '96px', boxShadow: '0 1px 4px rgba(0,0,0,0.08)' }}
+                className="skeleton-shimmer"
+                style={{ borderRadius: '12px', padding: '20px 24px', height: '96px', border: '1px solid var(--color-border)' }}
               />
             ))}
           </div>
@@ -710,23 +770,25 @@ export function BookingsPage() {
           /* ── Zero state ── */
           <div className="flex justify-center" style={{ paddingTop: '48px', paddingBottom: '48px' }}>
             <div
-              className="text-center bg-white"
+              className="text-center"
               style={{
                 maxWidth: '360px',
                 width: '100%',
                 borderRadius: '16px',
                 padding: '48px 32px',
-                boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                background: 'var(--color-bg-card)',
+                border: '1px solid var(--color-border)',
+                boxShadow: 'var(--shadow-md)',
               }}
             >
               <div
                 className="flex items-center justify-center mx-auto"
-                style={{ width: 64, height: 64, borderRadius: '50%', background: '#eff6ff', marginBottom: '16px' }}
+                style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(201,169,110,0.1)', border: '1px solid var(--color-border)', marginBottom: '16px' }}
               >
-                <Calendar className="w-8 h-8 text-blue-500" />
+                <Calendar style={{ width: 28, height: 28, color: 'var(--color-accent-gold)' }} />
               </div>
-              <p className="font-semibold text-gray-900" style={{ fontSize: '17px' }}>No bookings yet</p>
-              <p className="text-gray-500" style={{ fontSize: '14px', marginTop: '8px' }}>
+              <p style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>No bookings yet</p>
+              <p style={{ fontSize: '14px', color: 'var(--color-text-muted)', marginTop: '8px' }}>
                 Browse the catalog to book an asset and start your rental journey.
               </p>
               <Button onClick={() => navigate('/assets')} className="mt-6 w-full">
@@ -741,7 +803,7 @@ export function BookingsPage() {
 
             {/* ── Active Bookings ── */}
             {showActive && (
-              <Section icon={Sparkles} title="Active Bookings" iconColor="#22c55e" count={activeBookings.length}>
+              <Section icon={Sparkles} title="Active Bookings" iconColor="rgba(201,169,110,0.7)" count={activeBookings.length}>
                 {activeBookings.length === 0 ? (
                   <EmptyState
                     icon={CheckCircle2}
@@ -760,7 +822,7 @@ export function BookingsPage() {
 
             {/* ── Upcoming Bookings ── */}
             {showUpcoming && (
-              <Section icon={Clock} title="Upcoming Bookings" iconColor="#f59e0b" count={upcomingBookings.length}>
+              <Section icon={Clock} title="Upcoming Bookings" iconColor="rgba(201,169,110,0.45)" count={upcomingBookings.length}>
                 {upcomingBookings.length === 0 ? (
                   <EmptyState
                     icon={AlertCircle}
@@ -779,7 +841,7 @@ export function BookingsPage() {
 
             {/* ── Past Bookings ── */}
             {showPast && (pastBookings.length > 0 || activeTab === 'past') && (
-              <Section icon={History} title="Past Bookings" iconColor="#94a3b8" count={pastBookings.length}>
+              <Section icon={History} title="Past Bookings" iconColor="rgba(107,85,72,0.6)" count={pastBookings.length}>
                 {pastBookings.length === 0 ? (
                   <EmptyState
                     icon={History}
@@ -790,16 +852,15 @@ export function BookingsPage() {
                   <>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                       {pastBookings.slice(0, pastVisible).map((b) => (
-                        <PastBookingRow key={b.id} booking={b} onRebook={() => navigate('/assets')} />
+                        <PastBookingRow key={b.id} booking={b} onRebook={() => navigate('/assets')} onTrack={() => navigate(`/bookings/${b.id}/track`)} />
                       ))}
                     </div>
                     {pastVisible < pastBookings.length && (
                       <button
                         onClick={() => setPastVisible((v) => v + PAST_PAGE_SIZE)}
-                        className="flex items-center gap-1.5 font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                        style={{ fontSize: '13px', marginTop: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                        style={{ fontSize: '13px', marginTop: '12px', background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-accent-gold)', fontFamily: 'var(--font-sans)', fontWeight: 500 }}
                       >
-                        Load more <ChevronRight className="w-4 h-4" />
+                        Load more <ChevronRight style={{ width: 16, height: 16 }} />
                       </button>
                     )}
                   </>

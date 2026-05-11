@@ -4,6 +4,8 @@ import type {
   AssetCreatePayload,
   Booking,
   Category,
+  DryCleaner,
+  DryCleaningRequest,
   LoginPayload,
   LoginResponse,
   Payment,
@@ -15,6 +17,8 @@ import type {
   UserUpdatePayload,
   User,
   UserHistoryResponse,
+  TrackingPageData,
+  RecentActivityItem,
 } from './types'
 
 const API_BASE_URL =
@@ -123,6 +127,8 @@ export const api = {
     request<{ detail: string }>('/auth/change-password', { method: 'POST', token, body: payload }),
 
   listAssets: (token: string | null) => request<Asset[]>('/assets/', { token: token || null }),
+  getAsset: (token: string | null, assetId: number) =>
+    request<Asset>(`/assets/${assetId}`, { token: token || null }),
   listAssetsFiltered: (
     token: string | null,
     params?: { name?: string; category_name?: string; status?: string },
@@ -197,7 +203,7 @@ export const api = {
       pan_number?: string
     }
   ) => request<Booking>('/bookings/', { method: 'POST', token, body: payload }),
-  getBlockedDatesForAsset: (token: string, assetId: number) =>
+  getBlockedDatesForAsset: (token: string | null, assetId: number) =>
     request<BlockedDateRanges>(`/bookings/assets/${assetId}/blocked-dates`, { token }),
   listBookings: (token: string) => request<Booking[]>('/bookings/', { token }),
   listAdminBookings: (token: string) => request<Booking[]>('/bookings/admin/all', { token }),
@@ -205,6 +211,8 @@ export const api = {
     request<Booking>(`/bookings/${bookingId}`, { method: 'DELETE', token }),
   requestReturn: (token: string, bookingId: number) =>
     request<Booking>(`/bookings/${bookingId}/request-return`, { method: 'PATCH', token }),
+  refreshBookingStatuses: (token: string) =>
+    request<{ message: string; picked_up_count: number; overdue_count: number }>('/bookings/admin/refresh-statuses', { method: 'POST', token }),
 
   payDeposit: (token: string, bookingId: number) =>
     request<Payment>(`/payments/deposit/${bookingId}`, { method: 'POST', token }),
@@ -257,4 +265,53 @@ export const api = {
 
   createAsset: (token: string, payload: AssetCreatePayload) =>
     request<Asset[]>('/assets/', { method: 'POST', token, body: payload }),
+
+  // Dry Cleaning
+  getDryCleaningPendingSend: (token: string) =>
+    request<DryCleaningRequest[]>('/dry-cleaning/pending-send', { token }),
+  listDryCleaningRequests: (token: string, status?: string) => {
+    const q = status ? `?status=${status}` : ''
+    return request<DryCleaningRequest[]>(`/dry-cleaning/${q}`, { token })
+  },
+  listDryCleaningPortalJobs: (token: string) =>
+    request<DryCleaningRequest[]>('/dry-cleaning/portal/my-jobs', { token }),
+  sendToDryCleaner: (
+    token: string,
+    payload: {
+      asset_id: number; booking_id: number
+      dry_cleaner_name?: string; dry_cleaner_id?: number
+      notes?: string; admin_notes?: string
+      priority?: string; expected_by?: string
+    },
+  ) => request<DryCleaningRequest>('/dry-cleaning/', { method: 'POST', token, body: payload }),
+  startCleaning: (token: string, requestId: number) =>
+    request<DryCleaningRequest>(`/dry-cleaning/${requestId}/start`, { method: 'POST', token }),
+  markCleaningDone: (
+    token: string, requestId: number,
+    payload?: { cleaner_notes?: string; actual_cost?: number; rating?: number },
+  ) => request<DryCleaningRequest>(`/dry-cleaning/${requestId}/complete`, { method: 'POST', token, body: payload ?? {} }),
+  updateDryCleaningRequest: (
+    token: string, requestId: number,
+    payload: { dry_cleaner_name?: string; notes?: string; admin_notes?: string; priority?: string },
+  ) => request<DryCleaningRequest>(`/dry-cleaning/${requestId}`, { method: 'PATCH', token, body: payload }),
+  createDryCleanerUser: (
+    token: string,
+    payload: { full_name: string; email: string; password: string; phone?: string },
+  ) => request<User>('/users/dry-cleaner', { method: 'POST', token, body: payload }),
+
+  // Dry Cleaner Directory
+  listDryCleaners: (token: string, activeOnly?: boolean) =>
+    request<DryCleaner[]>(`/dry-cleaning/cleaners${activeOnly ? '?active_only=true' : ''}`, { token }),
+  createDryCleaner: (token: string, payload: Partial<DryCleaner> & { name: string }) =>
+    request<DryCleaner>('/dry-cleaning/cleaners', { method: 'POST', token, body: payload }),
+  updateDryCleaner: (token: string, id: number, payload: Partial<DryCleaner>) =>
+    request<DryCleaner>(`/dry-cleaning/cleaners/${id}`, { method: 'PATCH', token, body: payload }),
+  deleteDryCleaner: (token: string, id: number) =>
+    request<void>(`/dry-cleaning/cleaners/${id}`, { method: 'DELETE', token }),
+
+  // Tracking
+  getBookingTracking: (token: string, bookingId: number) =>
+    request<TrackingPageData>(`/tracking/bookings/${bookingId}`, { token }),
+  getRecentActivity: (token: string, limit = 10) =>
+    request<RecentActivityItem[]>(`/tracking/admin/recent-activity?limit=${limit}`, { token }),
 }

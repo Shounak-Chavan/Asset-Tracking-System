@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.core.dependencies import get_current_user
 from app.core.rbac import require_roles
+from app.core.rate_limiter import limiter
 from app.db.session import get_db
 from app.models.rental_plan import RentalPlan
 from app.models.user import User, UserRole
@@ -13,7 +14,9 @@ router = APIRouter(prefix="/rental-plans", tags=["rental-plans"])
 
 # POST /rental-plans/ - create new rental plan (admin only)
 @router.post("/", response_model=RentalPlanResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_rental_plan(
+    request: Request,
     data: RentalPlanCreate,
     current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
@@ -41,7 +44,9 @@ async def create_rental_plan(
 
 # GET /rental-plans/ - public endpoint, returns active plans to anyone
 @router.get("/", response_model=list[RentalPlanResponse])
+@limiter.limit("30/minute")
 async def list_rental_plans(
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     result = await db.execute(select(RentalPlan).where(RentalPlan.is_active == True))
@@ -50,8 +55,10 @@ async def list_rental_plans(
 
 # GET /rental-plans/{id} - any logged in user
 @router.get("/{plan_id}", response_model=RentalPlanResponse)
+@limiter.limit("30/minute")
 async def get_rental_plan(
     plan_id: int,
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -66,8 +73,10 @@ async def get_rental_plan(
 # PATCH /rental-plans/{id} - admin edits a plan
 
 @router.patch("/{plan_id}", response_model=RentalPlanResponse)
+@limiter.limit("10/minute")
 async def update_rental_plan(
     plan_id: int,
+    request: Request,
     data: RentalPlanUpdate,
     current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)

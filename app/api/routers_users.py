@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 from app.core.dependencies import get_current_user
+from app.core.rate_limiter import limiter
 from app.db.session import get_db
 from app.models.user import User, UserRole
 from app.models.bookings import Booking, BookingStatus
@@ -15,6 +16,32 @@ from app.core.security import hash_password
 from decimal import Decimal
 
 router = APIRouter(prefix="/users",tags=["users"])
+
+
+# POST /users/dry-cleaner — admin creates a dry cleaner account
+@router.post("/dry-cleaner", response_model=UserResponse, status_code=201)
+@limiter.limit("10/minute")
+async def create_dry_cleaner(
+    request: Request,
+    data: UserCreateAdmin,
+    current_user: User = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.email == data.email))
+    if result.scalars().first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    new_user = User(
+        full_name=data.full_name,
+        email=data.email,
+        password_hash=hash_password(data.password),
+        role=UserRole.dry_cleaner,
+        phone=data.phone,
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    return new_user
 
 
 # GET /users/me - own profile

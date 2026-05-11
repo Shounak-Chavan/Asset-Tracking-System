@@ -2,11 +2,22 @@ import { useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import {
   User, Lock, Eye, EyeOff, Save, Shield,
-  Calendar, Camera,
+  Calendar, Camera, AlertCircle, Check,
 } from 'lucide-react'
 import { api } from '../api'
 import { useAuth } from '../auth-context'
 import { Alert } from '../components/ui/Alert'
+import { validateName, validatePhone, validatePassword } from '../utils/validation'
+
+function FieldError({ message }: { message: string | null }) {
+  if (!message) return null
+  return (
+    <p style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#ef4444', margin: '4px 0 0 0' }}>
+      <AlertCircle size={12} color="#ef4444" style={{ flexShrink: 0 }} />
+      {message}
+    </p>
+  )
+}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getInitials(name: string | undefined) {
@@ -107,6 +118,8 @@ export function ProfilePage() {
   const [phone, setPhone] = useState(user?.phone ?? '')
   const [profileMsg, setProfileMsg] = useState('')
   const [profileError, setProfileError] = useState('')
+  const [profileFieldErrors, setProfileFieldErrors] = useState<Record<string, string | null>>({})
+  const [profileTouched, setProfileTouched] = useState<Record<string, boolean>>({})
 
   // Password form
   const [currentPassword, setCurrentPassword] = useState('')
@@ -114,6 +127,35 @@ export function ProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [pwMsg, setPwMsg] = useState('')
   const [pwError, setPwError] = useState('')
+  const [pwFieldErrors, setPwFieldErrors] = useState<Record<string, string | null>>({})
+  const [pwTouched, setPwTouched] = useState<Record<string, boolean>>({})
+
+  const validateProfileField = (field: string, value: string) => {
+    let err: string | null = null
+    if (field === 'fullName') err = validateName(value)
+    if (field === 'phone' && value.trim()) err = validatePhone(value)
+    setProfileFieldErrors(prev => ({ ...prev, [field]: err }))
+    return err
+  }
+
+  const validatePwField = (field: string, value: string) => {
+    let err: string | null = null
+    if (field === 'newPassword') err = validatePassword(value)
+    if (field === 'confirmPassword') err = value !== newPassword ? 'Passwords do not match' : null
+    if (field === 'currentPassword') err = !value ? 'Current password is required' : null
+    setPwFieldErrors(prev => ({ ...prev, [field]: err }))
+    return err
+  }
+
+  const getProfileBorder = (field: string, value: string) => {
+    if (!profileTouched[field]) return '#e5e7eb'
+    return profileFieldErrors[field] ? '#ef4444' : value ? '#22c55e' : '#e5e7eb'
+  }
+
+  const getPwBorder = (field: string, value: string) => {
+    if (!pwTouched[field]) return undefined
+    return pwFieldErrors[field] ? '#ef4444' : value ? '#22c55e' : undefined
+  }
 
   // Bookings for sidebar stats
   const bookingsQuery = useQuery({
@@ -145,6 +187,8 @@ export function ProfilePage() {
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
+      setPwTouched({})
+      setPwFieldErrors({})
       setTimeout(() => setPwMsg(''), 3000)
     },
     onError: (err: Error) => setPwError(err.message),
@@ -156,6 +200,27 @@ export function ProfilePage() {
   const pwStrength = getPasswordStrength(newPassword)
 
   const pwBtnDisabled = passwordMutation.isPending || !pwFormValid
+
+  const handleProfileSave = () => {
+    const nameErr = validateName(fullName)
+    const phoneErr = phone.trim() ? validatePhone(phone) : null
+    setProfileFieldErrors({ fullName: nameErr, phone: phoneErr })
+    setProfileTouched({ fullName: true, phone: true })
+    if (nameErr || phoneErr) return
+    profileMutation.mutate()
+  }
+
+  const handlePasswordUpdate = () => {
+    const errs = {
+      currentPassword: !currentPassword ? 'Current password is required' : null,
+      newPassword: validatePassword(newPassword),
+      confirmPassword: confirmPassword !== newPassword ? 'Passwords do not match' : null,
+    }
+    setPwFieldErrors(errs)
+    setPwTouched({ currentPassword: true, newPassword: true, confirmPassword: true })
+    if (Object.values(errs).some(Boolean)) return
+    passwordMutation.mutate()
+  }
 
   return (
     <>
@@ -169,7 +234,7 @@ export function ProfilePage() {
         }
       `}</style>
 
-      <div style={{ background: 'linear-gradient(180deg, #eef6ff 0%, #f0f4f8 100%)', minHeight: 'calc(100vh - 4rem)', padding: '32px 24px' }}>
+      <div style={{ minHeight: 'calc(100vh - 4rem)', background: 'var(--color-bg-primary)', padding: '32px 24px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
           {/* ── Page header ── */}
@@ -182,19 +247,20 @@ export function ProfilePage() {
 
             {/* ══ LEFT SIDEBAR ══ */}
             <div style={{
-              background: '#fff', borderRadius: '16px', padding: '32px 24px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.07)', textAlign: 'center',
-              borderTop: '3px solid #00c9a7',
+              background: 'var(--color-bg-card)', borderRadius: '16px', padding: '32px 24px',
+              boxShadow: 'var(--shadow-sm)', textAlign: 'center',
+              borderTop: '2px solid var(--color-accent-gold)',
+              border: '1px solid var(--color-border)',
             }}>
               {/* Avatar */}
               <div style={{ position: 'relative', display: 'inline-block' }}>
                 <div style={{
                   width: 96, height: 96, borderRadius: '50%',
-                  background: '#2563eb', color: '#fff',
+                  background: 'linear-gradient(135deg, #1a3a6b 0%, #2563eb 100%)', color: '#fff',
                   fontSize: '36px', fontWeight: 700,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   border: '4px solid #fff',
-                  boxShadow: '0 0 0 3px #dbeafe',
+                  boxShadow: '0 0 0 3px #dbeafe, 0 8px 24px rgba(26,58,107,0.2)',
                   margin: '0 auto',
                 }}>
                   {getInitials(user?.full_name)}
@@ -262,19 +328,20 @@ export function ProfilePage() {
 
               {/* ── Personal Information Card ── */}
               <div style={{
-                background: '#fff', borderRadius: '16px', padding: '28px 32px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                background: 'var(--color-bg-card)', borderRadius: '16px', padding: '28px 32px',
+                boxShadow: 'var(--shadow-sm)',
+                border: '1px solid var(--color-border)',
               }}>
                 {/* Card header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <div style={{
                       width: 36, height: 36, borderRadius: '50%',
-                      background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: 'rgba(201,169,110,0.1)', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
-                      <User size={16} color="#2563eb" />
+                      <User size={16} color="var(--color-accent-gold)" />
                     </div>
-                    <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                    <h2 style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-primary)', margin: 0 }}>
                       Personal information
                     </h2>
                   </div>
@@ -288,15 +355,21 @@ export function ProfilePage() {
                   {/* Full Name */}
                   <div>
                     <FieldLabel>Full Name</FieldLabel>
-                    <input
-                      type="text"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      disabled={profileMutation.isPending}
-                      style={inputBase}
-                      onFocus={focusInput}
-                      onBlur={blurInput}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="text"
+                        value={fullName}
+                        onChange={(e) => { setFullName(e.target.value); if (profileTouched.fullName) validateProfileField('fullName', e.target.value) }}
+                        onBlur={() => { setProfileTouched(p => ({ ...p, fullName: true })); validateProfileField('fullName', fullName) }}
+                        disabled={profileMutation.isPending}
+                        style={{ ...inputBase, border: `1.5px solid ${getProfileBorder('fullName', fullName)}` }}
+                        onFocus={focusInput}
+                      />
+                      {profileTouched.fullName && !profileFieldErrors.fullName && fullName && (
+                        <Check size={16} color="#22c55e" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+                      )}
+                    </div>
+                    <FieldError message={profileTouched.fullName ? profileFieldErrors.fullName ?? null : null} />
                   </div>
 
                   {/* Email — readonly */}
@@ -318,7 +391,12 @@ export function ProfilePage() {
                 {/* Phone — full width with +91 prefix */}
                 <div style={{ marginBottom: '20px' }}>
                   <FieldLabel>Phone</FieldLabel>
-                  <div style={{ display: 'flex', border: '1.5px solid #e5e7eb', borderRadius: '10px', overflow: 'hidden' }}>
+                  <div style={{
+                    display: 'flex',
+                    border: `1.5px solid ${getProfileBorder('phone', phone)}`,
+                    borderRadius: '10px', overflow: 'hidden',
+                    transition: 'border-color 0.15s',
+                  }}>
                     <div style={{
                       padding: '12px 14px', background: '#f9fafb',
                       borderRight: '1px solid #e5e7eb',
@@ -331,8 +409,10 @@ export function ProfilePage() {
                       type="tel"
                       placeholder="98765 43210"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => { setPhone(e.target.value); if (profileTouched.phone) validateProfileField('phone', e.target.value) }}
+                      onBlur={() => { setProfileTouched(p => ({ ...p, phone: true })); validateProfileField('phone', phone) }}
                       disabled={profileMutation.isPending}
+                      maxLength={10}
                       style={{
                         flex: 1, padding: '12px 16px', fontSize: '15px',
                         color: '#111827', border: 'none', outline: 'none',
@@ -340,19 +420,23 @@ export function ProfilePage() {
                       }}
                     />
                   </div>
+                  <FieldError message={profileTouched.phone ? profileFieldErrors.phone ?? null : null} />
+                  {phone && !profileFieldErrors.phone && profileTouched.phone && (
+                    <p style={{ fontSize: '12px', color: '#6b7280', margin: '4px 0 0 0' }}>
+                      +91 {phone.replace(/(\d{5})(\d{5})/, '$1 $2')}
+                    </p>
+                  )}
                 </div>
 
                 {/* Save button */}
                 <button
-                  onClick={() => profileMutation.mutate()}
+                  onClick={handleProfileSave}
                   disabled={profileMutation.isPending}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '8px',
                     marginLeft: 'auto',
                     padding: '12px 28px', borderRadius: '10px',
-                    background: '#2563eb', color: '#fff', border: 'none',
-                    fontSize: '14px', fontWeight: 500,
-                    cursor: profileMutation.isPending ? 'not-allowed' : 'pointer',
+                    background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)', color: '#fff', border: 'none',
                     opacity: profileMutation.isPending ? 0.7 : 1,
                     transition: 'all 0.2s ease',
                   }}
@@ -366,18 +450,19 @@ export function ProfilePage() {
 
               {/* ── Change Password Card ── */}
               <div style={{
-                background: '#fff', borderRadius: '16px', padding: '28px 32px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.07)',
+                background: 'var(--color-bg-card)', borderRadius: '16px', padding: '28px 32px',
+                boxShadow: 'var(--shadow-sm)',
+                border: '1px solid var(--color-border)',
               }}>
                 {/* Card header */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
                   <div style={{
                     width: 36, height: 36, borderRadius: '50%',
-                    background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(201,169,110,0.1)', border: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    <Lock size={16} color="#d97706" />
+                    <Lock size={16} color="var(--color-accent-gold)" />
                   </div>
-                  <h2 style={{ fontSize: '17px', fontWeight: 600, color: '#111827', margin: 0 }}>
+                  <h2 style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-primary)', margin: 0 }}>
                     Change password
                   </h2>
                 </div>
@@ -391,9 +476,11 @@ export function ProfilePage() {
                     <FieldLabel>Current Password</FieldLabel>
                     <PasswordInput
                       value={currentPassword}
-                      onChange={setCurrentPassword}
+                      onChange={(v) => { setCurrentPassword(v); if (pwTouched.currentPassword) validatePwField('currentPassword', v) }}
                       disabled={passwordMutation.isPending}
+                      borderColor={getPwBorder('currentPassword', currentPassword)}
                     />
+                    <FieldError message={pwTouched.currentPassword ? pwFieldErrors.currentPassword ?? null : null} />
                   </div>
 
                   {/* New password + strength */}
@@ -401,13 +488,14 @@ export function ProfilePage() {
                     <FieldLabel>New Password</FieldLabel>
                     <PasswordInput
                       value={newPassword}
-                      onChange={setNewPassword}
+                      onChange={(v) => { setNewPassword(v); if (pwTouched.newPassword) validatePwField('newPassword', v) }}
                       placeholder="Min. 8 characters"
                       disabled={passwordMutation.isPending}
+                      borderColor={getPwBorder('newPassword', newPassword)}
                     />
+                    <FieldError message={pwTouched.newPassword ? pwFieldErrors.newPassword ?? null : null} />
                     {newPassword && (
                       <div style={{ marginTop: '8px' }}>
-                        {/* Strength bar */}
                         <div style={{ display: 'flex', gap: '4px', marginBottom: '4px' }}>
                           {[1, 2, 3, 4].map((seg) => (
                             <div key={seg} style={{
@@ -429,34 +517,31 @@ export function ProfilePage() {
                     <FieldLabel>Confirm New Password</FieldLabel>
                     <PasswordInput
                       value={confirmPassword}
-                      onChange={setConfirmPassword}
+                      onChange={(v) => { setConfirmPassword(v); if (pwTouched.confirmPassword) validatePwField('confirmPassword', v) }}
                       placeholder="Re-enter new password"
                       disabled={passwordMutation.isPending}
-                      borderColor={passwordError ? '#ef4444' : undefined}
+                      borderColor={getPwBorder('confirmPassword', confirmPassword)}
                     />
-                    {passwordError && (
-                      <p style={{ fontSize: '12px', color: '#ef4444', margin: '4px 0 0 0' }}>
-                        Passwords do not match
-                      </p>
-                    )}
+                    <FieldError message={pwTouched.confirmPassword ? pwFieldErrors.confirmPassword ?? null : null} />
                   </div>
 
                   {/* Update button */}
                   <button
-                    onClick={() => passwordMutation.mutate()}
-                    disabled={pwBtnDisabled}
+                    onClick={handlePasswordUpdate}
+                    disabled={passwordMutation.isPending}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '8px',
                       marginLeft: 'auto',
                       padding: '12px 28px', borderRadius: '10px',
-                      background: pwBtnDisabled ? '#e5e7eb' : '#7c3aed',
-                      color: pwBtnDisabled ? '#9ca3af' : '#fff',
+                      background: 'linear-gradient(135deg, #6d28d9 0%, #7c3aed 100%)',
+                      color: '#fff',
                       border: 'none', fontSize: '14px', fontWeight: 500,
-                      cursor: pwBtnDisabled ? 'not-allowed' : 'pointer',
+                      cursor: passwordMutation.isPending ? 'not-allowed' : 'pointer',
+                      opacity: passwordMutation.isPending ? 0.7 : 1,
                       transition: 'all 0.2s ease',
                     }}
-                    onMouseEnter={(e) => { if (!pwBtnDisabled) { e.currentTarget.style.background = '#6d28d9'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.3)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
-                    onMouseLeave={(e) => { if (!pwBtnDisabled) { e.currentTarget.style.background = '#7c3aed'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' } }}
+                    onMouseEnter={(e) => { if (!passwordMutation.isPending) { e.currentTarget.style.background = '#6d28d9'; e.currentTarget.style.boxShadow = '0 4px 12px rgba(124,58,237,0.3)'; e.currentTarget.style.transform = 'translateY(-1px)' } }}
+                    onMouseLeave={(e) => { if (!passwordMutation.isPending) { e.currentTarget.style.background = '#7c3aed'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.transform = 'translateY(0)' } }}
                   >
                     <Shield size={16} />
                     {passwordMutation.isPending ? 'Updating...' : 'Update Password'}

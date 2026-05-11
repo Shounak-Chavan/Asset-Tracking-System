@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -6,6 +6,8 @@ import re
 from app.utils.asset_utils import generate_asset_code
 from app.core.dependencies import get_current_user, get_current_user_optional
 from app.core.rbac import require_roles
+from app.core.rate_limiter import limiter
+from app.core.logger import asset_logger
 from app.db.session import get_db
 from app.models.asset import Asset, AssetStatus
 from app.models.category import Category
@@ -17,14 +19,19 @@ router = APIRouter(prefix="/assets", tags=["assets"])
 
 # POST /assets/ - admin creates assets (single or bulk)
 @router.post("/", response_model=list[AssetResponse], status_code=status.HTTP_201_CREATED)
+@limiter.limit("20/minute")
 async def create_asset(
+    request: Request,
     data: AssetCreate,
     current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
+    asset_logger.info(f"Asset creation initiated - Name: {data.name}, Quantity: {data.quantity}, Category: {data.category_id}, Admin: {current_user.email}")
+    
     # Check if category exists
     result = await db.execute(select(Category).where(Category.id == data.category_id))
     if not result.scalars().first():
+        asset_logger.warning(f"Asset creation failed - Category not found: {data.category_id}, Admin: {current_user.email}")
         raise HTTPException(status_code=404, detail="Category not found")
 
     # Generate slug from name
@@ -56,12 +63,15 @@ async def create_asset(
     for asset in created_assets:
         await db.refresh(asset)
 
+    asset_logger.info(f"Assets created successfully - Count: {len(created_assets)}, Name: {data.name}, Admin: {current_user.email}, Codes: {[a.asset_code for a in created_assets]}")
     return created_assets
 
 
 # GET /assets/ - filtered list (PUBLIC - no auth required)
 @router.get("/", response_model=list[AssetResponse])
+@limiter.limit("30/minute")
 async def get_all_assets(
+    request: Request,
     name: str | None = None,
     category_name: str | None = None,
     status: AssetStatus | None = None,
@@ -93,8 +103,10 @@ async def get_all_assets(
 
 # GET /assets/{asset_id} - get single asset (PUBLIC)
 @router.get("/{asset_id}", response_model=AssetResponse)
+@limiter.limit("30/minute")
 async def get_asset(
     asset_id: int,
+    request: Request,
     current_user: User | None = Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db)
 ):
@@ -114,16 +126,21 @@ async def get_asset(
 
 # PATCH /assets/{asset_id} - admin edits an asset
 @router.patch("/{asset_id}", response_model=AssetResponse)
+@limiter.limit("20/minute")
 async def update_asset(
     asset_id: int,
+    request: Request,
     data: AssetUpdate,
     current_user: User = Depends(require_roles([UserRole.admin])),
     db: AsyncSession = Depends(get_db)
 ):
+    asset_logger.info(f"Asset update initiated - AssetId: {asset_id}, Admin: {current_user.email}")
+    
     result = await db.execute(select(Asset).where(Asset.id == asset_id))
     asset = result.scalars().first()
 
     if not asset:
+        asset_logger.warning(f"Asset update failed - Asset not found: {asset_id}, Admin: {current_user.email}")
         raise HTTPException(status_code=404, detail="Asset not found")
 
     if data.name is not None:
@@ -135,6 +152,7 @@ async def update_asset(
     if data.category_id is not None:
         cat = await db.execute(select(Category).where(Category.id == data.category_id))
         if not cat.scalars().first():
+            asset_logger.warning(f"Asset update failed - Category not found: {data.category_id}, AssetId: {asset_id}, Admin: {current_user.email}")
             raise HTTPException(status_code=404, detail="Category not found")
         asset.category_id = data.category_id
     if data.status is not None:
@@ -147,6 +165,8 @@ async def update_asset(
     db.add(asset)
     await db.commit()
     await db.refresh(asset)
+    
+    asset_logger.info(f"Asset updated successfully - AssetId: {asset_id}, Code: {asset.asset_code}, Admin: {current_user.email}")
     return asset
 
 

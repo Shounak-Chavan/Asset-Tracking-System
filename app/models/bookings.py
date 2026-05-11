@@ -11,8 +11,9 @@ class BookingStatus(str, enum.Enum):
     pending = "pending"
     booked = "booked"
     allocated = "allocated"
+    rent_paid = "rent_paid"       # rent paid, pickup date still in the future
+    picked_up = "picked_up"       # pickup date has arrived/passed
     ready_for_pickup = "ready_for_pickup"
-    picked_up = "picked_up"
     returned = "returned"
     overdue = "overdue"
     cancelled = "cancelled"

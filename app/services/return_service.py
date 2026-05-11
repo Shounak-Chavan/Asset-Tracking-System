@@ -11,6 +11,7 @@ from app.models.category import Category
 from app.models.allocations import Allocation
 from app.models.returns import Return
 from app.models.payment import Payment, PaymentType, PaymentStatus
+from app.services.tracking_service import record_event, RETURNED, SENT_DRY_CLEANING
 
 
 async def process_return(
@@ -70,10 +71,11 @@ async def process_return(
         raise HTTPException(404, "Allocated asset not found")
 
     category = await db.get(Category, asset.category_id)
-    is_cloth_asset = bool(category and category.name.strip().lower() == "cloth")
+    category_name = (category.name.strip().lower() if category else "")
+    is_cleanable_asset = category_name in ("cloth", "jwellary", "jewellery")
 
-    if send_for_dry_cleaning and not is_cloth_asset:
-        raise HTTPException(400, "Dry cleaning is allowed only for cloth assets")
+    if send_for_dry_cleaning and not is_cleanable_asset:
+        raise HTTPException(400, "Dry cleaning is allowed only for cloth or jewellery assets")
 
     # 9. Create return record
     return_record = Return(
@@ -91,7 +93,19 @@ async def process_return(
     # 10. Update states
     booking.status = BookingStatus.returned
     asset.status = AssetStatus.available
-    asset.is_in_dry_cleaning = bool(send_for_dry_cleaning and is_cloth_asset)
+    asset.is_in_dry_cleaning = bool(send_for_dry_cleaning and is_cleanable_asset)
+
+    record_event(
+        db, booking_id, RETURNED,
+        "Item returned successfully",
+        created_by=admin_id,
+    )
+    if send_for_dry_cleaning and is_cleanable_asset:
+        record_event(
+            db, booking_id, SENT_DRY_CLEANING,
+            "Item sent to dry cleaning facility",
+            created_by=admin_id,
+        )
 
     # 11. Create payment records for deductions and refund
     if fine_amount > Decimal("0"):

@@ -1,63 +1,69 @@
-import { CheckCircle2, AlertCircle, Info, X } from 'lucide-react'
-import { cn } from '../../lib/cn'
+import { CheckCircle2, AlertCircle, Info, X } from "lucide-react";
+import { cn } from "../../lib/cn";
 
-type AlertVariant = 'success' | 'error' | 'info' | 'warning'
+type AlertVariant = "success" | "error" | "info" | "warning";
 
 interface AlertProps {
-  variant: AlertVariant
-  message: string
-  onDismiss?: () => void
-  className?: string
+  variant: AlertVariant;
+  message: string;
+  onDismiss?: () => void;
+  className?: string;
 }
 
-const config: Record<AlertVariant, { bg: string; border: string; text: string; icon: React.ReactNode }> = {
+const config: Record<AlertVariant, { bg: string; border: string; color: string; icon: React.ReactNode }> = {
   success: {
-    bg: 'bg-green-50',
-    border: 'border-green-200',
-    text: 'text-green-700',
-    icon: <CheckCircle2 className="w-4 h-4 shrink-0" />,
+    bg: "rgba(126,200,160,0.08)",
+    border: "rgba(126,200,160,0.25)",
+    color: "var(--color-success)",
+    icon: <CheckCircle2 size={15} style={{ flexShrink: 0 }} />,
   },
   error: {
-    bg: 'bg-red-50',
-    border: 'border-red-200',
-    text: 'text-red-700',
-    icon: <AlertCircle className="w-4 h-4 shrink-0" />,
+    bg: "rgba(224,112,112,0.08)",
+    border: "rgba(224,112,112,0.25)",
+    color: "var(--color-error)",
+    icon: <AlertCircle size={15} style={{ flexShrink: 0 }} />,
   },
   info: {
-    bg: 'bg-blue-50',
-    border: 'border-blue-200',
-    text: 'text-blue-700',
-    icon: <Info className="w-4 h-4 shrink-0" />,
+    bg: "rgba(201,169,110,0.08)",
+    border: "rgba(201,169,110,0.25)",
+    color: "var(--color-accent-gold)",
+    icon: <Info size={15} style={{ flexShrink: 0 }} />,
   },
   warning: {
-    bg: 'bg-amber-50',
-    border: 'border-amber-200',
-    text: 'text-amber-700',
-    icon: <AlertCircle className="w-4 h-4 shrink-0" />,
+    bg: "rgba(232,180,100,0.08)",
+    border: "rgba(232,180,100,0.25)",
+    color: "#E8B464",
+    icon: <AlertCircle size={15} style={{ flexShrink: 0 }} />,
   },
-}
+};
 
 export function Alert({ variant, message, onDismiss, className }: AlertProps) {
-  const { bg, border, text, icon } = config[variant]
+  const { bg, border, color, icon } = config[variant];
   return (
     <div
       role="alert"
-      className={cn(
-        'flex items-center gap-3 p-4 rounded-2xl border text-sm font-medium',
-        bg, border, text, className
-      )}
+      className={cn("flex items-center gap-3 text-sm font-medium", className)}
+      style={{
+        background: bg,
+        border: `1px solid ${border}`,
+        borderRadius: "var(--radius-md)",
+        padding: "12px 14px",
+        color,
+        fontFamily: "var(--font-sans)",
+        marginBottom: 16,
+      }}
     >
       {icon}
-      <span className="flex-1">{message}</span>
+      <span style={{ flex: 1 }}>{message}</span>
       {onDismiss && (
         <button
           onClick={onDismiss}
           aria-label="Dismiss"
-          className="ml-auto p-0.5 rounded hover:opacity-70 transition-opacity shrink-0"
+          style={{ background: "none", border: "none", cursor: "pointer", color, padding: "2px", display: "flex", alignItems: "center", marginLeft: "auto", flexShrink: 0, opacity: 0.7 }}
         >
-          <X className="w-3.5 h-3.5" />
+          <X size={14} />
         </button>
       )}
     </div>
-  )
+  );
 }
