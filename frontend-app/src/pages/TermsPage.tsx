@@ -21,12 +21,12 @@ const SECTION_IDS = NAV_ITEMS.map((_, i) => `terms-section-${i}`)
 function SubPoint({ label, text, first = false }: { label: string; text: string; first?: boolean }) {
   return (
     <div style={{
-      borderLeft: '3px solid #dbeafe',
+      borderLeft: '2px solid var(--color-border-strong)',
       paddingLeft: '14px',
       margin: first ? '0' : '12px 0',
     }}>
-      <p style={{ fontSize: '13px', fontWeight: 600, color: '#1e40af', margin: '0 0 2px 0' }}>{label}</p>
-      <p style={{ fontSize: '14px', color: '#4b5563', lineHeight: 1.7, margin: 0 }}>{text}</p>
+      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: 'var(--color-accent-gold)', margin: '0 0 2px 0' }}>{label}</p>
+      <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: 'var(--color-text-muted)', lineHeight: 1.7, margin: 0 }}>{text}</p>
     </div>
   )
 }
@@ -34,19 +34,19 @@ function SubPoint({ label, text, first = false }: { label: string; text: string;
 // ── Callout banner ───────────────────────────────────────────────────────────
 function Callout({ type, text }: { type: 'info' | 'warning' | 'danger'; text: string }) {
   const styles = {
-    info:    { bg: '#eff6ff', border: '#bfdbfe', color: '#1e40af', icon: <Info size={16} color="#2563eb" /> },
-    warning: { bg: '#fffbeb', border: '#fde68a', color: '#92400e', icon: <AlertTriangle size={16} color="#d97706" /> },
-    danger:  { bg: '#fef2f2', border: '#fecaca', color: '#991b1b', icon: <AlertCircle size={16} color="#dc2626" /> },
+    info:    { bg: 'rgba(201,169,110,0.08)', border: 'rgba(201,169,110,0.25)', color: 'var(--color-accent-gold)', icon: <Info size={16} color="var(--color-accent-gold)" /> },
+    warning: { bg: 'rgba(232,180,100,0.08)', border: 'rgba(232,180,100,0.25)', color: '#E8B464', icon: <AlertTriangle size={16} color="#E8B464" /> },
+    danger:  { bg: 'rgba(224,112,112,0.08)', border: 'rgba(224,112,112,0.25)', color: 'var(--color-error)', icon: <AlertCircle size={16} color="var(--color-error)" /> },
   }
   const s = styles[type]
   return (
     <div style={{
       display: 'flex', gap: '10px', alignItems: 'flex-start',
       background: s.bg, border: `1px solid ${s.border}`,
-      borderRadius: '10px', padding: '14px 16px', marginBottom: '20px',
+      borderRadius: 'var(--radius-md)', padding: '14px 16px', marginBottom: '20px',
     }}>
       <span style={{ flexShrink: 0, marginTop: '1px' }}>{s.icon}</span>
-      <span style={{ fontSize: '14px', color: s.color, lineHeight: 1.6 }}>{text}</span>
+      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: s.color, lineHeight: 1.6 }}>{text}</span>
     </div>
   )
 }
@@ -153,32 +153,32 @@ export function TermsPage() {
   ]
 
   return (
-    <div style={{ background: '#f0f4f8', width: '100%' }}>
+    <div style={{ background: 'var(--color-bg-primary)', width: '100%' }}>
       <style>{`
         .terms-sidebar-item {
           display: flex; align-items: center; gap: 10px;
-          padding: 8px 10px; border-radius: 8px; cursor: pointer;
+          padding: 8px 10px; border-radius: var(--radius-md); cursor: pointer;
           transition: all 0.15s ease; border: none; background: none;
           width: 100%; text-align: left;
         }
-        .terms-sidebar-item:hover { background: #eff6ff; }
+        .terms-sidebar-item:hover { background: rgba(201,169,110,0.06); }
         .terms-sidebar-item:hover .terms-nav-num,
-        .terms-sidebar-item:hover .terms-nav-label { color: #2563eb; }
+        .terms-sidebar-item:hover .terms-nav-label { color: var(--color-accent-gold); }
         .terms-sidebar-item.active {
-          background: #f0fdf9;
-          border-left: 3px solid #00c9a7;
+          background: rgba(201,169,110,0.08);
+          border-left: 2px solid var(--color-accent-gold);
           padding-left: 8px;
         }
         .terms-sidebar-item.active .terms-nav-num,
         .terms-sidebar-item.active .terms-nav-label {
-          color: #00c9a7; font-weight: 500;
+          color: var(--color-accent-gold); font-weight: 500;
         }
-        .terms-nav-num { font-size: 11px; font-weight: 700; color: #9ca3af; min-width: 18px; }
-        .terms-nav-label { font-size: 13px; color: #374151; }
+        .terms-nav-num { font-size: 11px; font-weight: 700; color: var(--color-text-faint); min-width: 18px; font-family: var(--font-sans); }
+        .terms-nav-label { font-size: 13px; color: var(--color-text-muted); font-family: var(--font-sans); }
         .terms-mobile-pill {
           display: none;
           overflow-x: auto; gap: 8px; padding: 16px 24px;
-          background: #fff; border-bottom: 1px solid #e5e7eb;
+          background: var(--color-bg-secondary); border-bottom: 1px solid var(--color-border);
           scrollbar-width: none;
         }
         .terms-mobile-pill::-webkit-scrollbar { display: none; }
@@ -193,31 +193,24 @@ export function TermsPage() {
       `}</style>
 
       {/* ── 1. Hero ── */}
-      <section style={{ background: '#0f172a', padding: '56px 24px', textAlign: 'center' }}>
+      <section style={{ background: 'var(--color-bg-secondary)', borderBottom: '1px solid var(--color-border)', padding: '56px 24px', textAlign: 'center' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center',
-            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '100px', padding: '6px 16px',
-            fontSize: '13px', color: 'rgba(255,255,255,0.8)',
-          }}>
-            ✦ Legal
-          </div>
-          <h1 className="terms-hero-title" style={{ fontSize: '44px', fontWeight: 800, color: '#fff', marginTop: '16px', marginBottom: 0 }}>
+          <p className="section-eyebrow" style={{ marginBottom: 12 }}>Legal</p>
+          <h1 className="terms-hero-title" style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '44px', fontWeight: 500, color: 'var(--color-text-primary)', marginTop: '0', marginBottom: 0 }}>
             Terms and Conditions
           </h1>
-          <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.6)', marginTop: '10px' }}>
-            Please read these terms carefully before using AssetTrack.
+          <p style={{ fontFamily: 'var(--font-sans)', fontSize: '15px', color: 'var(--color-text-muted)', marginTop: '10px' }}>
+            Please read these terms carefully before using Riwaayat.
           </p>
           <div className="terms-hero-meta" style={{ display: 'flex', gap: '24px', justifyContent: 'center', alignItems: 'center', marginTop: '24px' }}>
             {[
-              { icon: <Calendar size={14} color="rgba(255,255,255,0.4)" />, text: 'Last updated: May 2026' },
-              { icon: <FileText size={14} color="rgba(255,255,255,0.4)" />, text: '10 sections' },
-              { icon: <Clock size={14} color="rgba(255,255,255,0.4)" />, text: '~5 min read' },
+              { icon: <Calendar size={14} color="var(--color-text-faint)" />, text: 'Last updated: May 2026' },
+              { icon: <FileText size={14} color="var(--color-text-faint)" />, text: '10 sections' },
+              { icon: <Clock size={14} color="var(--color-text-faint)" />, text: '~5 min read' },
             ].map((m, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 {m.icon}
-                <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>{m.text}</span>
+                <span style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--color-text-muted)' }}>{m.text}</span>
               </div>
             ))}
           </div>
@@ -232,9 +225,10 @@ export function TermsPage() {
             onClick={() => scrollTo(i)}
             style={{
               flexShrink: 0, padding: '6px 14px', borderRadius: '100px',
-              border: `1.5px solid ${activeSection === i ? '#2563eb' : '#e5e7eb'}`,
-              background: activeSection === i ? '#eff6ff' : '#fff',
-              color: activeSection === i ? '#2563eb' : '#374151',
+              border: `1px solid ${activeSection === i ? 'var(--color-accent-gold)' : 'var(--color-border)'}`,
+              background: activeSection === i ? 'rgba(201,169,110,0.1)' : 'transparent',
+              color: activeSection === i ? 'var(--color-accent-gold)' : 'var(--color-text-muted)',
+              fontFamily: 'var(--font-sans)',
               fontSize: '12px', fontWeight: activeSection === i ? 600 : 400,
               cursor: 'pointer', whiteSpace: 'nowrap',
             }}
@@ -245,13 +239,13 @@ export function TermsPage() {
       </div>
 
       {/* ── 2. Main layout ── */}
-      <div style={{ maxWidth: 1100, margin: '-24px auto 0', padding: '0 24px 80px' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '32px 24px 80px' }}>
         <div className="terms-layout" style={{ display: 'grid', gridTemplateColumns: '260px 1fr', gap: '32px', alignItems: 'start' }}>
 
           {/* LEFT — Sticky sidebar */}
           <aside className="terms-sidebar" style={{ position: 'sticky', top: '24px' }}>
-            <div style={{ background: '#fff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-              <p style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '0.06em', color: '#9ca3af', fontWeight: 600, margin: 0 }}>
+            <div style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '24px' }}>
+              <p style={{ fontFamily: 'var(--font-sans)', fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '0.15em', color: 'var(--color-accent-gold)', fontWeight: 600, margin: 0 }}>
                 Table of contents
               </p>
               <nav style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -267,22 +261,15 @@ export function TermsPage() {
                 ))}
               </nav>
 
-              <div style={{ borderTop: '1px solid #f1f5f9', marginTop: '24px', paddingTop: '16px' }}>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: '#374151', margin: 0 }}>Need help?</p>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+              <div style={{ borderTop: '1px solid var(--color-border)', marginTop: '24px', paddingTop: '16px' }}>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-primary)', margin: 0 }}>Need help?</p>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-text-muted)', marginTop: '4px' }}>
                   Contact our support team for clarification on any terms.
                 </p>
                 <button
                   onClick={() => navigate('/contact')}
-                  style={{
-                    width: '100%', marginTop: '12px',
-                    border: '1.5px solid #e5e7eb', borderRadius: '8px',
-                    padding: '8px', fontSize: '13px', color: '#2563eb',
-                    background: '#fff', cursor: 'pointer', textAlign: 'center',
-                    transition: 'background 0.15s ease',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#eff6ff')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#fff')}
+                  className="btn-gold"
+                  style={{ width: '100%', marginTop: '12px', padding: '8px', justifyContent: 'center' }}
                 >
                   Contact Support
                 </button>
@@ -292,7 +279,7 @@ export function TermsPage() {
 
           {/* RIGHT — Terms content card */}
           <main>
-            <div className="terms-card" style={{ background: '#fff', borderRadius: '16px', padding: '40px 44px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+            <div className="terms-card" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border)', borderRadius: '12px', padding: '40px 44px' }}>
               {sections.map((section, i) => (
                 <section
                   key={i}
@@ -300,20 +287,20 @@ export function TermsPage() {
                   ref={el => { sectionRefs.current[i] = el }}
                   style={{
                     padding: '32px 0',
-                    borderBottom: i < sections.length - 1 ? '1px solid #f1f5f9' : 'none',
+                    borderBottom: i < sections.length - 1 ? '1px solid var(--color-border)' : 'none',
                   }}
                 >
                   {/* Section header */}
                   <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '16px' }}>
                     <div style={{
-                      width: 32, height: 32, background: '#eff6ff', borderRadius: '8px',
+                      width: 32, height: 32, background: 'rgba(201,169,110,0.1)', border: '1px solid var(--color-border)', borderRadius: 'var(--radius-md)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}>
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#2563eb' }}>
+                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', fontWeight: 700, color: 'var(--color-accent-gold)' }}>
                         {String(i + 1).padStart(2, '0')}
                       </span>
                     </div>
-                    <h2 style={{ fontSize: '19px', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+                    <h2 style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: '20px', fontWeight: 500, color: 'var(--color-text-primary)', margin: 0 }}>
                       {section.title}
                     </h2>
                   </div>
@@ -323,7 +310,7 @@ export function TermsPage() {
 
                   {/* Plain paragraph */}
                   {section.content && (
-                    <p style={{ fontSize: '15px', color: '#4b5563', lineHeight: 1.8, margin: 0 }}>
+                    <p style={{ fontFamily: 'var(--font-sans)', fontSize: '14px', color: 'var(--color-text-muted)', lineHeight: 1.8, margin: 0 }}>
                       {section.content}
                     </p>
                   )}
@@ -341,20 +328,17 @@ export function TermsPage() {
 
               {/* Document footer */}
               <div style={{ paddingTop: '32px', textAlign: 'center' }}>
-                <p style={{ fontSize: '13px', color: '#9ca3af', margin: 0 }}>Last updated: May 2026</p>
-                <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>These terms are governed by the laws of India.</p>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--color-text-faint)', margin: 0 }}>Last updated: May 2026</p>
+                <p style={{ fontFamily: 'var(--font-sans)', fontSize: '12px', color: 'var(--color-text-faint)', marginTop: '4px' }}>These terms are governed by the laws of India.</p>
                 <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '16px' }}>
-                  <button
-                    onClick={() => navigate('/contact')}
-                    style={{ background: 'none', border: 'none', fontSize: '13px', color: '#2563eb', cursor: 'pointer', padding: 0 }}
+                  <button onClick={() => navigate('/contact')} style={{ background: 'none', border: 'none', fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--color-accent-gold)', cursor: 'pointer', padding: 0 }}
                     onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
                     onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
                   >
                     Contact Us
                   </button>
-                  <span style={{ color: '#e5e7eb' }}>|</span>
-                  <button
-                    style={{ background: 'none', border: 'none', fontSize: '13px', color: '#2563eb', cursor: 'pointer', padding: 0 }}
+                  <span style={{ color: 'var(--color-border)' }}>|</span>
+                  <button style={{ background: 'none', border: 'none', fontFamily: 'var(--font-sans)', fontSize: '13px', color: 'var(--color-accent-gold)', cursor: 'pointer', padding: 0 }}
                     onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
                     onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
                   >

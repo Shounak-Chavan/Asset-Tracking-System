@@ -6,6 +6,7 @@ from app.models.payment import Payment, PaymentType, PaymentStatus
 from app.models.bookings import Booking, BookingStatus
 from app.models.allocations import Allocation
 from app.models.asset import Asset, AssetStatus
+from app.services.tracking_service import record_event, DEPOSIT_PAID, RENT_PAID
 
 #  DEPOSIT PAYMENT (MOCK)
 
@@ -53,6 +54,12 @@ async def pay_deposit(
 
     # 6. Update booking status
     booking.status = BookingStatus.booked
+
+    record_event(
+        db, booking_id, DEPOSIT_PAID,
+        f"Security deposit of ₹{booking.deposit_amount} received",
+        created_by=user_id,
+    )
 
     await db.commit()
     await db.refresh(payment)
@@ -103,8 +110,8 @@ async def pay_rent(
 
     db.add(payment)
 
-    # 6. Update booking and asset status
-    booking.status = BookingStatus.picked_up
+    # 6. Update booking and asset status — rent paid but pickup may be in the future
+    booking.status = BookingStatus.rent_paid
 
     alloc_result = await db.execute(
         select(Allocation).where(Allocation.booking_id == booking_id)
@@ -113,7 +120,13 @@ async def pay_rent(
     if allocation:
         asset = await db.get(Asset, allocation.asset_id)
         if asset:
-            asset.status = AssetStatus.picked_up
+            asset.status = AssetStatus.picked_up  # asset is reserved/committed
+
+    record_event(
+        db, booking_id, RENT_PAID,
+        f"Total rent of ₹{booking.rent_amount} paid successfully",
+        created_by=user_id,
+    )
 
     await db.commit()
     await db.refresh(payment)

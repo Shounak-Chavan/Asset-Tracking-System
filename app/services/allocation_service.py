@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from app.models.allocations import Allocation
 from app.models.bookings import Booking,BookingStatus
 from app.models.asset import Asset, AssetStatus
+from app.services.tracking_service import record_event, ASSET_ALLOCATED, READY_FOR_PICKUP, BOOKING_REJECTED
 
 async def allocate_asset(
         db: AsyncSession,
@@ -56,6 +57,17 @@ async def allocate_asset(
     booking.status = BookingStatus.allocated
     asset.status = AssetStatus.allocated
 
+    record_event(
+        db, booking_id, ASSET_ALLOCATED,
+        "Admin has allocated your asset",
+        created_by=allocated_by,
+    )
+    record_event(
+        db, booking_id, READY_FOR_PICKUP,
+        f"Visit the center to pick up your item on {booking.pickup_date}",
+        created_by=allocated_by,
+    )
+
     await db.commit()
     await db.refresh(allocation)
 
@@ -79,6 +91,7 @@ async def reject_booking_request(
         raise HTTPException(status_code=400, detail="Only pending or booked requests can be rejected")
 
     booking.status = BookingStatus.cancelled
+    record_event(db, booking_id, BOOKING_REJECTED, "Booking has been rejected by admin")
     await db.commit()
     await db.refresh(booking, attribute_names=["rental_plan"])
     return booking

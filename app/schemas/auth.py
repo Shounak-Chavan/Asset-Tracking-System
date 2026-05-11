@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-
+from datetime import datetime
 from app.models.user import UserRole
 
 
@@ -15,6 +15,7 @@ class UserResponse(BaseModel):
     role: UserRole
     phone: str | None = None
     is_active: bool
+    created_at: datetime | None = None
 
     class Config:
         from_attributes = True

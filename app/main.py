@@ -11,6 +11,8 @@ from app.api.routers_booking import router as booking_router
 from app.api.routers_allocation import router as allocation_router
 from app.api.routers_return import router as return_router
 from app.api.routers_payment import router as payment_router
+from app.api.routers_dry_cleaning import router as dry_cleaning_router
+from app.api.routers_tracking import router as tracking_router
 from app.db.seed import seed
 
 
@@ -57,6 +59,8 @@ app.include_router(booking_router)
 app.include_router(allocation_router)
 app.include_router(return_router)
 app.include_router(payment_router)
+app.include_router(dry_cleaning_router)
+app.include_router(tracking_router)
 
 @app.get("/health")
 async def health():

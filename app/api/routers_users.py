@@ -17,6 +17,30 @@ from decimal import Decimal
 router = APIRouter(prefix="/users",tags=["users"])
 
 
+# POST /users/dry-cleaner — admin creates a dry cleaner account
+@router.post("/dry-cleaner", response_model=UserResponse, status_code=201)
+async def create_dry_cleaner(
+    data: UserCreateAdmin,
+    current_user: User = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(select(User).where(User.email == data.email))
+    if result.scalars().first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    new_user = User(
+        full_name=data.full_name,
+        email=data.email,
+        password_hash=hash_password(data.password),
+        role=UserRole.dry_cleaner,
+        phone=data.phone,
+    )
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+    return new_user
+
+
 # GET /users/me - own profile
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):

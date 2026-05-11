@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Calendar, ChevronLeft, ChevronRight, Package2,
@@ -105,7 +105,6 @@ export function AssetBookingModal({
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const [calendarMonth, setCalendarMonth] = useState(() => toDateOnly(new Date()));
-
   const plansQuery = useQuery({
     queryKey: ['plans', token],
     queryFn: async () => {
@@ -125,12 +124,39 @@ export function AssetBookingModal({
   const blockedDatesQuery = useQuery({
     queryKey: ['blockedDates', asset?.id],
     queryFn: async () => {
-      if (!token || !asset) return [] as BlockedDateRange[];
+      if (!asset) return [] as BlockedDateRange[];
       const res = await api.getBlockedDatesForAsset(token, asset.id);
       return res.blocked_ranges;
     },
-    enabled: Boolean(token && asset),
+    enabled: Boolean(asset),
   });
+
+  // Auto-advance calendar to the first month that has a free day.
+  // This handles "fully booked for the next N months" cases so the user
+  // doesn't have to manually scroll through a wall of red dates.
+  useEffect(() => {
+    const ranges = blockedDatesQuery.data;
+    if (!ranges || ranges.length === 0) return;
+    const today = toDateOnly(new Date());
+    // Find the first free day starting from today, up to 3 years out
+    for (let i = 0; i < 365 * 3; i++) {
+      const check = new Date(today);
+      check.setDate(today.getDate() + i);
+      const blocked = ranges.some(r => {
+        const s = toDateOnly(fromISODate(r.from_date));
+        const e = toDateOnly(fromISODate(r.to_date));
+        return check >= s && check <= e;
+      });
+      if (!blocked) {
+        // Jump to the month of the first free day if it's not the current month
+        const firstFreeMonth = new Date(check.getFullYear(), check.getMonth(), 1);
+        if (firstFreeMonth > toDateOnly(new Date())) {
+          setCalendarMonth(firstFreeMonth);
+        }
+        return;
+      }
+    }
+  }, [blockedDatesQuery.data]);
 
   const createBookingMutation = useMutation({
     mutationFn: async () => {
@@ -296,12 +322,13 @@ export function AssetBookingModal({
             </p>
             <span style={{
               display: 'inline-block',
-              background: '#dcfce7', color: '#16a34a',
+              background: asset.is_in_dry_cleaning ? '#fef3c7' : '#dcfce7',
+              color: asset.is_in_dry_cleaning ? '#d97706' : '#16a34a',
               fontSize: '11px', fontWeight: 600,
               padding: '3px 10px', borderRadius: '9999px',
               textTransform: 'uppercase', letterSpacing: '0.3px',
             }}>
-              {asset.status}
+              {asset.is_in_dry_cleaning ? 'Coming Soon' : 'Available'}
             </span>
           </div>
         </div>
@@ -483,34 +510,41 @@ export function AssetBookingModal({
                           let color = '#374151';
                           let border = 'none';
                           let cursor = 'pointer';
+                          let borderRadius = '50%';
+                          let cellTitle: string | undefined;
 
                           if (!isCurrentMonth) { color = 'transparent'; cursor = 'default'; }
-                          else if (isSelected) { bg = '#2563eb'; color = '#fff'; }
-                          else if (isToday) { border = '2px solid #3b82f6'; color = '#2563eb'; }
-                          else if (isInPast || isBlocked) { color = '#d1d5db'; cursor = 'not-allowed'; }
+                          else if (isSelected) { bg = '#00c9a7'; color = '#fff'; }
+                          else if (isBlocked && !isInPast) {
+                            bg = '#fee2e2'; color = '#fca5a5';
+                            cursor = 'not-allowed'; borderRadius = '6px';
+                            cellTitle = 'Already booked';
+                          }
+                          else if (isToday) { border = '2px solid #00c9a7'; color = '#0d9488'; }
+                          else if (isInPast) { color = '#d1d5db'; cursor = 'not-allowed'; }
 
                           return (
                             <button
                               key={toISODate(day)}
                               type="button"
+                              title={cellTitle}
                               onClick={() => !disabled && handleCalendarSelect(day)}
                               disabled={disabled}
                               style={{
-                                width: 36, height: 36, borderRadius: '50%',
+                                width: 36, height: 36, borderRadius,
                                 border, background: bg, color,
                                 fontSize: '13px', fontWeight: isSelected ? 600 : 400,
                                 cursor, display: 'flex', alignItems: 'center',
                                 justifyContent: 'center', margin: '0 auto',
                                 transition: 'background 0.1s',
-                                textDecoration: isBlocked && isCurrentMonth ? 'line-through' : 'none',
                               }}
                               onMouseEnter={(e) => {
-                                if (!disabled && !isSelected)
-                                  e.currentTarget.style.background = '#dbeafe';
+                                if (!disabled && !isSelected && isCurrentMonth)
+                                  e.currentTarget.style.background = '#ccfbf1';
                               }}
                               onMouseLeave={(e) => {
-                                if (!disabled && !isSelected)
-                                  e.currentTarget.style.background = 'transparent';
+                                if (!disabled && !isSelected && isCurrentMonth)
+                                  e.currentTarget.style.background = isBlocked ? '#fee2e2' : 'transparent';
                               }}
                             >
                               {day.getDate()}
@@ -518,18 +552,65 @@ export function AssetBookingModal({
                           );
                         })}
                       </div>
-                    </div>
+
+                      {/* Legend — only shown when there are blocked dates */}
+                      {(blockedDatesQuery.data?.length ?? 0) > 0 && (
+                        <div style={{
+                          display: 'flex', gap: '14px', marginTop: '10px',
+                          paddingTop: '10px', borderTop: '1px solid #f3f4f6',
+                          flexWrap: 'wrap',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <div style={{ width: 12, height: 12, borderRadius: '3px', background: '#fee2e2', border: '1px solid #fca5a5', flexShrink: 0 }} />
+                            <span style={{ fontSize: '11px', color: '#6b7280' }}>Already booked</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#00c9a7', flexShrink: 0 }} />
+                            <span style={{ fontSize: '11px', color: '#6b7280' }}>Selected</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                            <div style={{ width: 12, height: 12, borderRadius: '50%', border: '2px solid #00c9a7', flexShrink: 0 }} />
+                            <span style={{ fontSize: '11px', color: '#6b7280' }}>Today</span>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>{/* end padding div */}
 
                     {/* Selected date display */}
                     {pickupDate && (
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
                         padding: '10px 16px', borderTop: '1px solid #f0f9ff',
-                        background: '#f0f9ff',
+                        background: '#f0fdf4',
                       }}>
-                        <Calendar size={14} color="#0284c7" />
-                        <span style={{ fontSize: '13px', color: '#0369a1' }}>
-                          Scheduled Date: <strong>{formatDisplayDate(pickupDate)}</strong>
+                        <Calendar size={14} color="#0d9488" />
+                        <span style={{ fontSize: '13px', color: '#0d9488' }}>
+                          Pickup: <strong>{formatDisplayDate(pickupDate)}</strong>
+                          {selectedPlan && (
+                            <> · Returns <strong>{formatDisplayDate(
+                              (() => {
+                                const d = new Date(fromISODate(pickupDate))
+                                d.setDate(d.getDate() + selectedPlan.duration_days)
+                                const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0')
+                                return `${y}-${m}-${day}`
+                              })()
+                            )}</strong></>
+                          )}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Conflict warning */}
+                    {hasDateOverlap && pickupDate && (
+                      <div style={{
+                        display: 'flex', alignItems: 'flex-start', gap: '10px',
+                        padding: '10px 16px', borderTop: '1px solid #fecaca',
+                        background: '#fef2f2',
+                      }}>
+                        <AlertCircle size={15} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+                        <span style={{ fontSize: '13px', color: '#dc2626', lineHeight: 1.5 }}>
+                          This date range conflicts with an existing booking. Please pick a different date.
                         </span>
                       </div>
                     )}
@@ -664,17 +745,20 @@ export function AssetBookingModal({
                 style={{
                   display: 'flex', alignItems: 'center', gap: '8px',
                   padding: '10px 24px', borderRadius: '8px',
-                  border: 'none', background: '#2563eb', color: '#fff',
+                  border: 'none',
+                  background: hasDateOverlap ? '#9ca3af' : isFormValid && !isPending ? '#00c9a7' : '#9ca3af',
+                  color: '#fff',
                   fontSize: '14px', fontWeight: 600,
                   cursor: isFormValid && !isPending ? 'pointer' : 'not-allowed',
-                  opacity: isFormValid && !isPending ? 1 : 0.5,
+                  opacity: isFormValid && !isPending ? 1 : 0.6,
                   transition: 'background 0.15s, opacity 0.15s',
                 }}
-                onMouseEnter={(e) => { if (isFormValid && !isPending) e.currentTarget.style.background = '#1d4ed8'; }}
-                onMouseLeave={(e) => { if (isFormValid && !isPending) e.currentTarget.style.background = '#2563eb'; }}
+                onMouseEnter={(e) => { if (isFormValid && !isPending) e.currentTarget.style.background = '#0aab8e'; }}
+                onMouseLeave={(e) => { if (isFormValid && !isPending) e.currentTarget.style.background = '#00c9a7'; }}
+                title={hasDateOverlap ? 'Please select an available date' : undefined}
               >
                 {isPending ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
-                {isPending ? 'Processing...' : 'Confirm Booking'}
+                {isPending ? 'Processing...' : hasDateOverlap ? 'Select an Available Date' : 'Confirm Booking'}
               </button>
             </div>
           </div>

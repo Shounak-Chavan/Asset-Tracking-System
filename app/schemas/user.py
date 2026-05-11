@@ -23,7 +23,7 @@ class UserUpdateAdmin(BaseModel):
     phone : str | None = None
 
 class UserRoleUpdate(BaseModel):
-    role: UserRole
+    role: UserRole  # now accepts admin | user | dry_cleaner
 
 class UserActivate(BaseModel):
     is_active: bool
