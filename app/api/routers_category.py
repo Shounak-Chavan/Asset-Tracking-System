@@ -107,5 +107,5 @@ async def delete_category(
     if assets.scalars().first():
         raise HTTPException(status_code=400, detail="Cannot delete category with existing assets")
 
-    db.delete(category)
+    await db.delete(category)
     await db.commit()

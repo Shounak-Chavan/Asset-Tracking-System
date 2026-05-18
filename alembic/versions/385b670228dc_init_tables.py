@@ -1,8 +1,8 @@
 """init tables
 
-Revision ID: bdd967a6cb5c
+Revision ID: 385b670228dc
 Revises: 
-Create Date: 2026-04-19 11:55:23.549009
+Create Date: 2026-05-18 14:53:13.081348
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'bdd967a6cb5c'
+revision: str = '385b670228dc'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -29,6 +29,23 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_categories_id'), 'categories', ['id'], unique=False)
     op.create_index(op.f('ix_categories_name'), 'categories', ['name'], unique=True)
+    op.create_table('dry_cleaners',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('name', sa.String(), nullable=False),
+    sa.Column('contact_person', sa.String(), nullable=True),
+    sa.Column('phone', sa.String(), nullable=True),
+    sa.Column('email', sa.String(), nullable=True),
+    sa.Column('address', sa.Text(), nullable=True),
+    sa.Column('specializations', sa.String(), nullable=True),
+    sa.Column('rating', sa.Numeric(precision=3, scale=2), nullable=True),
+    sa.Column('total_jobs', sa.Integer(), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('turnaround_days', sa.Integer(), nullable=False),
+    sa.Column('price_per_item', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_dry_cleaners_id'), 'dry_cleaners', ['id'], unique=False)
     op.create_table('rental_plans',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('name', sa.String(), nullable=False),
@@ -48,7 +65,7 @@ def upgrade() -> None:
     sa.Column('full_name', sa.String(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
     sa.Column('password_hash', sa.String(), nullable=False),
-    sa.Column('role', sa.Enum('admin', 'user', name='userrole'), nullable=False),
+    sa.Column('role', sa.Enum('admin', 'user', 'dry_cleaner', name='userrole'), nullable=False),
     sa.Column('phone', sa.String(), nullable=True),
     sa.Column('is_active', sa.Boolean(), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
@@ -92,7 +109,7 @@ def upgrade() -> None:
     sa.Column('requested_asset_id', sa.Integer(), nullable=True),
     sa.Column('aadhaar_number', sa.String(length=12), nullable=True),
     sa.Column('pan_number', sa.String(length=10), nullable=True),
-    sa.Column('status', sa.Enum('pending', 'booked', 'allocated', 'ready_for_pickup', 'picked_up', 'returned', 'overdue', 'cancelled', name='bookingstatus'), nullable=False),
+    sa.Column('status', sa.Enum('pending', 'booked', 'allocated', 'rent_paid', 'picked_up', 'ready_for_pickup', 'returned', 'overdue', 'cancelled', name='bookingstatus'), nullable=False),
     sa.Column('pickup_date', sa.Date(), nullable=False),
     sa.Column('due_date', sa.Date(), nullable=False),
     sa.Column('deposit_amount', sa.Numeric(precision=10, scale=2), nullable=False),
@@ -118,6 +135,31 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_allocations_booking_id'), 'allocations', ['booking_id'], unique=False)
     op.create_index(op.f('ix_allocations_id'), 'allocations', ['id'], unique=False)
+    op.create_table('dry_cleaning_requests',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('asset_id', sa.Integer(), nullable=False),
+    sa.Column('booking_id', sa.Integer(), nullable=False),
+    sa.Column('status', sa.Enum('pending', 'sent', 'in_progress', 'completed', name='drycleaningstatus'), nullable=False),
+    sa.Column('priority', sa.String(), nullable=False),
+    sa.Column('sent_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('completed_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('expected_by', sa.Date(), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('admin_notes', sa.Text(), nullable=True),
+    sa.Column('cleaner_notes', sa.Text(), nullable=True),
+    sa.Column('dry_cleaner_name', sa.String(), nullable=True),
+    sa.Column('dry_cleaner_id', sa.Integer(), nullable=True),
+    sa.Column('actual_cost', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('rating', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), nullable=False),
+    sa.ForeignKeyConstraint(['asset_id'], ['assets.id'], ),
+    sa.ForeignKeyConstraint(['booking_id'], ['bookings.id'], ),
+    sa.ForeignKeyConstraint(['dry_cleaner_id'], ['dry_cleaners.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_dry_cleaning_requests_asset_id'), 'dry_cleaning_requests', ['asset_id'], unique=False)
+    op.create_index(op.f('ix_dry_cleaning_requests_booking_id'), 'dry_cleaning_requests', ['booking_id'], unique=False)
+    op.create_index(op.f('ix_dry_cleaning_requests_id'), 'dry_cleaning_requests', ['id'], unique=False)
     op.create_table('payments',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('booking_id', sa.Integer(), nullable=False),
@@ -149,18 +191,39 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_returns_booking_id'), 'returns', ['booking_id'], unique=False)
     op.create_index(op.f('ix_returns_id'), 'returns', ['id'], unique=False)
+    op.create_table('tracking_events',
+    sa.Column('id', sa.Integer(), nullable=False),
+    sa.Column('booking_id', sa.Integer(), nullable=False),
+    sa.Column('event_type', sa.String(), nullable=False),
+    sa.Column('event_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('meta', sa.Text(), nullable=True),
+    sa.ForeignKeyConstraint(['booking_id'], ['bookings.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['created_by'], ['users.id'], ondelete='SET NULL'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_tracking_events_booking_id'), 'tracking_events', ['booking_id'], unique=False)
+    op.create_index(op.f('ix_tracking_events_id'), 'tracking_events', ['id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_tracking_events_id'), table_name='tracking_events')
+    op.drop_index(op.f('ix_tracking_events_booking_id'), table_name='tracking_events')
+    op.drop_table('tracking_events')
     op.drop_index(op.f('ix_returns_id'), table_name='returns')
     op.drop_index(op.f('ix_returns_booking_id'), table_name='returns')
     op.drop_table('returns')
     op.drop_index(op.f('ix_payments_id'), table_name='payments')
     op.drop_index(op.f('ix_payments_booking_id'), table_name='payments')
     op.drop_table('payments')
+    op.drop_index(op.f('ix_dry_cleaning_requests_id'), table_name='dry_cleaning_requests')
+    op.drop_index(op.f('ix_dry_cleaning_requests_booking_id'), table_name='dry_cleaning_requests')
+    op.drop_index(op.f('ix_dry_cleaning_requests_asset_id'), table_name='dry_cleaning_requests')
+    op.drop_table('dry_cleaning_requests')
     op.drop_index(op.f('ix_allocations_id'), table_name='allocations')
     op.drop_index(op.f('ix_allocations_booking_id'), table_name='allocations')
     op.drop_table('allocations')
@@ -177,6 +240,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_rental_plans_name'), table_name='rental_plans')
     op.drop_index(op.f('ix_rental_plans_id'), table_name='rental_plans')
     op.drop_table('rental_plans')
+    op.drop_index(op.f('ix_dry_cleaners_id'), table_name='dry_cleaners')
+    op.drop_table('dry_cleaners')
     op.drop_index(op.f('ix_categories_name'), table_name='categories')
     op.drop_index(op.f('ix_categories_id'), table_name='categories')
     op.drop_table('categories')

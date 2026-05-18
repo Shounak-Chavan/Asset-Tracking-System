@@ -9,7 +9,7 @@ class BookingCreate(BaseModel):
     rental_plan_id: int
     pickup_date: date
     category_id: Optional[int] = None
-    requested_asset_id: Optional[int] = None
+    asset_id: Optional[int] = None
     aadhaar_number: str
     pan_number: str
 
