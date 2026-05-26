@@ -5,11 +5,22 @@ from typing import List, Optional
 from app.models.bookings import BookingStatus
 from app.schemas.rental_plan import RentalPlanResponse
 
+
+class UserBasicResponse(BaseModel):
+    id: int
+    full_name: str
+    email: str
+    phone: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
 class BookingCreate(BaseModel):
     rental_plan_id: int
     pickup_date: date
     category_id: Optional[int] = None
-    asset_id: Optional[int] = None
+    requested_asset_id: Optional[int] = None
     aadhaar_number: str
     pan_number: str
 
@@ -53,7 +64,8 @@ class BookingResponse(BaseModel):
     rent_amount: Decimal
     created_at: datetime
 
-    rental_plan : RentalPlanResponse
+    user: UserBasicResponse
+    rental_plan: RentalPlanResponse
 
     @field_serializer("deposit_amount", "rent_amount")
     def serialize_decimal(self, value: Decimal):

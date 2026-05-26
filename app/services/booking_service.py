@@ -69,9 +69,9 @@ async def create_booking(db: AsyncSession, user, data):
     # 3. Validate optional asset + category consistency
     resolved_category_id = data.category_id
 
-    if data.asset_id is not None:
+    if data.requested_asset_id is not None:
 
-        requested_asset = await db.get(Asset, data.asset_id)
+        requested_asset = await db.get(Asset, data.requested_asset_id)
 
         if not requested_asset:
             raise HTTPException(
@@ -94,11 +94,11 @@ async def create_booking(db: AsyncSession, user, data):
     due_date = data.pickup_date + timedelta(days=plan.duration_days)
 
     # 5. Prevent overlapping bookings
-    if data.asset_id is not None:
+    if data.requested_asset_id is not None:
 
         is_overlapping = await _has_overlapping_booking(
             db,
-            data.asset_id,
+            data.requested_asset_id,
             data.pickup_date,
             due_date,
         )
@@ -119,7 +119,7 @@ async def create_booking(db: AsyncSession, user, data):
         category_id=resolved_category_id,
 
         # DB model field can still remain requested_asset_id
-        requested_asset_id=data.asset_id,
+        requested_asset_id=data.requested_asset_id,
 
         aadhaar_number=data.aadhaar_number,
         pan_number=data.pan_number,
@@ -150,7 +150,7 @@ async def create_booking(db: AsyncSession, user, data):
 
     await db.refresh(
         booking,
-        attribute_names=["rental_plan"]
+        attribute_names=["rental_plan", "user"]
     )
 
     return booking
@@ -161,7 +161,7 @@ async def get_user_bookings(db: AsyncSession, user):
 
     result = await db.execute(
         select(Booking)
-        .options(selectinload(Booking.rental_plan))
+        .options(selectinload(Booking.rental_plan), selectinload(Booking.user))
         .where(Booking.user_id == user.id)
         .order_by(Booking.created_at.desc())
     )
@@ -197,7 +197,7 @@ async def get_all_bookings(db: AsyncSession):
 
     result = await db.execute(
         select(Booking)
-        .options(selectinload(Booking.rental_plan))
+        .options(selectinload(Booking.rental_plan), selectinload(Booking.user))
         .order_by(Booking.created_at.desc())
     )
 
@@ -236,7 +236,7 @@ async def cancel_booking(
 
     result = await db.execute(
         select(Booking)
-        .options(selectinload(Booking.rental_plan))
+        .options(selectinload(Booking.rental_plan), selectinload(Booking.user))
         .where(Booking.id == booking_id)
     )
 
@@ -268,7 +268,7 @@ async def cancel_booking(
 
     await db.refresh(
         booking,
-        attribute_names=["rental_plan"]
+        attribute_names=["rental_plan", "user"]
     )
 
     return booking
@@ -283,7 +283,7 @@ async def request_return(
 
     result = await db.execute(
         select(Booking)
-        .options(selectinload(Booking.rental_plan))
+        .options(selectinload(Booking.rental_plan), selectinload(Booking.user))
         .where(Booking.id == booking_id)
     )
 
@@ -332,7 +332,7 @@ async def request_return(
 
     await db.refresh(
         booking,
-        attribute_names=["rental_plan"]
+        attribute_names=["rental_plan", "user"]
     )
 
     return booking
@@ -348,7 +348,7 @@ async def mark_picked_up(
     
     result = await db.execute(
         select(Booking)
-        .options(selectinload(Booking.rental_plan))
+        .options(selectinload(Booking.rental_plan), selectinload(Booking.user))
         .where(Booking.id == booking_id)
     )
 
@@ -380,7 +380,7 @@ async def mark_picked_up(
 
     await db.refresh(
         booking,
-        attribute_names=["rental_plan"]
+        attribute_names=["rental_plan", "user"]
     )
 
     return booking

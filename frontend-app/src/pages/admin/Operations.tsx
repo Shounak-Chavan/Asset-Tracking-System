@@ -24,6 +24,8 @@ export function AdminOperationsPage() {
   const [dryCleaning, setDryCleaning] = useState(false)
   const [markReceivedDCId, setMarkReceivedDCId] = useState<number | null>(null)
   const [dcNotes, setDcNotes] = useState('')
+  const [allocatingBookingId, setAllocatingBookingId] = useState<number | null>(null)
+  const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null)
 
   const bookingsQuery = useQuery({
     queryKey: ['admin-bookings', token],
@@ -259,11 +261,13 @@ export function AdminOperationsPage() {
             ) : toAllocate.length === 0 ? (
               <EmptyState message="No bookings awaiting allocation" />
             ) : toAllocate.map((b: Booking) => (
-              <div key={b.id} style={{ background: '#3A1528', border: '1px solid rgba(74,144,217,0.25)', borderRadius: '10px', padding: '10px 14px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <div>
+              <div key={b.id} style={{ background: '#3A1528', border: '1px solid rgba(74,144,217,0.25)', borderRadius: '10px', padding: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                  <div style={{ flex: 1 }}>
                     <p style={{ fontSize: '13px', fontWeight: 600, color: '#F5ECD7', margin: 0 }}>Booking #{b.id}</p>
                     <p style={{ fontSize: '11px', color: '#9E8070', margin: '2px 0 0' }}>{b.rental_plan?.name ?? `Plan #${b.rental_plan_id}`}</p>
+                    <p style={{ fontSize: '11px', color: '#C9A96E', margin: '4px 0 0', fontWeight: 500 }}>👤 {b.user?.full_name ?? 'Unknown'}</p>
+                    <p style={{ fontSize: '10px', color: '#9E8070', margin: '2px 0 0' }}>{b.user?.email}</p>
                   </div>
                   <StatusBadge status={b.status} />
                 </div>
@@ -285,22 +289,69 @@ export function AdminOperationsPage() {
                         </button>
                       </div>
                     ) : (
-                      <p style={{ fontSize: '12px', color: '#E07070', margin: 0 }}>Requested asset (#{b.requested_asset_id}) is not available</p>
+                      <p style={{ fontSize: '12px', color: '#E07070', margin: 0 }}>⚠ Requested asset (#{b.requested_asset_id}) is not available</p>
                     )
                   })()
+                ) : allocatingBookingId === b.id ? (
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <select
+                      value={selectedAssetId || ''}
+                      onChange={(e) => setSelectedAssetId(e.target.value ? Number(e.target.value) : null)}
+                      style={{
+                        flex: 1, padding: '8px 10px', fontSize: '12px', borderRadius: '8px',
+                        background: '#3A1528', border: '1px solid rgba(74,144,217,0.4)', color: '#F5ECD7',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <option value="">Select asset to allocate...</option>
+                      {availableAssets.map((asset) => (
+                        <option key={asset.id} value={asset.id}>
+                          {asset.name} ({asset.asset_code})
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      onClick={() => {
+                        if (selectedAssetId) {
+                          allocateMutation.mutate({ bookingId: b.id, assetId: selectedAssetId })
+                          setAllocatingBookingId(null)
+                          setSelectedAssetId(null)
+                        }
+                      }}
+                      disabled={!selectedAssetId || allocateMutation.isPending}
+                      style={{
+                        padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px',
+                        background: selectedAssetId ? '#4A90D9' : '#555',
+                        color: '#fff', border: 'none', cursor: selectedAssetId ? 'pointer' : 'not-allowed',
+                        flexShrink: 0
+                      }}
+                    >
+                      Allocate
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAllocatingBookingId(null)
+                        setSelectedAssetId(null)
+                      }}
+                      style={{
+                        padding: '6px 12px', fontSize: '12px', borderRadius: '8px',
+                        background: 'transparent', color: '#9E8070', border: '1px solid #555',
+                        cursor: 'pointer', flexShrink: 0
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 ) : (
-                  <select
-                    style={{ width: '100%', height: '36px', borderRadius: '8px', border: '1px solid rgba(74,144,217,0.3)', background: 'var(--color-bg-secondary)', padding: '0 8px', fontSize: '13px', color: '#F5ECD7', outline: 'none' }}
-                    defaultValue=""
-                    onChange={(e) => { if (e.target.value) allocateMutation.mutate({ bookingId: b.id, assetId: Number(e.target.value) }) }}
-                    disabled={allocateMutation.isPending}
-                    aria-label="Select asset to allocate"
+                  <button
+                    onClick={() => setAllocatingBookingId(b.id)}
+                    style={{
+                      padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px',
+                      background: '#4A90D9', color: '#fff', border: 'none', cursor: 'pointer'
+                    }}
                   >
-                    <option value="">Select asset to allocate</option>
-                    {availableAssets.map((a) => (
-                      <option key={a.id} value={a.id}>{a.name} ({a.asset_code})</option>
-                    ))}
-                  </select>
+                    Select Asset to Allocate
+                  </button>
                 )}
               </div>
             ))}

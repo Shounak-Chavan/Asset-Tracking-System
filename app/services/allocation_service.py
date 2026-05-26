@@ -24,7 +24,11 @@ async def allocate_asset(
     if booking.status != BookingStatus.booked:
         raise HTTPException(status_code=400, detail="Booking is not approved for allocation")
     
-    # 3. Check if already allocated 
+    # 3. Check if asset matches what user requested
+    if booking.requested_asset_id and booking.requested_asset_id != asset_id:
+        raise HTTPException(status_code=400, detail=f"User requested asset #{booking.requested_asset_id}, cannot allocate different asset")
+    
+    # 4. Check if already allocated 
     result = await db.execute(
         select(Allocation).where(Allocation.booking_id == booking_id)
     )
@@ -32,12 +36,12 @@ async def allocate_asset(
     if existing_allocation:
         raise HTTPException(status_code=400, detail="Booking is already allocated")
     
-    # 4. Get asset
+    # 5. Get asset
     asset = await db.get(Asset, asset_id)
     if not asset:
         raise HTTPException(status_code=404, detail="Asset not found")
     
-    # 5. Validate asset state
+    # 6. Validate asset state
     if not asset.is_active:
         raise HTTPException(status_code=400, detail="Asset is inactive and cannot be allocated")
     if asset.is_in_dry_cleaning:

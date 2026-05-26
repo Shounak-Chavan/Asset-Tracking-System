@@ -1,8 +1,8 @@
 """init tables
 
-Revision ID: 653ab7420637
+Revision ID: c64531ff5c64
 Revises: 
-Create Date: 2026-05-26 11:19:04.901542
+Create Date: 2026-05-26 20:11:48.835706
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '653ab7420637'
+revision: str = 'c64531ff5c64'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -109,7 +109,7 @@ def upgrade() -> None:
     sa.Column('requested_asset_id', sa.Integer(), nullable=True),
     sa.Column('aadhaar_number', sa.String(length=12), nullable=True),
     sa.Column('pan_number', sa.String(length=10), nullable=True),
-    sa.Column('status', sa.Enum('pending', 'booked', 'allocated', 'rent_paid', 'picked_up', 'ready_for_pickup', 'returned', 'overdue', 'cancelled', name='bookingstatus'), nullable=False),
+    sa.Column('status', sa.Enum('pending', 'booked', 'allocated', 'rent_paid', 'picked_up', 'ready_for_pickup', 'return_requested', 'returned', 'overdue', 'cancelled', name='bookingstatus'), nullable=False),
     sa.Column('pickup_date', sa.Date(), nullable=False),
     sa.Column('due_date', sa.Date(), nullable=False),
     sa.Column('deposit_amount', sa.Numeric(precision=10, scale=2), nullable=False),

@@ -45,6 +45,7 @@ class Booking(Base):
         default=lambda: datetime.now(timezone.utc),
         nullable=False
     )
+    user = relationship("User")
     rental_plan = relationship("RentalPlan", back_populates="bookings")
     category = relationship("Category")
     requested_asset = relationship("Asset", foreign_keys=[requested_asset_id])

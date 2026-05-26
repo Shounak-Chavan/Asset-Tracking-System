@@ -90,6 +90,7 @@ export interface Booking {
   requested_asset_id?: number | null
   allocated_asset_id?: number | null
   created_at: string
+  user: { id: number; full_name: string; email: string; phone?: string | null }
   rental_plan: RentalPlan
 }
 

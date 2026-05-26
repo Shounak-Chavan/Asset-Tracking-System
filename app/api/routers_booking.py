@@ -27,7 +27,7 @@ async def create_booking(
     db: AsyncSession = Depends(get_db)
 ):
     booking_logger.info(
-        f"Booking creation attempt - Asset: {data.asset_id}, "
+        f"Booking creation attempt - Asset: {data.requested_asset_id}, "
         f"User: {current_user.email}, "
         f"Pickup Date: {data.pickup_date}"
     )
@@ -38,7 +38,7 @@ async def create_booking(
         booking_logger.info(
             f"Booking created successfully - "
             f"BookingId: {booking.id}, "
-            f"Asset: {data.asset_id}, "
+            f"Asset: {data.requested_asset_id}, "
             f"User: {current_user.email}"
         )
 
@@ -47,7 +47,7 @@ async def create_booking(
     except Exception as e:
         booking_logger.error(
             f"Booking creation failed - "
-            f"Asset: {data.asset_id}, "
+            f"Asset: {data.requested_asset_id}, "
             f"User: {current_user.email}, "
             f"Error: {str(e)}"
         )
