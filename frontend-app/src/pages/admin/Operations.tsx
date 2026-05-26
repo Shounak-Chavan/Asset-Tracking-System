@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Package2, RotateCcw, Wrench, ClipboardList, Inbox, MapPin } from 'lucide-react'
+import { Package2, RotateCcw, Wrench, ClipboardList, Inbox, MapPin, Shirt, CheckCircle2 } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../api'
@@ -8,7 +8,7 @@ import { useAuth } from '../../auth-context'
 import { Input } from '../../components/ui/Input'
 import { Alert } from '../../components/ui/Alert'
 import { StatusBadge } from '../../components/ui/StatusBadge'
-import type { Booking } from '../../types'
+import type { Booking, DryCleaningRequest } from '../../types'
 
 export function AdminOperationsPage() {
   const { token } = useAuth()
@@ -22,6 +22,8 @@ export function AdminOperationsPage() {
   const [damageAmount, setDamageAmount] = useState('0')
   const [damageNotes, setDamageNotes] = useState('')
   const [dryCleaning, setDryCleaning] = useState(false)
+  const [markReceivedDCId, setMarkReceivedDCId] = useState<number | null>(null)
+  const [dcNotes, setDcNotes] = useState('')
 
   const bookingsQuery = useQuery({
     queryKey: ['admin-bookings', token],
@@ -33,6 +35,20 @@ export function AdminOperationsPage() {
     queryKey: ['admin-assets', token],
     queryFn: () => api.listAssets(token!),
     enabled: Boolean(token),
+  })
+
+  const dryCleaningQuery = useQuery({
+    queryKey: ['dry-cleaning-requests', token],
+    queryFn: () => api.listDryCleaningRequests(token!, 'sent'),
+    enabled: Boolean(token),
+    refetchInterval: 30000,
+  })
+
+  const dryCleaningInProgressQuery = useQuery({
+    queryKey: ['dry-cleaning-in-progress', token],
+    queryFn: () => api.listDryCleaningRequests(token!, 'in_progress'),
+    enabled: Boolean(token),
+    refetchInterval: 30000,
   })
 
   const allocateMutation = useMutation({
@@ -83,6 +99,33 @@ export function AdminOperationsPage() {
     onError: (err: Error) => setError(err.message),
   })
 
+  const markDCReceivedMutation = useMutation({
+    mutationFn: (requestId: number) =>
+      api.markCleaningDone(token!, requestId, { cleaner_notes: dcNotes || undefined }),
+    onSuccess: async () => {
+      setNotice('Dry cleaning marked as received! Asset is now available.')
+      setError('')
+      setMarkReceivedDCId(null)
+      setDcNotes('')
+      await queryClient.invalidateQueries({ queryKey: ['dry-cleaning-in-progress'] })
+      await queryClient.invalidateQueries({ queryKey: ['dry-cleaning-requests'] })
+      await queryClient.invalidateQueries({ queryKey: ['admin-assets'] })
+      setTimeout(() => setNotice(''), 3000)
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
+  const markPickedUpMutation = useMutation({
+    mutationFn: (bookingId: number) => api.markPickedUp(token!, bookingId),
+    onSuccess: async () => {
+      setNotice('Booking marked as picked up!')
+      setError('')
+      await queryClient.invalidateQueries({ queryKey: ['admin-bookings'] })
+      setTimeout(() => setNotice(''), 3000)
+    },
+    onError: (err: Error) => setError(err.message),
+  })
+
   const refreshStatusesMutation = useMutation({
     mutationFn: () => api.refreshBookingStatuses(token!),
     onSuccess: (data) => {
@@ -99,7 +142,7 @@ export function AdminOperationsPage() {
 
   const pending = bookings.filter((b) => b.status === 'pending')
   const toAllocate = bookings.filter((b) => b.status === 'booked')
-  const returnRequests = bookings.filter((b) => b.status === 'ready_for_pickup')
+  const returnRequests = bookings.filter((b) => b.status === 'return_requested')
   const active = bookings.filter((b) => ['allocated', 'rent_paid', 'picked_up', 'overdue'].includes(b.status))
 
   function EmptyState({ message }: { message: string }) {
@@ -390,6 +433,23 @@ export function AdminOperationsPage() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                   <StatusBadge status={b.status} />
+                  {b.status === 'rent_paid' && (
+                    <button
+                      onClick={() => markPickedUpMutation.mutate(b.id)}
+                      disabled={markPickedUpMutation.isPending}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '5px',
+                        padding: '5px 12px', fontSize: '12px', fontWeight: 600,
+                        borderRadius: '8px', background: '#4CAF50', color: '#fff',
+                        border: 'none', cursor: 'pointer', transition: 'background 0.15s',
+                      }}
+                      onMouseEnter={e => { if (!markPickedUpMutation.isPending) e.currentTarget.style.background = '#43A047' }}
+                      onMouseLeave={e => { if (!markPickedUpMutation.isPending) e.currentTarget.style.background = '#4CAF50' }}
+                      title="Mark this booking as picked up by user"
+                    >
+                      Picked Up
+                    </button>
+                  )}
                   <button
                     onClick={() => navigate(`/admin/tracking/${b.id}`)}
                     style={{
@@ -405,6 +465,73 @@ export function AdminOperationsPage() {
                     Track
                   </button>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Mark Dry Cleaning Received ── */}
+        <div style={{ background: '#2D1020', borderRadius: '16px', border: '1px solid rgba(201,169,110,0.15)', borderLeft: '4px solid #FF9800', padding: '24px', display: 'flex', flexDirection: 'column', gap: '20px', transition: 'box-shadow 0.2s' }}
+          onMouseEnter={e => (e.currentTarget.style.boxShadow = 'var(--shadow-gold)')}
+          onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255,152,0,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <CheckCircle2 size={17} color="#FF9800" />
+              </div>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: '#FFB74D', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Dry Cleaning Received</span>
+            </div>
+            <span style={{ fontSize: '42px', fontWeight: 800, lineHeight: 1, color: '#FFB74D' }}>{(dryCleaningInProgressQuery.data ?? []).length}</span>
+          </div>
+          <div style={{ height: '1px', background: 'rgba(255,152,0,0.2)' }} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {dryCleaningInProgressQuery.isLoading ? (
+              [1].map(i => <div key={i} style={{ height: '56px', background: '#3A1528', borderRadius: '10px', opacity: 0.6 }} />)
+            ) : (dryCleaningInProgressQuery.data ?? []).length === 0 ? (
+              <EmptyState message="No cleaning in progress" />
+            ) : (dryCleaningInProgressQuery.data ?? []).map((dc: DryCleaningRequest) => (
+              <div key={dc.id} style={{ background: '#3A1528', border: '1px solid rgba(255,152,0,0.25)', borderRadius: '10px', padding: '10px 14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <p style={{ fontSize: '13px', fontWeight: 600, color: '#F5ECD7', margin: 0 }}>{dc.asset?.name ?? 'Asset'}</p>
+                    <p style={{ fontSize: '11px', color: '#9E8070', margin: '2px 0 0' }}>Booking #{dc.booking_id}</p>
+                  </div>
+                  {markReceivedDCId !== dc.id && (
+                    <button
+                      style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', background: '#FF9800', color: '#fff', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = '#F57C00')}
+                      onMouseLeave={e => (e.currentTarget.style.background = '#FF9800')}
+                      onClick={() => setMarkReceivedDCId(dc.id)}
+                    >
+                      Mark Received
+                    </button>
+                  )}
+                </div>
+                {markReceivedDCId === dc.id && (
+                  <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid rgba(255,152,0,0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <Input placeholder="Cleaner notes (optional)" value={dcNotes} onChange={(e) => setDcNotes(e.target.value)} className="h-9 text-sm" />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', background: '#FF9800', color: '#fff', border: 'none', cursor: 'pointer', transition: 'background 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#F57C00')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#FF9800')}
+                        onClick={() => markDCReceivedMutation.mutate(dc.id)}
+                        disabled={markDCReceivedMutation.isPending}
+                      >
+                        {markDCReceivedMutation.isPending ? 'Marking...' : 'Confirm Received'}
+                      </button>
+                      <button
+                        style={{ padding: '6px 14px', fontSize: '12px', fontWeight: 600, borderRadius: '8px', background: 'transparent', color: '#9E8070', border: '1px solid var(--color-border)', cursor: 'pointer', transition: 'background 0.15s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(201,169,110,0.06)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                        onClick={() => setMarkReceivedDCId(null)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

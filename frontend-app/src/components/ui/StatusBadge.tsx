@@ -14,6 +14,7 @@ const riwaayatStatusColor: Record<string, React.CSSProperties> = {
   allocated:        { background: "rgba(180,140,200,0.12)", color: "#C8A0D8", border: "1px solid rgba(180,140,200,0.3)" },
   rent_paid:        { background: "rgba(180,140,200,0.12)", color: "#C8A0D8", border: "1px solid rgba(180,140,200,0.3)" },
   ready_for_pickup: { background: "rgba(232,180,100,0.12)", color: "#E8B464", border: "1px solid rgba(232,180,100,0.3)" },
+  return_requested: { background: "rgba(232,140,100,0.12)", color: "#E88C64", border: "1px solid rgba(232,140,100,0.3)" },
   picked_up:        { background: "rgba(126,200,160,0.12)", color: "#7EC8A0", border: "1px solid rgba(126,200,160,0.3)" },
   overdue:          { background: "rgba(224,112,112,0.12)", color: "#E07070", border: "1px solid rgba(224,112,112,0.3)" },
   returned:         { background: "rgba(126,200,160,0.12)", color: "#7EC8A0", border: "1px solid rgba(126,200,160,0.3)" },

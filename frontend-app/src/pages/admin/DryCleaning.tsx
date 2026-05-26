@@ -407,6 +407,111 @@ function AssignModal({ request, cleaners, onClose, onSent }: {
   )
 }
 
+// ── Mark Cleaning Done Modal ─────────────────────────────────────────────────
+function MarkCleaningDoneModal({ request, onClose, onSuccess }: { request: DryCleaningRequest; onClose: () => void; onSuccess: () => void }) {
+  const { token } = useAuth()
+  const [notes, setNotes] = useState('')
+  const [cost, setCost] = useState('')
+  const [rating, setRating] = useState(5)
+  const [err, setErr] = useState('')
+
+  const mutation = useMutation({
+    mutationFn: () => api.markCleaningDone(
+      token!,
+      request.id,
+      {
+        cleaner_notes: notes || undefined,
+        actual_cost: cost ? parseFloat(cost) : undefined,
+        rating,
+      }
+    ),
+    onSuccess: () => {
+      onSuccess()
+      onClose()
+    },
+    onError: (e: Error) => setErr(e.message),
+  })
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
+      <motion.div initial={{ scale: 0.93, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+        style={{ background: '#1E0A14', borderRadius: 16, width: '100%', maxWidth: 520, overflow: 'hidden', boxShadow: '0 24px 64px rgba(0,0,0,0.5)', border: '1px solid rgba(201,169,110,0.2)' }}>
+
+        {/* Header */}
+        <div style={{ background: 'linear-gradient(135deg, #16a34a, #22c55e)', padding: '24px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 24, marginBottom: 8 }}>✓</div>
+            <p style={{ fontSize: 18, fontWeight: 700, color: '#fff', margin: 0 }}>Mark as Completed</p>
+            <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)', margin: '4px 0 0' }}>Asset will be marked available after completion</p>
+          </div>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: 8, cursor: 'pointer', color: '#fff', padding: '6px 8px' }}>
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: 28, maxHeight: '65vh', overflowY: 'auto', background: '#1E0A14' }}>
+          {err && <div style={{ background: 'rgba(224,112,112,0.1)', border: '1px solid rgba(224,112,112,0.3)', borderRadius: 8, padding: '10px 12px', marginBottom: 16, fontSize: 13, color: '#E07070' }}>{err}</div>}
+
+          {/* Asset Info */}
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#C9A96E', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 14px' }}>Item</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, padding: 12, background: '#3A1528', borderRadius: 10, border: '1px solid rgba(201,169,110,0.2)' }}>
+            <AssetThumb url={request.asset?.image_url ?? null} name={request.asset?.name ?? ''} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 14, fontWeight: 600, color: '#F5ECD7', margin: 0 }}>{request.asset?.name}</p>
+              <p style={{ fontSize: 12, color: '#9E8070', margin: '2px 0 0' }}>Sent {fmt(request.sent_at)}</p>
+            </div>
+          </div>
+
+          {/* Cleaner Notes */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#F5ECD7', marginBottom: 6 }}>Cleaner Notes</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
+                placeholder="Any notes about the cleaning process..."
+                style={{ width: '100%', boxSizing: 'border-box', borderRadius: 10, border: '1.5px solid rgba(201,169,110,0.25)', padding: '10px 14px', fontSize: 13, outline: 'none', resize: 'vertical', fontFamily: 'inherit', background: '#2D1020', color: '#F5ECD7' }}
+                onFocus={e => { e.target.style.borderColor = '#C9A96E' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(201,169,110,0.25)' }}
+              />
+            </div>
+
+            {/* Actual Cost */}
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#F5ECD7', marginBottom: 6 }}>Actual Cost (₹)</label>
+              <input type="number" value={cost} onChange={e => setCost(e.target.value)} placeholder="Final cost for this job"
+                style={{ width: '100%', boxSizing: 'border-box', height: 42, borderRadius: 10, border: '1.5px solid rgba(201,169,110,0.25)', padding: '0 14px', fontSize: 13, outline: 'none', background: '#2D1020', color: '#F5ECD7' }}
+                onFocus={e => { e.target.style.borderColor = '#C9A96E' }}
+                onBlur={e => { e.target.style.borderColor = 'rgba(201,169,110,0.25)' }}
+              />
+            </div>
+
+            {/* Rating */}
+            <div>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#F5ECD7', marginBottom: 6 }}>Quality Rating</label>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[1, 2, 3, 4, 5].map(i => (
+                  <button key={i} onClick={() => setRating(i)}
+                    style={{ flex: 1, height: 40, borderRadius: 8, background: i <= rating ? '#00c9a7' : '#3A1528', color: i <= rating ? '#fff' : '#9E8070', border: `1.5px solid ${i <= rating ? '#00c9a7' : 'rgba(201,169,110,0.25)'}`, fontSize: 16, cursor: 'pointer', fontWeight: 600 }}>
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ padding: '14px 24px', borderTop: '1px solid rgba(201,169,110,0.15)', display: 'flex', gap: 10, flexShrink: 0 }}>
+          <button onClick={onClose} style={{ flex: 1, height: 40, borderRadius: 8, background: '#3A1528', color: '#F5ECD7', border: '1px solid rgba(201,169,110,0.2)', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+          <button onClick={() => mutation.mutate()} disabled={mutation.isPending}
+            style={{ flex: 1, height: 40, borderRadius: 8, background: mutation.isPending ? '#16a34a' : '#22c55e', color: '#fff', border: 'none', fontSize: 13, fontWeight: 600, cursor: mutation.isPending ? 'not-allowed' : 'pointer' }}>
+            {mutation.isPending ? 'Completing...' : 'Mark Completed'}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
 // ── Main Page ────────────────────────────────────────────────────────────────
 export function AdminDryCleaningPage() {
   const { token } = useAuth()
@@ -416,6 +521,7 @@ export function AdminDryCleaningPage() {
   const [showAddCleaner, setShowAddCleaner] = useState(false)
   const [assignRequest, setAssignRequest] = useState<DryCleaningRequest | null>(null)
   const [viewJobsCleaner, setViewJobsCleaner] = useState<User | null>(null)
+  const [markDoneRequest, setMarkDoneRequest] = useState<DryCleaningRequest | null>(null)
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['dc-pending-send'] })
@@ -608,6 +714,10 @@ export function AdminDryCleaningPage() {
                 <p style={{ fontSize: 11, color: '#9E8070', margin: '8px 0 0', fontStyle: 'italic' }}>
                   Awaiting completion by dry cleaner
                 </p>
+                <button onClick={() => setMarkDoneRequest(r)}
+                  style={{ marginTop: 10, width: '100%', padding: '6px 12px', fontSize: 12, fontWeight: 600, borderRadius: 8, background: '#22c55e', color: '#fff', border: 'none', cursor: 'pointer' }}>
+                  Mark Done
+                </button>
               </div>
             )
           })}
@@ -707,6 +817,17 @@ export function AdminDryCleaningPage() {
         <ViewJobsModal
           cleaner={viewJobsCleaner}
           onClose={() => setViewJobsCleaner(null)}
+        />
+      )}
+      {markDoneRequest && (
+        <MarkCleaningDoneModal
+          request={markDoneRequest}
+          onClose={() => setMarkDoneRequest(null)}
+          onSuccess={() => {
+            invalidate()
+            setNotice(`✓ ${markDoneRequest.asset?.name ?? 'Item'} marked as completed.`)
+            setTimeout(() => setNotice(''), 4000)
+          }}
         />
       )}
     </div>

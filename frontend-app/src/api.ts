@@ -213,6 +213,8 @@ export const api = {
     request<Booking>(`/bookings/${bookingId}/request-return`, { method: 'PATCH', token }),
   refreshBookingStatuses: (token: string) =>
     request<{ message: string; picked_up_count: number; overdue_count: number }>('/bookings/admin/refresh-statuses', { method: 'POST', token }),
+  markPickedUp: (token: string, bookingId: number) =>
+    request<Booking>(`/bookings/admin/${bookingId}/mark-picked-up`, { method: 'PATCH', token }),
 
   payDeposit: (token: string, bookingId: number) =>
     request<Payment>(`/payments/deposit/${bookingId}`, { method: 'POST', token }),

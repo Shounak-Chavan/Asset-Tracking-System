@@ -127,6 +127,29 @@ async def refresh_booking_statuses(
     }
 
 
+# PATCH /bookings/admin/{booking_id}/mark-picked-up
+@router.patch("/admin/{booking_id}/mark-picked-up", response_model=BookingResponse)
+@limiter.limit("30/minute")
+async def mark_booking_picked_up(
+    request: Request,
+    booking_id: int,
+    current_user=Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    """Admin marks booking as picked up by user"""
+    booking_logger.info(
+        f"Admin marking booking #{booking_id} as picked up - Admin: {current_user.email}"
+    )
+    
+    booking = await booking_service.mark_picked_up(booking_id, db, admin_id=current_user.id)
+    
+    booking_logger.info(
+        f"Booking #{booking_id} marked as picked up - Admin: {current_user.email}"
+    )
+    
+    return booking
+
+
 # GET /bookings/assets/{asset_id}/blocked-dates
 @router.get(
     "/assets/{asset_id}/blocked-dates",

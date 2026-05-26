@@ -272,6 +272,7 @@ function BookingCard({
     allocated:        { bg: '#ede9fe', color: '#7c3aed', label: 'Allocated' },
     rent_paid:        { bg: '#f3e8ff', color: '#9333ea', label: `Rent Paid · Pickup on ${formatDate(b.pickup_date)}` },
     ready_for_pickup: { bg: '#ffedd5', color: '#ea580c', label: 'Return Requested' },
+    return_requested: { bg: '#fed7aa', color: '#c2410c', label: 'Return Requested' },
     picked_up:        { bg: '#dcfce7', color: '#16a34a', label: 'Picked Up' },
     overdue:          { bg: '#fee2e2', color: '#dc2626', label: 'Overdue' },
   }
@@ -358,7 +359,7 @@ function BookingCard({
       </div>
 
       {/* ── Action buttons ── */}
-      {(b.status === 'pending' || b.status === 'allocated' || b.status === 'picked_up' || b.status === 'overdue' || b.status === 'rent_paid') && (
+      {(b.status === 'pending' || b.status === 'allocated' || b.status === 'picked_up' || b.status === 'return_requested' || b.status === 'overdue' || b.status === 'rent_paid') && (
         <div style={{
           display: 'flex', flexWrap: 'wrap', gap: '10px',
           marginTop: '16px', paddingTop: '14px',
@@ -435,7 +436,13 @@ function BookingCard({
               Your pickup is scheduled for {formatDate(b.pickup_date)}
             </p>
           )}
-          {(b.status === 'picked_up' || b.status === 'overdue') && (
+          {b.status === 'return_requested' && (
+            <p style={{ fontSize: '13px', color: 'var(--color-accent-gold)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <RotateCcw style={{ width: 15, height: 15 }} />
+              Return request submitted. Admin will process it soon.
+            </p>
+          )}
+          {(b.status === 'picked_up' || b.status === 'overdue' || b.status === 'rent_paid') && (
             <button
               onClick={() => onReturn(b.id)}
               disabled={isActionPending}
@@ -646,9 +653,9 @@ export function BookingsPage() {
     returnMutation.isPending
 
   const bookings = bookingsQuery.data ?? []
-  const activeBookings = bookings.filter((b) => ['picked_up', 'overdue', 'ready_for_pickup'].includes(b.status))
+  const activeBookings = bookings.filter((b) => ['picked_up', 'overdue', 'ready_for_pickup', 'return_requested', 'rent_paid'].includes(b.status))
   const upcomingBookings = bookings.filter((b) =>
-    ['pending', 'booked', 'allocated', 'rent_paid'].includes(b.status)
+    ['pending', 'booked', 'allocated'].includes(b.status)
   )
   const pastBookings = bookings.filter((b) => ['returned', 'cancelled'].includes(b.status))
 

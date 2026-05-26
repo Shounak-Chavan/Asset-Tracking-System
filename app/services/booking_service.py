@@ -25,6 +25,7 @@ ACTIVE_BOOKING_STATUSES = {
     BookingStatus.rent_paid,
     BookingStatus.ready_for_pickup,
     BookingStatus.picked_up,
+    BookingStatus.return_requested,
     BookingStatus.overdue,
 }
 
@@ -317,7 +318,7 @@ async def request_return(
             detail="Return request allowed only after rent payment"
         )
 
-    booking.status = BookingStatus.ready_for_pickup
+    booking.status = BookingStatus.return_requested
 
     record_event(
         db,
@@ -325,6 +326,54 @@ async def request_return(
         RETURN_REQUESTED,
         "You requested to return the item",
         created_by=user.id,
+    )
+
+    await db.commit()
+
+    await db.refresh(
+        booking,
+        attribute_names=["rental_plan"]
+    )
+
+    return booking
+
+
+# Admin marks booking as picked up
+async def mark_picked_up(
+    booking_id: int,
+    db: AsyncSession,
+    admin_id: int
+):
+    """Admin marks a booking as picked up"""
+    
+    result = await db.execute(
+        select(Booking)
+        .options(selectinload(Booking.rental_plan))
+        .where(Booking.id == booking_id)
+    )
+
+    booking = result.scalar_one_or_none()
+
+    if not booking:
+        raise HTTPException(
+            status_code=404,
+            detail="Booking not found"
+        )
+
+    if booking.status != BookingStatus.rent_paid:
+        raise HTTPException(
+            status_code=400,
+            detail="Only rent_paid bookings can be marked as picked up"
+        )
+
+    booking.status = BookingStatus.picked_up
+
+    record_event(
+        db,
+        booking_id,
+        PICKED_UP,
+        "Admin marked asset as picked up",
+        created_by=admin_id,
     )
 
     await db.commit()

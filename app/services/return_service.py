@@ -28,12 +28,11 @@ async def process_return(
     if not booking:
         raise HTTPException(404, "Booking not found")
 
-    # 2. Validate status
-    # Admin should accept a user-initiated return request first.
-    if booking.status != BookingStatus.ready_for_pickup:
+    # 2. Validate status - must be in return_requested or picked_up state
+    if booking.status not in {BookingStatus.return_requested, BookingStatus.picked_up, BookingStatus.overdue}:
         raise HTTPException(
             400,
-            "Return can be processed only after user requests return",
+            "Return can be processed only for picked up or overdue bookings",
         )
 
     # 3. Prevent duplicate return

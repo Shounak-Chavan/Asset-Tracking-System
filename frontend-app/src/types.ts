@@ -72,6 +72,7 @@ export type BookingStatus =
   | 'rent_paid'
   | 'ready_for_pickup'
   | 'picked_up'
+  | 'return_requested'
   | 'returned'
   | 'overdue'
   | 'cancelled'

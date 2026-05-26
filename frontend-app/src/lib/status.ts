@@ -8,6 +8,7 @@ export const bookingStatusColor: Record<string, string> = {
   allocated:        'bg-violet-100 text-violet-700 border-violet-200',
   rent_paid:        'bg-purple-100 text-purple-700 border-purple-200',
   ready_for_pickup: 'bg-orange-100 text-orange-700 border-orange-200',
+  return_requested: 'bg-orange-100 text-orange-600 border-orange-200',
   picked_up:        'bg-green-100 text-green-700 border-green-200',
   returned:         'bg-gray-100 text-gray-600 border-gray-200',
   overdue:          'bg-red-100 text-red-700 border-red-200',
