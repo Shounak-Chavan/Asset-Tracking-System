@@ -400,6 +400,7 @@ async def get_blocked_date_ranges_for_asset(
             detail="Asset not found"
         )
 
+    # 1. Get bookings where user requested this specific asset
     result = await db.execute(
         select(Booking)
         .where(
@@ -408,8 +409,32 @@ async def get_blocked_date_ranges_for_asset(
         )
         .order_by(Booking.pickup_date.asc())
     )
+    bookings_by_request = result.scalars().all()
 
-    bookings = result.scalars().all()
+    # 2. Get allocations for this asset, then get their bookings
+    alloc_result = await db.execute(
+        select(Allocation)
+        .where(Allocation.asset_id == asset_id)
+    )
+    allocations = alloc_result.scalars().all()
+    
+    booking_ids = [alloc.booking_id for alloc in allocations]
+    
+    bookings_by_allocation = []
+    if booking_ids:
+        alloc_result_bookings = await db.execute(
+            select(Booking)
+            .where(
+                Booking.id.in_(booking_ids),
+                Booking.status.in_(ACTIVE_BOOKING_STATUSES),
+            )
+            .order_by(Booking.pickup_date.asc())
+        )
+        bookings_by_allocation = alloc_result_bookings.scalars().all()
+
+    # Combine both lists (remove duplicates by booking id)
+    booking_ids_set = {b.id for b in bookings_by_request}
+    all_bookings = bookings_by_request + [b for b in bookings_by_allocation if b.id not in booking_ids_set]
 
     return [
         {
@@ -417,7 +442,7 @@ async def get_blocked_date_ranges_for_asset(
             "from_date": booking.pickup_date,
             "to_date": booking.due_date,
         }
-        for booking in bookings
+        for booking in all_bookings
     ]
 
 
