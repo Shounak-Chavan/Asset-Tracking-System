@@ -74,3 +74,5 @@ logs/
 
 # ============ Kiro IDE ============
 .kiro/
+
+TECHNICAL_REPORT.md
