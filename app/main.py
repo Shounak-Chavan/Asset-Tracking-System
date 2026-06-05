@@ -15,6 +15,10 @@ from app.api.routers_payment import router as payment_router
 from app.api.routers_dry_cleaning import router as dry_cleaning_router
 from app.api.routers_tracking import router as tracking_router
 from app.db.seed import seed
+from fastapi.staticfiles import StaticFiles
+
+
+
 
 
 @asynccontextmanager
@@ -52,6 +56,8 @@ register_exception_handlers(app)
 
 # Rate Limiting
 setup_rate_limiter(app)
+
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # Routers
 app.include_router(auth_router)

@@ -24,6 +24,7 @@ class AssetResponse(BaseModel):
     asset_code: str
     description: str | None = None
     image_url: str | None = None
+    qr_code_path: str | None = None
     category_id: int
     status: AssetStatus
     created_at: datetime

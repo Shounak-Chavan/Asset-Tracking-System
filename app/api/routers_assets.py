@@ -3,6 +3,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
 import re
+from fastapi.responses import FileResponse
+from pathlib import Path
+from app.services.qr_service import generate_qr
 from app.utils.asset_utils import generate_asset_code
 from app.core.dependencies import get_current_user, get_current_user_optional
 from app.core.rbac import require_roles
@@ -13,6 +16,7 @@ from app.models.asset import Asset, AssetStatus
 from app.models.category import Category
 from app.models.user import User, UserRole
 from app.schemas.asset import AssetCreate, AssetUpdate, AssetResponse
+from app.services.qr_service import generate_qr
 
 router = APIRouter(prefix="/assets", tags=["assets"])
 
@@ -56,12 +60,14 @@ async def create_asset(
             category_id=data.category_id,
             status=AssetStatus.available
         )
+        asset.qr_code_path = f"/uploads/qrcodes/{asset_code}.png"
         db.add(asset)
         created_assets.append(asset)
 
     await db.commit()
     for asset in created_assets:
         await db.refresh(asset)
+        generate_qr(asset.asset_code)
 
     asset_logger.info(f"Assets created successfully - Count: {len(created_assets)}, Name: {data.name}, Admin: {current_user.email}, Codes: {[a.asset_code for a in created_assets]}")
     return created_assets
@@ -203,3 +209,76 @@ async def delete_asset(
     await db.flush()
     await db.delete(asset)
     await db.commit()
+
+@router.get("/code/{asset_code}", response_model=AssetResponse)
+async def get_asset_by_code(
+    asset_code: str,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Asset).where(Asset.asset_code == asset_code)
+    )
+
+    asset = result.scalars().first()
+
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+
+    return asset
+
+@router.get("/code/{asset_code}/download-qr")
+async def download_qr(
+    asset_code: str,
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Asset).where(Asset.asset_code == asset_code)
+    )
+
+    asset = result.scalars().first()
+
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail="Asset not found"
+        )
+
+    file_path = Path(f"uploads/qrcodes/{asset_code}.png")
+
+    if not file_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail="QR code not found"
+        )
+
+    return FileResponse(
+        path=file_path,
+        filename=f"{asset_code}.png",
+        media_type="image/png"
+    )
+
+@router.post("/code/{asset_code}/regenerate-qr")
+async def regenerate_qr(
+    asset_code: str,
+    current_user: User = Depends(require_roles([UserRole.admin])),
+    db: AsyncSession = Depends(get_db)
+):
+    result = await db.execute(
+        select(Asset).where(Asset.asset_code == asset_code)
+    )
+
+    asset = result.scalars().first()
+
+    if not asset:
+        raise HTTPException(
+            status_code=404,
+            detail="Asset not found"
+        )
+
+    generate_qr(asset.asset_code)
+
+    return {
+        "message": "QR code regenerated successfully",
+        "asset_code": asset.asset_code,
+        "qr_code_path": asset.qr_code_path
+    }
