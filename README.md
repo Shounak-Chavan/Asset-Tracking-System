@@ -1,4 +1,279 @@
-# 📦 Asset Tracking System - Full Stack Rental & Lifecycle Management
+# Asset Tracking System
+
+Full-stack asset and rental lifecycle management platform for Riwaayat. The application covers customer onboarding, catalog browsing, bookings, payments, allocation, returns, dry-cleaning workflows, QR-code tracking, and admin operations.
+
+Repository: https://github.com/Shounak-Chavan/Asset-Tracking-System.git
+
+## Overview
+
+This branch contains the Terms and Conditions feature set and supporting documentation for the project. It is intended for independent review or reuse without mixing in unrelated work.
+
+## Tech Stack
+
+Backend:
+
+- FastAPI
+- Python 3.13+
+- SQLAlchemy with async PostgreSQL support (`asyncpg`)
+- Alembic migrations
+- JWT authentication with refresh tokens
+- Role-based access control
+
+Frontend:
+
+- React
+- TypeScript
+- Vite
+- React Router
+- TanStack Query
+- React Hook Form
+- Zod
+- Framer Motion
+- Tailwind CSS utilities with custom design tokens
+
+## Features
+
+- User registration, login, logout, profile, and password management
+- JWT access and refresh token authentication
+- Admin, user, and dry-cleaner role flows
+- Asset catalog with categories, rental plans, and asset details
+- Booking creation, booking tracking, payment status, and return requests
+- Admin booking review, allocation, pickup, return, and rejection workflows
+- Payment breakdowns for deposit, rent, fines, and refunds
+- Dry-cleaning portal and admin dry-cleaning management
+- QR-code based asset tracking
+- Terms and Conditions / rental policy agreement page
+
+## Project Structure
+
+```text
+Asset-Tracking-System/
+|-- app/
+|   |-- api/                 FastAPI routers
+|   |-- core/                Config, security, RBAC, logging, exceptions
+|   |-- db/                  Database session, base, seed, init scripts
+|   |-- models/              SQLAlchemy models
+|   |-- schemas/             Pydantic schemas
+|   |-- services/            Business logic services
+|   |-- utils/               Utility helpers
+|   `-- main.py              FastAPI application entrypoint
+|-- alembic/                 Database migrations
+|-- frontend-app/
+|   |-- src/
+|   |   |-- components/      Shared UI and layout components
+|   |   |-- layouts/         Public and admin layout wrappers
+|   |   |-- pages/           Frontend pages
+|   |   |-- lib/             Shared frontend helpers
+|   |   `-- api.ts           API client
+|   |-- README.md
+|   |-- package-lock.json
+|   `-- src/pages/TermsPage.tsx
+|-- uploads/                 Uploaded files and generated QR codes
+|-- requirements.txt         Backend Python dependencies
+|-- pyproject.toml           Python project metadata
+|-- .env.example             Backend environment template
+|-- frontend-app/.env.example Frontend environment template
+`-- README.md
+```
+
+## Requirements
+
+- Python 3.13 or newer
+- PostgreSQL 14 or newer
+- Node.js 20 or newer
+- npm
+- Git
+
+## Environment Variables
+
+### Backend
+
+Copy the template and fill in your local values:
+
+```bash
+cp .env.example .env
+```
+
+Required backend variables:
+
+```env
+APP_NAME="Asset Tracking System"
+ACCESS_TOKEN_SECRET_KEY=your_secure_access_token_secret_key_here
+REFRESH_TOKEN_SECRET_KEY=your_secure_refresh_token_secret_key_here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+REFRESH_TOKEN_EXPIRE_DAYS=7
+DATABASE_URL=postgresql+asyncpg://postgres:your_password@localhost:5432/asset_db
+ADMIN_EMAIL=admin@example.com
+ADMIN_PASSWORD=secure_password_here
+ADMIN_FULL_NAME=Admin User
+```
+
+Optional backend integrations are documented in `.env.example` for email, Razorpay, and AWS S3.
+
+### Frontend
+
+Copy the frontend template and point it at your backend:
+
+```bash
+cd frontend-app
+cp .env.example .env.local
+```
+
+Example frontend configuration:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+## Backend Setup
+
+1. Create and activate a virtual environment.
+
+Linux or macOS:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+```
+
+Windows PowerShell:
+
+```powershell
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+```
+
+2. Install Python dependencies.
+
+```bash
+pip install -r requirements.txt
+```
+
+3. Create the PostgreSQL database if it does not already exist.
+
+```bash
+psql -U postgres
+CREATE DATABASE asset_db;
+\q
+```
+
+4. Run database migrations.
+
+```bash
+alembic upgrade head
+```
+
+5. Seed initial data.
+
+```bash
+python -m app.db.seed
+```
+
+## Frontend Setup
+
+1. Install frontend dependencies.
+
+```bash
+cd frontend-app
+npm install
+```
+
+2. Create `.env.local` from the template if you have not already done so.
+
+```bash
+cp .env.example .env.local
+```
+
+3. Ensure `VITE_API_BASE_URL` points to the backend URL you are running locally.
+
+## Run The Application
+
+Use two terminals from the project root.
+
+### Terminal 1: Backend
+
+```bash
+source .venv/bin/activate
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Terminal 2: Frontend
+
+```bash
+cd frontend-app
+npm run dev
+```
+
+Open these URLs in your browser:
+
+- Frontend: http://localhost:3000
+- Backend health check: http://127.0.0.1:8000/health
+- API docs: http://127.0.0.1:8000/docs
+- OpenAPI JSON: http://127.0.0.1:8000/openapi.json
+
+## Frontend Scripts
+
+From `frontend-app/`:
+
+```bash
+npm run dev      # Start Vite development server
+npm run build    # Type-check and build production assets
+npm run lint     # Run ESLint
+npm run preview  # Preview the production build
+```
+
+## Backend Scripts and Commands
+
+From the project root:
+
+```bash
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+alembic upgrade head
+python -m app.db.seed
+pytest
+```
+
+## Routes
+
+Common frontend routes include:
+
+- `/` - Home
+- `/assets` - Catalog
+- `/assets/:id` - Asset details and booking
+- `/bookings` - User bookings
+- `/bookings/:bookingId/track` - Booking tracking
+- `/profile` - User profile
+- `/terms` - Terms and conditions / rental policy
+- `/about` - About page
+- `/contact` - Contact page
+- `/admin` - Admin dashboard
+- `/admin/assets` - Admin asset management
+- `/admin/categories` - Admin category management
+- `/admin/plans` - Admin rental plan management
+- `/admin/users` - Admin user management
+- `/admin/ops` - Admin booking operations
+- `/dry-cleaning/login` - Dry-cleaning staff login
+- `/dry-cleaning/portal` - Dry-cleaning staff portal
+
+## Testing And Validation
+
+Backend tests use `pytest`.
+Frontend validation uses `npm run lint` and `npm run build`.
+
+The frontend build could not be executed in this workspace because the front-end manifest is not present in the checked-out tree.
+
+## Troubleshooting
+
+- If the backend fails on startup, confirm `.env` exists and all required keys are set.
+- If the frontend cannot reach the API, verify `VITE_API_BASE_URL` matches the backend port.
+- If PostgreSQL connections fail, verify the database name, credentials, and that the service is running.
+- If seed data looks stale, rerun `python -m app.db.seed` after migrations.
+
+## Notes
+
+- Do not commit `.env` or `.env.local` files.
+- Another developer can check out `Shravani-Terms-and-Condition` to review the Terms implementation without touching `main`.# 📦 Asset Tracking System - Full Stack Rental & Lifecycle Management
 
 FastAPI | JWT Auth | RBAC | Async SQLAlchemy | PostgreSQL | React + TypeScript | Vite
 
